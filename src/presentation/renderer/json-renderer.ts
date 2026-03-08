@@ -43,9 +43,11 @@ export class JsonRenderer implements Renderer {
         budgetedPercent: g.budgetedPercent,
         actualPercent: g.actualPercent,
       })),
+      uncategorized: report.uncategorized.toEuros(),
       totalBudgeted: report.totalBudgeted.toEuros(),
       totalActual: report.totalActual.toEuros(),
       totalDelta: report.totalDelta.toEuros(),
+      transactionCount: report.transactionCount,
     };
   }
 }

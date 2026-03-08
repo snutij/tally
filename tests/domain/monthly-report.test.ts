@@ -60,16 +60,46 @@ describe("MonthlyReport", () => {
     expect(wants.actual.cents).toBe(15000);
     expect(wants.delta.cents).toBe(5000);
 
+    expect(report.uncategorized.cents).toBe(0);
     expect(report.totalBudgeted.cents).toBe(150000);
     expect(report.totalActual.cents).toBe(95000);
     expect(report.totalDelta.cents).toBe(55000);
+    expect(report.transactionCount).toBe(2);
+  });
+
+  it("tracks uncategorized transactions separately", () => {
+    const transactions: Transaction[] = [
+      {
+        id: "1",
+        date: new Date("2026-03-05"),
+        label: "Unknown store",
+        amount: Money.fromEuros(-75),
+        sourceBank: "credit-mutuel",
+      },
+      {
+        id: "2",
+        date: new Date("2026-03-10"),
+        label: "Rent March",
+        amount: Money.fromEuros(-800),
+        categoryId: "rent",
+        sourceBank: "credit-mutuel",
+      },
+    ];
+
+    const report = MonthlyReport.compute(budget, transactions);
+
+    expect(report.uncategorized.cents).toBe(7500);
+    expect(report.totalActual.cents).toBe(87500);
+    expect(report.transactionCount).toBe(2);
   });
 
   it("handles empty transactions", () => {
     const report = MonthlyReport.compute(budget, []);
 
     expect(report.totalActual.cents).toBe(0);
+    expect(report.uncategorized.cents).toBe(0);
     expect(report.totalDelta.cents).toBe(150000);
+    expect(report.transactionCount).toBe(0);
   });
 
   it("handles empty budget", () => {

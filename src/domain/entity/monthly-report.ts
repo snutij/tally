@@ -17,9 +17,11 @@ export class MonthlyReport {
   private constructor(
     readonly month: Month,
     readonly groups: GroupSummary[],
+    readonly uncategorized: Money,
     readonly totalBudgeted: Money,
     readonly totalActual: Money,
     readonly totalDelta: Money,
+    readonly transactionCount: number,
   ) {}
 
   static compute(budget: Budget, transactions: Transaction[]): MonthlyReport {
@@ -29,32 +31,31 @@ export class MonthlyReport {
       actualByGroup.set(group, Money.zero());
     }
 
-    // Map category IDs to groups from budget
     const categoryGroupMap = new Map<string, CategoryGroup>();
     for (const line of budget.lines) {
       categoryGroupMap.set(line.category.id, line.category.group);
     }
 
-    // Sum transaction amounts by group (expenses are negative, we want absolute values)
+    let uncategorized = Money.zero();
+
     for (const txn of transactions) {
       const group = txn.categoryId
         ? categoryGroupMap.get(txn.categoryId)
         : undefined;
+      const absAmount = Money.fromCents(Math.abs(txn.amount.cents));
       if (group) {
-        const current = actualByGroup.get(group)!;
-        // Transactions are typically negative for expenses; take absolute value
-        actualByGroup.set(
-          group,
-          current.add(Money.fromCents(Math.abs(txn.amount.cents))),
-        );
+        actualByGroup.set(group, actualByGroup.get(group)!.add(absAmount));
+      } else {
+        uncategorized = uncategorized.add(absAmount);
       }
     }
 
     const totalBudgeted = budget.total();
-    const totalActual = [...actualByGroup.values()].reduce(
+    const categorizedActual = [...actualByGroup.values()].reduce(
       (sum, m) => sum.add(m),
       Money.zero(),
     );
+    const totalActual = categorizedActual.add(uncategorized);
 
     const groups: GroupSummary[] = Object.values(CategoryGroup).map(
       (group) => {
@@ -78,9 +79,11 @@ export class MonthlyReport {
     return new MonthlyReport(
       budget.month,
       groups,
+      uncategorized,
       totalBudgeted,
       totalActual,
       totalBudgeted.subtract(totalActual),
+      transactions.length,
     );
   }
 }
