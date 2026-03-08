@@ -9,7 +9,10 @@ export class CreditMutuelImporter implements BankImportGateway {
   readonly bankName = "credit-mutuel";
 
   parse(filePath: string): Transaction[] {
-    const content = readFileSync(filePath, "utf-8");
+    // Credit Mutuel CSVs may be encoded in Latin-1/ISO-8859-1
+    const raw = readFileSync(filePath);
+    const content = this.decode(raw);
+
     const records = parse(content, {
       columns: true,
       delimiter: ";",
@@ -18,18 +21,17 @@ export class CreditMutuelImporter implements BankImportGateway {
     }) as Array<Record<string, string>>;
 
     return records.map((row) => {
-      // Credit Mutuel CSV columns (French headers): Date;Libellé;Débit;Crédit
+      // Real format: Date;Date de valeur;Montant;Libellé;Solde
       const dateStr = row["Date"];
-      const label = row["Libellé"] ?? row["Libelle"] ?? "";
-      const debit = row["Débit"] ?? row["Debit"] ?? "";
-      const credit = row["Crédit"] ?? row["Credit"] ?? "";
+      const label = this.findColumn(row, ["Libellé", "Libelle"]);
+      const montant = this.findColumn(row, ["Montant"]);
 
       const [day, month, year] = dateStr.split("/");
       const date = new Date(`${year}-${month}-${day}`);
 
-      const debitAmount = debit ? parseFloat(debit.replace(",", ".")) : 0;
-      const creditAmount = credit ? parseFloat(credit.replace(",", ".")) : 0;
-      const amount = Money.fromEuros(creditAmount - Math.abs(debitAmount));
+      const amount = Money.fromEuros(
+        parseFloat(montant.replace(/\s/g, "").replace(",", ".")) || 0,
+      );
 
       return {
         id: randomUUID(),
@@ -39,5 +41,31 @@ export class CreditMutuelImporter implements BankImportGateway {
         sourceBank: this.bankName,
       };
     });
+  }
+
+  private findColumn(row: Record<string, string>, candidates: string[]): string {
+    for (const key of candidates) {
+      if (row[key] !== undefined) return row[key];
+    }
+    // Fallback: fuzzy match for encoding issues (e.g. Libell\xe9 vs Libellé)
+    const rowKeys = Object.keys(row);
+    for (const candidate of candidates) {
+      const normalized = candidate.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const match = rowKeys.find(
+        (k) =>
+          k.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized,
+      );
+      if (match) return row[match];
+    }
+    return "";
+  }
+
+  private decode(buffer: Buffer): string {
+    const utf8 = buffer.toString("utf-8");
+    // If UTF-8 decoding produces replacement characters, try Latin-1
+    if (utf8.includes("\ufffd")) {
+      return buffer.toString("latin1");
+    }
+    return utf8;
   }
 }
