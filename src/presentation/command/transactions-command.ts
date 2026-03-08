@@ -50,9 +50,7 @@ export function createTransactionsCommand(
       const { categorized, interrupted } = await categorizePrompt(uncategorized);
 
       const updated = categorized.filter((t) => t.categoryId);
-      if (updated.length > 0) {
-        txnRepo.saveAll(updated);
-      }
+      txnRepo.saveAll(updated);
 
       if (interrupted) {
         console.log(`\nInterrupted — saved ${updated.length} of ${uncategorized.length} uncategorized transactions.`);

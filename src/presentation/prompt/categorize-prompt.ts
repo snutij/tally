@@ -54,7 +54,7 @@ export async function categorizePrompt(
         loop: true,
       });
 
-      if (answer === "__skip__" || answer === "__income__") {
+      if (answer === "__skip__") {
         result.push(txn);
       } else {
         result.push({ ...txn, categoryId: answer });

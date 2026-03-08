@@ -88,7 +88,7 @@ describe("categorizePrompt", () => {
     expect(result.categorized[0].categoryId).toBeUndefined();
   });
 
-  it("does not assign categoryId when income is selected", async () => {
+  it("assigns __income__ categoryId when income is selected", async () => {
     selectMock.mockResolvedValueOnce("__income__");
     const { categorizePrompt } = await import(
       "../../src/presentation/prompt/categorize-prompt.js"
@@ -96,7 +96,7 @@ describe("categorizePrompt", () => {
 
     const result = await categorizePrompt([txn()]);
 
-    expect(result.categorized[0].categoryId).toBeUndefined();
+    expect(result.categorized[0].categoryId).toBe("__income__");
   });
 
   it("returns partial results on Ctrl+C (ExitPromptError)", async () => {
