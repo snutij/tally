@@ -1,4 +1,5 @@
-import select, { ExitPromptError } from "@inquirer/select";
+import select from "@inquirer/select";
+import { ExitPromptError } from "@inquirer/core";
 import { Transaction } from "../../domain/entity/transaction.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
