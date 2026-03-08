@@ -12,6 +12,7 @@ function cat(
 const N = CategoryGroup.NEEDS;
 const W = CategoryGroup.WANTS;
 const I = CategoryGroup.INVESTMENTS;
+const Inc = CategoryGroup.INCOME;
 
 // IDs are stable and must NEVER change — they are stored in the DB.
 // Rename display names freely. Add new categories at the end of each group.
@@ -48,4 +49,6 @@ export const DEFAULT_CATEGORIES: Category[] = [
   cat("i02", "Savings", I),
   cat("i03", "Stock market", I),
   cat("i04", "Life insurance", I),
+  // INCOME
+  cat("inc01", "Income", Inc),
 ];

@@ -3,6 +3,7 @@ import { Transaction } from "./transaction.js";
 import { CategoryGroup } from "../value-object/category-group.js";
 import { Money } from "../value-object/money.js";
 import { Month } from "../value-object/month.js";
+import { DEFAULT_CATEGORIES } from "../default-categories.js";
 
 export interface GroupSummary {
   readonly group: CategoryGroup;
@@ -32,8 +33,8 @@ export class MonthlyReport {
     }
 
     const categoryGroupMap = new Map<string, CategoryGroup>();
-    for (const line of budget.lines) {
-      categoryGroupMap.set(line.category.id, line.category.group);
+    for (const cat of DEFAULT_CATEGORIES) {
+      categoryGroupMap.set(cat.id, cat.group);
     }
 
     let uncategorized = Money.zero();

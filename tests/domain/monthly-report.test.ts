@@ -11,15 +11,15 @@ describe("MonthlyReport", () => {
 
   const budget = new Budget(month, [
     {
-      category: { id: "rent", name: "Rent", group: CategoryGroup.NEEDS },
+      category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
       amount: Money.fromEuros(800),
     },
     {
-      category: { id: "dining-out", name: "Dining out", group: CategoryGroup.WANTS },
+      category: { id: "w02", name: "Eating out", group: CategoryGroup.WANTS },
       amount: Money.fromEuros(200),
     },
     {
-      category: { id: "pea", name: "PEA", group: CategoryGroup.INVESTMENTS },
+      category: { id: "i03", name: "Stock market", group: CategoryGroup.INVESTMENTS },
       amount: Money.fromEuros(500),
     },
   ]);
@@ -31,7 +31,7 @@ describe("MonthlyReport", () => {
         date: new Date("2026-03-01"),
         label: "Rent March",
         amount: Money.fromEuros(-800),
-        categoryId: "rent",
+        categoryId: "n01",
         sourceBank: "credit-mutuel",
       },
       {
@@ -39,7 +39,7 @@ describe("MonthlyReport", () => {
         date: new Date("2026-03-15"),
         label: "Restaurant",
         amount: Money.fromEuros(-150),
-        categoryId: "dining-out",
+        categoryId: "w02",
         sourceBank: "credit-mutuel",
       },
     ];
@@ -81,7 +81,7 @@ describe("MonthlyReport", () => {
         date: new Date("2026-03-10"),
         label: "Rent March",
         amount: Money.fromEuros(-800),
-        categoryId: "rent",
+        categoryId: "n01",
         sourceBank: "credit-mutuel",
       },
     ];

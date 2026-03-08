@@ -32,14 +32,14 @@ describe("buildCategoryChoices", () => {
     }
   });
 
-  it("always includes skip and income options", () => {
+  it("includes skip option and income category", () => {
     const choices = buildCategoryChoices();
     const selectableValues = choices
       .filter((c): c is { value: string; name: string } => "value" in c)
       .map((c) => c.value);
 
     expect(selectableValues).toContain("__skip__");
-    expect(selectableValues).toContain("__income__");
+    expect(selectableValues).toContain("inc01");
   });
 
   it("has group separators", () => {
@@ -51,6 +51,7 @@ describe("buildCategoryChoices", () => {
     expect(separators).toContain("— Needs —");
     expect(separators).toContain("— Wants —");
     expect(separators).toContain("— Investments —");
+    expect(separators).toContain("— Income —");
   });
 });
 
@@ -88,15 +89,15 @@ describe("categorizePrompt", () => {
     expect(result.categorized[0].categoryId).toBeUndefined();
   });
 
-  it("assigns __income__ categoryId when income is selected", async () => {
-    selectMock.mockResolvedValueOnce("__income__");
+  it("assigns inc01 categoryId when income is selected", async () => {
+    selectMock.mockResolvedValueOnce("inc01");
     const { categorizePrompt } = await import(
       "../../src/presentation/prompt/categorize-prompt.js"
     );
 
     const result = await categorizePrompt([txn()]);
 
-    expect(result.categorized[0].categoryId).toBe("__income__");
+    expect(result.categorized[0].categoryId).toBe("inc01");
   });
 
   it("returns partial results on Ctrl+C (ExitPromptError)", async () => {

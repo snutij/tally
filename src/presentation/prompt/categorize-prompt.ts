@@ -8,6 +8,7 @@ const GROUP_LABELS: Record<CategoryGroup, string> = {
   NEEDS: "— Needs —",
   WANTS: "— Wants —",
   INVESTMENTS: "— Investments —",
+  INCOME: "— Income —",
 };
 
 type Choice =
@@ -26,7 +27,6 @@ export function buildCategoryChoices(): Choice[] {
 
   choices.push({ type: "separator" as const, separator: "" });
   choices.push({ value: "__skip__", name: "(skip)" });
-  choices.push({ value: "__income__", name: "(income — no category)" });
 
   return choices;
 }
