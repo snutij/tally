@@ -1,0 +1,25 @@
+# Data — NEVER commit real financial data
+*.db
+*.sqlite
+*.sqlite3
+
+# Bank CSV imports — NEVER commit real bank statements
+*.csv
+!tests/fixtures/*.csv
+
+# Node
+node_modules/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Env
+.env
+.env.*

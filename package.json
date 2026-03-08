@@ -1,0 +1,29 @@
+{
+  "name": "tally",
+  "version": "0.1.0",
+  "description": "Personal finance CLI — budget tracking & reporting",
+  "type": "module",
+  "bin": {
+    "tally": "./src/presentation/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/presentation/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "commander": "^14.0.3",
+    "csv-parse": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.3.5",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
