@@ -50,5 +50,8 @@ export const DEFAULT_CATEGORIES: Category[] = [
   cat("i03", "Stock market", I),
   cat("i04", "Life insurance", I),
   // INCOME
-  cat("inc01", "Income", Inc),
+  cat("inc01", "Salary", Inc),
+  cat("inc02", "Rental income", Inc),
+  cat("inc03", "Allowances & Benefits", Inc),
+  cat("inc04", "Refund", Inc),
 ];

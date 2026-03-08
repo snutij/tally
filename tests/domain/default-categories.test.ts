@@ -3,8 +3,8 @@ import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 
 describe("Default Categories", () => {
-  it("has 30 categories", () => {
-    expect(DEFAULT_CATEGORIES).toHaveLength(30);
+  it("has 33 categories", () => {
+    expect(DEFAULT_CATEGORIES).toHaveLength(33);
   });
 
   it("has 17 NEEDS categories", () => {
@@ -28,11 +28,11 @@ describe("Default Categories", () => {
     expect(investments).toHaveLength(4);
   });
 
-  it("has 1 INCOME category", () => {
+  it("has 4 INCOME categories", () => {
     const income = DEFAULT_CATEGORIES.filter(
       (c) => c.group === CategoryGroup.INCOME,
     );
-    expect(income).toHaveLength(1);
+    expect(income).toHaveLength(4);
   });
 
   it("has unique IDs", () => {
