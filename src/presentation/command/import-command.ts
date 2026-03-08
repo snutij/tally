@@ -32,10 +32,7 @@ export function createImportCommand(
         return;
       }
 
-      const { categorized, interrupted } = await categorizePrompt(
-        transactions,
-        { includeIncome: true },
-      );
+      const { categorized, interrupted } = await categorizePrompt(transactions);
 
       const result = importTransactions.save(categorized);
 

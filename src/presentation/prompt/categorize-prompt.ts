@@ -14,7 +14,7 @@ type Choice =
   | { value: string; name: string }
   | { type: "separator"; separator: string };
 
-function buildCategoryChoices(includeIncome: boolean): Choice[] {
+export function buildCategoryChoices(): Choice[] {
   const choices: Choice[] = [];
 
   for (const group of Object.values(CategoryGroup)) {
@@ -26,9 +26,7 @@ function buildCategoryChoices(includeIncome: boolean): Choice[] {
 
   choices.push({ type: "separator" as const, separator: "" });
   choices.push({ value: "__skip__", name: "(skip)" });
-  if (includeIncome) {
-    choices.push({ value: "__income__", name: "(income — no category)" });
-  }
+  choices.push({ value: "__income__", name: "(income — no category)" });
 
   return choices;
 }
@@ -40,9 +38,8 @@ export interface CategorizeResult {
 
 export async function categorizePrompt(
   transactions: Transaction[],
-  opts: { includeIncome: boolean } = { includeIncome: false },
 ): Promise<CategorizeResult> {
-  const choices = buildCategoryChoices(opts.includeIncome);
+  const choices = buildCategoryChoices();
   const result: Transaction[] = [];
 
   try {
