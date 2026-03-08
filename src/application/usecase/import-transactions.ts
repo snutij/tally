@@ -1,3 +1,4 @@
+import { Transaction } from "../../domain/entity/transaction.js";
 import { UnknownBankAdapter } from "../../domain/error/index.js";
 import { BankImportGateway } from "../gateway/bank-import.js";
 import { TransactionRepository } from "../gateway/transaction-repository.js";
@@ -8,16 +9,15 @@ export class ImportTransactions {
     private txnRepo: TransactionRepository,
   ) {}
 
-  execute(
-    bankName: string,
-    filePath: string,
-  ): { count: number } {
+  parse(bankName: string, filePath: string): Transaction[] {
     const importer = this.importers.get(bankName);
     if (!importer) {
       throw new UnknownBankAdapter(bankName);
     }
+    return importer.parse(filePath);
+  }
 
-    const transactions = importer.parse(filePath);
+  save(transactions: Transaction[]): { count: number } {
     this.txnRepo.saveAll(transactions);
     return { count: transactions.length };
   }

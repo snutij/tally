@@ -54,14 +54,20 @@ describe("ImportTransactions", () => {
     );
   });
 
-  it("parses and saves transactions", () => {
-    const result = useCase.execute("test-bank", "dummy.csv");
+  it("parses transactions from bank adapter", () => {
+    const transactions = useCase.parse("test-bank", "dummy.csv");
+    expect(transactions).toHaveLength(2);
+  });
+
+  it("saves transactions and returns count", () => {
+    const transactions = useCase.parse("test-bank", "dummy.csv");
+    const result = useCase.save(transactions);
     expect(result.count).toBe(2);
     expect(txnRepo.saved).toHaveLength(2);
   });
 
   it("throws UnknownBankAdapter for unknown bank", () => {
-    expect(() => useCase.execute("unknown-bank", "dummy.csv")).toThrow(
+    expect(() => useCase.parse("unknown-bank", "dummy.csv")).toThrow(
       UnknownBankAdapter,
     );
   });
