@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { parse } from "csv-parse/sync";
-import { randomUUID } from "node:crypto";
 import { Transaction } from "../../domain/entity/transaction.js";
 import { Money } from "../../domain/value-object/money.js";
 import { BankImportGateway } from "../../application/gateway/bank-import.js";
+import { deterministicTransactionId } from "./transaction-id.js";
 
 export class CreditMutuelImporter implements BankImportGateway {
   readonly bankName = "credit-mutuel";
@@ -20,6 +20,8 @@ export class CreditMutuelImporter implements BankImportGateway {
       trim: true,
     }) as Array<Record<string, string>>;
 
+    const seen = new Map<string, number>();
+
     return records.map((row) => {
       // Real format: Date;Date de valeur;Montant;Libellé;Solde
       const dateStr = row["Date"];
@@ -27,14 +29,19 @@ export class CreditMutuelImporter implements BankImportGateway {
       const montant = this.findColumn(row, ["Montant"]);
 
       const [day, month, year] = dateStr.split("/");
-      const date = new Date(`${year}-${month}-${day}`);
+      const date = new Date(Date.UTC(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10)));
 
       const amount = Money.fromEuros(
         parseFloat(montant.replace(/\s/g, "").replace(",", ".")) || 0,
       );
 
+      const isoDate = `${year}-${month}-${day}`;
+      const key = `${this.bankName}|${isoDate}|${label}|${amount.cents}`;
+      const seq = seen.get(key) ?? 0;
+      seen.set(key, seq + 1);
+
       return {
-        id: randomUUID(),
+        id: deterministicTransactionId(this.bankName, isoDate, label, amount.cents, seq),
         date,
         label,
         amount,

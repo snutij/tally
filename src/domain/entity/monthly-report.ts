@@ -3,7 +3,12 @@ import { Transaction } from "./transaction.js";
 import { CategoryGroup } from "../value-object/category-group.js";
 import { Money } from "../value-object/money.js";
 import { Month } from "../value-object/month.js";
-import { DEFAULT_CATEGORIES } from "../default-categories.js";
+
+const EXPENSE_GROUPS: CategoryGroup[] = [
+  CategoryGroup.NEEDS,
+  CategoryGroup.WANTS,
+  CategoryGroup.INVESTMENTS,
+];
 
 export interface GroupSummary {
   readonly group: CategoryGroup;
@@ -19,9 +24,11 @@ export class MonthlyReport {
     readonly month: Month,
     readonly groups: GroupSummary[],
     readonly uncategorized: Money,
-    readonly totalBudgeted: Money,
-    readonly totalActual: Money,
-    readonly totalDelta: Money,
+    readonly totalIncomeBudgeted: Money,
+    readonly totalIncomeActual: Money,
+    readonly totalExpenseBudgeted: Money,
+    readonly totalExpenseActual: Money,
+    readonly net: Money,
     readonly transactionCount: number,
   ) {}
 
@@ -33,8 +40,8 @@ export class MonthlyReport {
     }
 
     const categoryGroupMap = new Map<string, CategoryGroup>();
-    for (const cat of DEFAULT_CATEGORIES) {
-      categoryGroupMap.set(cat.id, cat.group);
+    for (const line of budget.lines) {
+      categoryGroupMap.set(line.category.id, line.category.group);
     }
 
     let uncategorized = Money.zero();
@@ -51,39 +58,61 @@ export class MonthlyReport {
       }
     }
 
-    const totalBudgeted = budget.total();
-    const categorizedActual = [...actualByGroup.values()].reduce(
-      (sum, m) => sum.add(m),
+    const totalExpenseBudgeted = EXPENSE_GROUPS.reduce(
+      (sum, g) => sum.add(budget.totalByGroup(g)),
       Money.zero(),
     );
-    const totalActual = categorizedActual.add(uncategorized);
+    const totalExpenseActual = EXPENSE_GROUPS.reduce(
+      (sum, g) => sum.add(actualByGroup.get(g)!),
+      Money.zero(),
+    );
+    const totalIncomeBudgeted = budget.totalByGroup(CategoryGroup.INCOME);
+    const totalIncomeActual = actualByGroup.get(CategoryGroup.INCOME)!;
 
     const groups: GroupSummary[] = Object.values(CategoryGroup).map(
       (group) => {
         const budgeted = budget.totalByGroup(group);
         const actual = actualByGroup.get(group)!;
+        const isIncome = group === CategoryGroup.INCOME;
+        const typeBudgetTotal = isIncome
+          ? totalIncomeBudgeted
+          : totalExpenseBudgeted;
+        const typeActualTotal = isIncome
+          ? totalIncomeActual
+          : totalExpenseActual;
+
         return {
           group,
           budgeted,
           actual,
           delta: budgeted.subtract(actual),
-          budgetedPercent: totalBudgeted.isZero()
+          budgetedPercent: typeBudgetTotal.isZero()
             ? 0
-            : Math.round((budgeted.cents / totalBudgeted.cents) * 10000) / 100,
-          actualPercent: totalActual.isZero()
+            : Math.round(
+                (budgeted.cents / typeBudgetTotal.cents) * 10000,
+              ) / 100,
+          actualPercent: typeActualTotal.isZero()
             ? 0
-            : Math.round((actual.cents / totalActual.cents) * 10000) / 100,
+            : Math.round((actual.cents / typeActualTotal.cents) * 10000) /
+              100,
         };
       },
+    );
+
+    const net = transactions.reduce(
+      (sum, txn) => sum.add(txn.amount),
+      Money.zero(),
     );
 
     return new MonthlyReport(
       budget.month,
       groups,
       uncategorized,
-      totalBudgeted,
-      totalActual,
-      totalBudgeted.subtract(totalActual),
+      totalIncomeBudgeted,
+      totalIncomeActual,
+      totalExpenseBudgeted,
+      totalExpenseActual,
+      net,
       transactions.length,
     );
   }

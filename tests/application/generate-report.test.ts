@@ -63,14 +63,14 @@ describe("GenerateReport", () => {
     ]);
 
     const report = useCase.execute(month);
-    expect(report.totalBudgeted.cents).toBe(80000);
-    expect(report.totalActual.cents).toBe(80000);
+    expect(report.totalExpenseBudgeted.cents).toBe(80000);
+    expect(report.totalExpenseActual.cents).toBe(80000);
   });
 
   it("returns empty report when no budget exists", () => {
     const month = Month.from("2026-03");
     const report = useCase.execute(month);
-    expect(report.totalBudgeted.cents).toBe(0);
-    expect(report.totalActual.cents).toBe(0);
+    expect(report.totalExpenseBudgeted.cents).toBe(0);
+    expect(report.totalExpenseActual.cents).toBe(0);
   });
 });

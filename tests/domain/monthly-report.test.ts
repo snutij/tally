@@ -61,9 +61,9 @@ describe("MonthlyReport", () => {
     expect(wants.delta.cents).toBe(5000);
 
     expect(report.uncategorized.cents).toBe(0);
-    expect(report.totalBudgeted.cents).toBe(150000);
-    expect(report.totalActual.cents).toBe(95000);
-    expect(report.totalDelta.cents).toBe(55000);
+    expect(report.totalExpenseBudgeted.cents).toBe(150000);
+    expect(report.totalExpenseActual.cents).toBe(95000);
+    expect(report.net.cents).toBe(-95000);
     expect(report.transactionCount).toBe(2);
   });
 
@@ -89,16 +89,18 @@ describe("MonthlyReport", () => {
     const report = MonthlyReport.compute(budget, transactions);
 
     expect(report.uncategorized.cents).toBe(7500);
-    expect(report.totalActual.cents).toBe(87500);
+    expect(report.totalExpenseActual.cents).toBe(80000);
+    expect(report.net.cents).toBe(-87500);
     expect(report.transactionCount).toBe(2);
   });
 
   it("handles empty transactions", () => {
     const report = MonthlyReport.compute(budget, []);
 
-    expect(report.totalActual.cents).toBe(0);
+    expect(report.totalExpenseActual.cents).toBe(0);
     expect(report.uncategorized.cents).toBe(0);
-    expect(report.totalDelta.cents).toBe(150000);
+    expect(report.totalExpenseBudgeted.cents).toBe(150000);
+    expect(report.net.cents).toBe(0);
     expect(report.transactionCount).toBe(0);
   });
 
@@ -106,12 +108,12 @@ describe("MonthlyReport", () => {
     const emptyBudget = new Budget(month, []);
     const report = MonthlyReport.compute(emptyBudget, []);
 
-    expect(report.totalBudgeted.cents).toBe(0);
-    expect(report.totalActual.cents).toBe(0);
+    expect(report.totalExpenseBudgeted.cents).toBe(0);
+    expect(report.totalExpenseActual.cents).toBe(0);
     expect(report.groups.every((g) => g.budgetedPercent === 0)).toBe(true);
   });
 
-  it("computes percentage breakdown", () => {
+  it("computes expense percentage against expense totals only", () => {
     const report = MonthlyReport.compute(budget, []);
 
     const needs = report.groups.find(
@@ -119,5 +121,84 @@ describe("MonthlyReport", () => {
     )!;
     // 800 / 1500 = 53.33%
     expect(needs.budgetedPercent).toBeCloseTo(53.33, 1);
+  });
+
+  it("separates income from expenses in totals", () => {
+    const budgetWithIncome = new Budget(month, [
+      {
+        category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
+        amount: Money.fromEuros(800),
+      },
+      {
+        category: { id: "inc01", name: "Salary", group: CategoryGroup.INCOME },
+        amount: Money.fromEuros(2500),
+      },
+    ]);
+
+    const transactions: Transaction[] = [
+      {
+        id: "1",
+        date: new Date("2026-03-01"),
+        label: "Rent March",
+        amount: Money.fromEuros(-800),
+        categoryId: "n01",
+        sourceBank: "credit-mutuel",
+      },
+      {
+        id: "2",
+        date: new Date("2026-03-05"),
+        label: "Salary",
+        amount: Money.fromEuros(2500),
+        categoryId: "inc01",
+        sourceBank: "credit-mutuel",
+      },
+    ];
+
+    const report = MonthlyReport.compute(budgetWithIncome, transactions);
+
+    expect(report.totalIncomeBudgeted.cents).toBe(250000);
+    expect(report.totalIncomeActual.cents).toBe(250000);
+    expect(report.totalExpenseBudgeted.cents).toBe(80000);
+    expect(report.totalExpenseActual.cents).toBe(80000);
+    expect(report.net.cents).toBe(170000);
+
+    const income = report.groups.find(
+      (g) => g.group === CategoryGroup.INCOME,
+    )!;
+    expect(income.budgetedPercent).toBe(100);
+    expect(income.actualPercent).toBe(100);
+
+    const needs = report.groups.find(
+      (g) => g.group === CategoryGroup.NEEDS,
+    )!;
+    expect(needs.budgetedPercent).toBe(100);
+  });
+
+  it("uses budget categories for group mapping, not hardcoded defaults", () => {
+    const customBudget = new Budget(month, [
+      {
+        category: { id: "custom-1", name: "Custom", group: CategoryGroup.WANTS },
+        amount: Money.fromEuros(100),
+      },
+    ]);
+
+    const transactions: Transaction[] = [
+      {
+        id: "1",
+        date: new Date("2026-03-01"),
+        label: "Custom purchase",
+        amount: Money.fromEuros(-50),
+        categoryId: "custom-1",
+        sourceBank: "test",
+      },
+    ];
+
+    const report = MonthlyReport.compute(customBudget, transactions);
+
+    const wants = report.groups.find(
+      (g) => g.group === CategoryGroup.WANTS,
+    )!;
+    expect(wants.actual.cents).toBe(5000);
+    expect(report.uncategorized.cents).toBe(0);
   });
 });
