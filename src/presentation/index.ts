@@ -14,6 +14,7 @@ import { JsonRenderer } from "./renderer/json-renderer.js";
 import { createBudgetCommand } from "./command/budget-command.js";
 import { createImportCommand } from "./command/import-command.js";
 import { createReportCommand } from "./command/report-command.js";
+import { createTransactionsCommand } from "./command/transactions-command.js";
 import { BankImportGateway } from "../application/gateway/bank-import.js";
 
 // --- Data directory (XDG convention) ---
@@ -48,5 +49,6 @@ program
 program.addCommand(createBudgetCommand(planBudget, renderer));
 program.addCommand(createImportCommand(importTransactions, renderer));
 program.addCommand(createReportCommand(generateReport, renderer));
+program.addCommand(createTransactionsCommand(txnRepo, renderer));
 
 program.parse();
