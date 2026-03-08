@@ -1,0 +1,178 @@
+import Database from "better-sqlite3";
+import { Budget, BudgetLine } from "../../domain/entity/budget.js";
+import { Transaction } from "../../domain/entity/transaction.js";
+import { CategoryGroup } from "../../domain/value-object/category-group.js";
+import { Money } from "../../domain/value-object/money.js";
+import { Month } from "../../domain/value-object/month.js";
+import { BudgetRepository } from "../../application/gateway/budget-repository.js";
+import { TransactionRepository } from "../../application/gateway/transaction-repository.js";
+
+function migrate(db: Database.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      "group" TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS budgets (
+      month TEXT PRIMARY KEY
+    );
+
+    CREATE TABLE IF NOT EXISTS budget_lines (
+      month TEXT NOT NULL,
+      category_id TEXT NOT NULL,
+      amount_cents INTEGER NOT NULL,
+      PRIMARY KEY (month, category_id),
+      FOREIGN KEY (month) REFERENCES budgets(month),
+      FOREIGN KEY (category_id) REFERENCES categories(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS transactions (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      label TEXT NOT NULL,
+      amount_cents INTEGER NOT NULL,
+      category_id TEXT,
+      source_bank TEXT NOT NULL,
+      FOREIGN KEY (category_id) REFERENCES categories(id)
+    );
+  `);
+}
+
+export class SqliteBudgetRepository implements BudgetRepository {
+  constructor(private db: Database.Database) {}
+
+  save(budget: Budget): void {
+    const tx = this.db.transaction(() => {
+      const upsertCat = this.db.prepare(
+        `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
+      );
+      for (const line of budget.lines) {
+        upsertCat.run(line.category.id, line.category.name, line.category.group);
+      }
+
+      this.db.prepare(`INSERT OR REPLACE INTO budgets (month) VALUES (?)`).run(
+        budget.month.value,
+      );
+
+      this.db
+        .prepare(`DELETE FROM budget_lines WHERE month = ?`)
+        .run(budget.month.value);
+
+      const insertLine = this.db.prepare(
+        `INSERT INTO budget_lines (month, category_id, amount_cents) VALUES (?, ?, ?)`,
+      );
+      for (const line of budget.lines) {
+        insertLine.run(budget.month.value, line.category.id, line.amount.cents);
+      }
+    });
+    tx();
+  }
+
+  findByMonth(month: Month): Budget | null {
+    const row = this.db
+      .prepare(`SELECT month FROM budgets WHERE month = ?`)
+      .get(month.value) as { month: string } | undefined;
+
+    if (!row) return null;
+
+    const lineRows = this.db
+      .prepare(
+        `SELECT bl.category_id, bl.amount_cents, c.name, c."group"
+         FROM budget_lines bl
+         JOIN categories c ON c.id = bl.category_id
+         WHERE bl.month = ?`,
+      )
+      .all(month.value) as Array<{
+      category_id: string;
+      amount_cents: number;
+      name: string;
+      group: string;
+    }>;
+
+    const lines: BudgetLine[] = lineRows.map((r) => ({
+      category: {
+        id: r.category_id,
+        name: r.name,
+        group: r.group as CategoryGroup,
+      },
+      amount: Money.fromCents(r.amount_cents),
+    }));
+
+    return new Budget(month, lines);
+  }
+
+  exists(month: Month): boolean {
+    const row = this.db
+      .prepare(`SELECT 1 FROM budgets WHERE month = ?`)
+      .get(month.value);
+    return row !== undefined;
+  }
+}
+
+export class SqliteTransactionRepository implements TransactionRepository {
+  constructor(private db: Database.Database) {}
+
+  saveAll(transactions: Transaction[]): void {
+    const tx = this.db.transaction(() => {
+      const stmt = this.db.prepare(
+        `INSERT OR REPLACE INTO transactions (id, date, label, amount_cents, category_id, source_bank)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      );
+      for (const t of transactions) {
+        stmt.run(
+          t.id,
+          t.date.toISOString().slice(0, 10),
+          t.label,
+          t.amount.cents,
+          t.categoryId ?? null,
+          t.sourceBank,
+        );
+      }
+    });
+    tx();
+  }
+
+  findByMonth(month: Month): Transaction[] {
+    const pattern = `${month.value}-%`;
+    const rows = this.db
+      .prepare(
+        `SELECT id, date, label, amount_cents, category_id, source_bank
+         FROM transactions WHERE date LIKE ?`,
+      )
+      .all(pattern) as Array<{
+      id: string;
+      date: string;
+      label: string;
+      amount_cents: number;
+      category_id: string | null;
+      source_bank: string;
+    }>;
+
+    return rows.map((r) => ({
+      id: r.id,
+      date: new Date(r.date),
+      label: r.label,
+      amount: Money.fromCents(r.amount_cents),
+      categoryId: r.category_id ?? undefined,
+      sourceBank: r.source_bank,
+    }));
+  }
+}
+
+export function openDatabase(dbPath: string): {
+  db: Database.Database;
+  budgetRepo: SqliteBudgetRepository;
+  txnRepo: SqliteTransactionRepository;
+} {
+  const db = new Database(dbPath);
+  db.pragma("journal_mode = WAL");
+  db.pragma("foreign_keys = ON");
+  migrate(db);
+  return {
+    db,
+    budgetRepo: new SqliteBudgetRepository(db),
+    txnRepo: new SqliteTransactionRepository(db),
+  };
+}
