@@ -1,0 +1,86 @@
+import { Budget } from "./budget.js";
+import { Transaction } from "./transaction.js";
+import { CategoryGroup } from "../value-object/category-group.js";
+import { Money } from "../value-object/money.js";
+import { Month } from "../value-object/month.js";
+
+export interface GroupSummary {
+  readonly group: CategoryGroup;
+  readonly budgeted: Money;
+  readonly actual: Money;
+  readonly delta: Money;
+  readonly budgetedPercent: number;
+  readonly actualPercent: number;
+}
+
+export class MonthlyReport {
+  private constructor(
+    readonly month: Month,
+    readonly groups: GroupSummary[],
+    readonly totalBudgeted: Money,
+    readonly totalActual: Money,
+    readonly totalDelta: Money,
+  ) {}
+
+  static compute(budget: Budget, transactions: Transaction[]): MonthlyReport {
+    const actualByGroup = new Map<CategoryGroup, Money>();
+
+    for (const group of Object.values(CategoryGroup)) {
+      actualByGroup.set(group, Money.zero());
+    }
+
+    // Map category IDs to groups from budget
+    const categoryGroupMap = new Map<string, CategoryGroup>();
+    for (const line of budget.lines) {
+      categoryGroupMap.set(line.category.id, line.category.group);
+    }
+
+    // Sum transaction amounts by group (expenses are negative, we want absolute values)
+    for (const txn of transactions) {
+      const group = txn.categoryId
+        ? categoryGroupMap.get(txn.categoryId)
+        : undefined;
+      if (group) {
+        const current = actualByGroup.get(group)!;
+        // Transactions are typically negative for expenses; take absolute value
+        actualByGroup.set(
+          group,
+          current.add(Money.fromCents(Math.abs(txn.amount.cents))),
+        );
+      }
+    }
+
+    const totalBudgeted = budget.total();
+    const totalActual = [...actualByGroup.values()].reduce(
+      (sum, m) => sum.add(m),
+      Money.zero(),
+    );
+
+    const groups: GroupSummary[] = Object.values(CategoryGroup).map(
+      (group) => {
+        const budgeted = budget.totalByGroup(group);
+        const actual = actualByGroup.get(group)!;
+        return {
+          group,
+          budgeted,
+          actual,
+          delta: budgeted.subtract(actual),
+          budgetedPercent: totalBudgeted.isZero()
+            ? 0
+            : Math.round((budgeted.cents / totalBudgeted.cents) * 10000) / 100,
+          actualPercent: totalActual.isZero()
+            ? 0
+            : Math.round((actual.cents / totalActual.cents) * 10000) / 100,
+        };
+      },
+    );
+
+    return new MonthlyReport(
+      budget.month,
+      groups,
+      totalBudgeted,
+      totalActual,
+      totalBudgeted.subtract(totalActual),
+    );
+  }
+}
