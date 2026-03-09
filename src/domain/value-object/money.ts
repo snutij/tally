@@ -44,6 +44,10 @@ export class Money {
     return this.cents / 100;
   }
 
+  toJSON(): number {
+    return this.toEuros();
+  }
+
   format(): string {
     const euros = Math.abs(this.cents) / 100;
     const sign = this.cents < 0 ? "-" : "";

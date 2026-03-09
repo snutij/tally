@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { BankImportGateway } from "../../src/application/gateway/bank-import.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { UnknownBankAdapter } from "../../src/domain/error/index.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
@@ -12,14 +13,14 @@ class StubImporter implements BankImportGateway {
     return [
       {
         id: "tx-1",
-        date: new Date("2026-03-01"),
+        date: DateOnly.from("2026-03-01"),
         label: "Test transaction",
         amount: Money.fromEuros(-42.5),
         sourceBank: "test-bank",
       },
       {
         id: "tx-2",
-        date: new Date("2026-03-15"),
+        date: DateOnly.from("2026-03-15"),
         label: "Another transaction",
         amount: Money.fromEuros(-10),
         sourceBank: "test-bank",

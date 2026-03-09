@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { buildCategoryChoices } from "../../src/presentation/prompt/categorize-prompt.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
+import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import type { Transaction } from "../../src/domain/entity/transaction.js";
 
@@ -12,7 +13,7 @@ vi.mock("@inquirer/core", () => ({
 function txn(overrides: Partial<Transaction> = {}): Transaction {
   return {
     id: "t1",
-    date: new Date("2026-01-15"),
+    date: DateOnly.from("2026-01-15"),
     label: "TEST",
     amount: Money.fromEuros(-42),
     sourceBank: "test",

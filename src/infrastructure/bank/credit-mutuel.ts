@@ -29,9 +29,10 @@ export class CreditMutuelImporter implements BankImportGateway {
       const label = this.findColumn(row, ["Libellé", "Libelle"]);
       const montant = this.findColumn(row, ["Montant"]);
 
-      const { date, isoDate } = parseFrenchDate(dateStr);
+      const date = parseFrenchDate(dateStr);
       const amount = Money.fromEuros(parseEuroAmount(montant));
 
+      const isoDate = date.toString();
       const key = `${this.bankName}|${isoDate}|${label}|${amount.cents}`;
       const seq = seen.get(key) ?? 0;
       seen.set(key, seq + 1);

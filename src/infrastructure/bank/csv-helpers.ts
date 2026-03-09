@@ -1,9 +1,7 @@
 import { InvalidCsvData } from "../../domain/error/index.js";
+import { DateOnly } from "../../domain/value-object/date-only.js";
 
-export function parseFrenchDate(dateStr: string): {
-  date: Date;
-  isoDate: string;
-} {
+export function parseFrenchDate(dateStr: string): DateOnly {
   const parts = dateStr.split("/");
   if (parts.length !== 3) {
     throw new InvalidCsvData(`expected DD/MM/YYYY date, got "${dateStr}"`);
@@ -15,10 +13,7 @@ export function parseFrenchDate(dateStr: string): {
   if (isNaN(y) || isNaN(m) || isNaN(d)) {
     throw new InvalidCsvData(`non-numeric date components in "${dateStr}"`);
   }
-  return {
-    date: new Date(Date.UTC(y, m - 1, d)),
-    isoDate: `${year}-${month}-${day}`,
-  };
+  return DateOnly.from(`${year}-${month}-${day}`);
 }
 
 export function parseEuroAmount(str: string): number {

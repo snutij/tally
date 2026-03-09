@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
+import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { Budget } from "../../src/domain/entity/budget.js";
@@ -32,7 +33,7 @@ describe("GenerateReport", () => {
     txnRepo.saveAll([
       {
         id: "1",
-        date: new Date("2026-03-01"),
+        date: DateOnly.from("2026-03-01"),
         label: "Rent",
         amount: Money.fromEuros(-800),
         categoryId: "rent",

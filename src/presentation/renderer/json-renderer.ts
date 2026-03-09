@@ -19,80 +19,28 @@ export class JsonRenderer implements Renderer {
 
   private serializeBudget(budget: Budget) {
     return {
-      month: budget.month.value,
+      month: budget.month,
       lines: budget.lines.map((line) => ({
-        category: {
-          id: line.category.id,
-          name: line.category.name,
-          group: line.category.group,
-        },
-        amount: line.amount.toEuros(),
+        category: line.category,
+        amount: line.amount,
       })),
-      total: budget.total().toEuros(),
+      total: budget.total(),
     };
   }
 
   private serializeReport(report: MonthlyReport) {
     return {
-      month: report.month.value,
-      groups: report.groups.map((g) => ({
-        group: g.group,
-        budgeted: g.budgeted.toEuros(),
-        actual: g.actual.toEuros(),
-        delta: g.delta.toEuros(),
-        budgetedPercent: g.budgetedPercent,
-        actualPercent: g.actualPercent,
-      })),
-      categories: report.categories.map((c) => ({
-        categoryId: c.categoryId,
-        categoryName: c.categoryName,
-        group: c.group,
-        budgeted: c.budgeted.toEuros(),
-        actual: c.actual.toEuros(),
-        delta: c.delta.toEuros(),
-      })),
-      uncategorized: report.uncategorized.toEuros(),
-      totalIncomeBudgeted: report.totalIncomeBudgeted.toEuros(),
-      totalIncomeActual: report.totalIncomeActual.toEuros(),
-      totalExpenseBudgeted: report.totalExpenseBudgeted.toEuros(),
-      totalExpenseActual: report.totalExpenseActual.toEuros(),
-      net: report.net.toEuros(),
+      month: report.month,
+      groups: report.groups,
+      categories: report.categories,
+      uncategorized: report.uncategorized,
+      totalIncomeBudgeted: report.totalIncomeBudgeted,
+      totalIncomeActual: report.totalIncomeActual,
+      totalExpenseBudgeted: report.totalExpenseBudgeted,
+      totalExpenseActual: report.totalExpenseActual,
+      net: report.net,
       transactionCount: report.transactionCount,
-      kpis: {
-        savingsRate: report.kpis.savingsRate,
-        fiftyThirtyTwenty: report.kpis.fiftyThirtyTwenty,
-        adherenceRate: report.kpis.adherenceRate,
-        topSpendingCategories: report.kpis.topSpendingCategories.map((c) => ({
-          categoryId: c.categoryId,
-          categoryName: c.categoryName,
-          group: c.group,
-          actual: c.actual.toEuros(),
-        })),
-        dailyAverageSpending: report.kpis.dailyAverageSpending.toEuros(),
-        largestExpenses: report.kpis.largestExpenses.map((e) => ({
-          id: e.id,
-          date: e.date.toISOString().slice(0, 10),
-          label: e.label,
-          amount: e.amount.toEuros(),
-        })),
-        uncategorizedRatio: report.kpis.uncategorizedRatio,
-        categoryVariance: {
-          overruns: report.kpis.categoryVariance.overruns.map((v) => ({
-            categoryId: v.categoryId,
-            categoryName: v.categoryName,
-            budgeted: v.budgeted.toEuros(),
-            actual: v.actual.toEuros(),
-            variance: v.variance.toEuros(),
-          })),
-          underruns: report.kpis.categoryVariance.underruns.map((v) => ({
-            categoryId: v.categoryId,
-            categoryName: v.categoryName,
-            budgeted: v.budgeted.toEuros(),
-            actual: v.actual.toEuros(),
-            variance: v.variance.toEuros(),
-          })),
-        },
-      },
+      kpis: report.kpis,
     };
   }
 }

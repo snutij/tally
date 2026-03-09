@@ -3,6 +3,7 @@ import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { Budget, BudgetLine } from "../../domain/entity/budget.js";
 import { Transaction } from "../../domain/entity/transaction.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
+import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
 import { Month } from "../../domain/value-object/month.js";
 import { BudgetRepository } from "../../application/gateway/budget-repository.js";
@@ -131,7 +132,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
       for (const t of transactions) {
         stmt.run(
           t.id,
-          t.date.toISOString().slice(0, 10),
+          t.date.toString(),
           t.label,
           t.amount.cents,
           t.categoryId ?? null,
@@ -162,7 +163,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
 
     return rows.map((r) => ({
       id: r.id,
-      date: new Date(r.date),
+      date: DateOnly.from(r.date),
       label: r.label,
       amount: Money.fromCents(r.amount_cents),
       categoryId: r.category_id ?? undefined,
@@ -188,7 +189,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
 
     return rows.map((r) => ({
       id: r.id,
-      date: new Date(r.date),
+      date: DateOnly.from(r.date),
       label: r.label,
       amount: Money.fromCents(r.amount_cents),
       categoryId: r.category_id ?? undefined,

@@ -31,7 +31,7 @@ describe("CreditMutuelImporter", () => {
 
   it("parses dates correctly", () => {
     const transactions = importer.parse(fixturePath);
-    expect(transactions[0].date.toISOString().slice(0, 10)).toBe("2026-03-01");
+    expect(transactions[0].date.toString()).toBe("2026-03-01");
   });
 
   it("sets sourceBank", () => {

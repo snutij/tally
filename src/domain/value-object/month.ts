@@ -31,4 +31,8 @@ export class Month {
   toString(): string {
     return this.value;
   }
+
+  toJSON(): string {
+    return this.value;
+  }
 }

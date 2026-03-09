@@ -46,7 +46,7 @@ export async function categorizePrompt(
     for (let i = 0; i < transactions.length; i++) {
       const txn = transactions[i];
       const sign = txn.amount.isNegative() ? "" : "+";
-      const header = `${i + 1}/${transactions.length}  ${sign}${txn.amount.format()}  ${txn.label}  (${txn.date.toISOString().slice(0, 10)})`;
+      const header = `${i + 1}/${transactions.length}  ${sign}${txn.amount.format()}  ${txn.label}  (${txn.date})`;
 
       const answer = await select({
         message: header,

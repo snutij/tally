@@ -3,6 +3,7 @@ import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
 import { Budget } from "../../src/domain/entity/budget.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
+import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 
@@ -28,7 +29,7 @@ describe("MonthlyReport", () => {
     const transactions: Transaction[] = [
       {
         id: "1",
-        date: new Date("2026-03-01"),
+        date: DateOnly.from("2026-03-01"),
         label: "Rent March",
         amount: Money.fromEuros(-800),
         categoryId: "n01",
@@ -36,7 +37,7 @@ describe("MonthlyReport", () => {
       },
       {
         id: "2",
-        date: new Date("2026-03-15"),
+        date: DateOnly.from("2026-03-15"),
         label: "Restaurant",
         amount: Money.fromEuros(-150),
         categoryId: "w02",
@@ -71,14 +72,14 @@ describe("MonthlyReport", () => {
     const transactions: Transaction[] = [
       {
         id: "1",
-        date: new Date("2026-03-05"),
+        date: DateOnly.from("2026-03-05"),
         label: "Unknown store",
         amount: Money.fromEuros(-75),
         sourceBank: "credit-mutuel",
       },
       {
         id: "2",
-        date: new Date("2026-03-10"),
+        date: DateOnly.from("2026-03-10"),
         label: "Rent March",
         amount: Money.fromEuros(-800),
         categoryId: "n01",
@@ -138,7 +139,7 @@ describe("MonthlyReport", () => {
     const transactions: Transaction[] = [
       {
         id: "1",
-        date: new Date("2026-03-01"),
+        date: DateOnly.from("2026-03-01"),
         label: "Rent March",
         amount: Money.fromEuros(-800),
         categoryId: "n01",
@@ -146,7 +147,7 @@ describe("MonthlyReport", () => {
       },
       {
         id: "2",
-        date: new Date("2026-03-05"),
+        date: DateOnly.from("2026-03-05"),
         label: "Salary",
         amount: Money.fromEuros(2500),
         categoryId: "inc01",
@@ -185,7 +186,7 @@ describe("MonthlyReport", () => {
     const transactions: Transaction[] = [
       {
         id: "1",
-        date: new Date("2026-03-01"),
+        date: DateOnly.from("2026-03-01"),
         label: "Custom purchase",
         amount: Money.fromEuros(-50),
         categoryId: "custom-1",
@@ -207,7 +208,7 @@ describe("MonthlyReport", () => {
       const transactions: Transaction[] = [
         {
           id: "1",
-          date: new Date("2026-03-01"),
+          date: DateOnly.from("2026-03-01"),
           label: "Rent",
           amount: Money.fromEuros(-750),
           categoryId: "n01",
@@ -215,7 +216,7 @@ describe("MonthlyReport", () => {
         },
         {
           id: "2",
-          date: new Date("2026-03-10"),
+          date: DateOnly.from("2026-03-10"),
           label: "Dinner",
           amount: Money.fromEuros(-120),
           categoryId: "w02",
@@ -281,7 +282,7 @@ describe("MonthlyReport", () => {
     const fullTransactions: Transaction[] = [
       {
         id: "1",
-        date: new Date("2026-03-01"),
+        date: DateOnly.from("2026-03-01"),
         label: "Salary",
         amount: Money.fromEuros(3000),
         categoryId: "inc01",
@@ -289,7 +290,7 @@ describe("MonthlyReport", () => {
       },
       {
         id: "2",
-        date: new Date("2026-03-02"),
+        date: DateOnly.from("2026-03-02"),
         label: "Rent",
         amount: Money.fromEuros(-800),
         categoryId: "n01",
@@ -297,7 +298,7 @@ describe("MonthlyReport", () => {
       },
       {
         id: "3",
-        date: new Date("2026-03-05"),
+        date: DateOnly.from("2026-03-05"),
         label: "Groceries",
         amount: Money.fromEuros(-350),
         categoryId: "n02",
@@ -305,7 +306,7 @@ describe("MonthlyReport", () => {
       },
       {
         id: "4",
-        date: new Date("2026-03-10"),
+        date: DateOnly.from("2026-03-10"),
         label: "Restaurant",
         amount: Money.fromEuros(-150),
         categoryId: "w01",
@@ -313,7 +314,7 @@ describe("MonthlyReport", () => {
       },
       {
         id: "5",
-        date: new Date("2026-03-15"),
+        date: DateOnly.from("2026-03-15"),
         label: "ETF",
         amount: Money.fromEuros(-300),
         categoryId: "i01",
@@ -321,7 +322,7 @@ describe("MonthlyReport", () => {
       },
       {
         id: "6",
-        date: new Date("2026-03-20"),
+        date: DateOnly.from("2026-03-20"),
         label: "Mystery",
         amount: Money.fromEuros(-50),
         sourceBank: "cm",
@@ -364,7 +365,7 @@ describe("MonthlyReport", () => {
       const txns: Transaction[] = [
         {
           id: "1",
-          date: new Date("2026-03-01"),
+          date: DateOnly.from("2026-03-01"),
           label: "Rent",
           amount: Money.fromEuros(-900),
           categoryId: "n01",
@@ -436,7 +437,7 @@ describe("MonthlyReport", () => {
       const txns: Transaction[] = [
         {
           id: "1",
-          date: new Date("2026-03-01"),
+          date: DateOnly.from("2026-03-01"),
           label: "Salary",
           amount: Money.fromEuros(3000),
           categoryId: "inc01",
@@ -462,7 +463,7 @@ describe("MonthlyReport", () => {
       const txns: Transaction[] = [
         {
           id: "1",
-          date: new Date("2026-03-01"),
+          date: DateOnly.from("2026-03-01"),
           label: "Rent",
           amount: Money.fromEuros(-900),
           categoryId: "n01",
@@ -470,7 +471,7 @@ describe("MonthlyReport", () => {
         },
         {
           id: "2",
-          date: new Date("2026-03-05"),
+          date: DateOnly.from("2026-03-05"),
           label: "Dinner",
           amount: Money.fromEuros(-50),
           categoryId: "w02",

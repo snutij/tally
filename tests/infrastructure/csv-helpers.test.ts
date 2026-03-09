@@ -6,10 +6,9 @@ import {
 import { InvalidCsvData } from "../../src/domain/error/index.js";
 
 describe("parseFrenchDate", () => {
-  it("parses DD/MM/YYYY into Date and isoDate", () => {
+  it("parses DD/MM/YYYY into DateOnly", () => {
     const result = parseFrenchDate("15/03/2026");
-    expect(result.isoDate).toBe("2026-03-15");
-    expect(result.date.toISOString()).toBe("2026-03-15T00:00:00.000Z");
+    expect(result.toString()).toBe("2026-03-15");
   });
 
   it("throws InvalidCsvData for malformed date", () => {

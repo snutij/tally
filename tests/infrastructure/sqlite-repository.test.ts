@@ -10,6 +10,7 @@ import {
 } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { Budget } from "../../src/domain/entity/budget.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
+import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 
@@ -69,14 +70,14 @@ describe("SqliteRepository", () => {
       txnRepo.saveAll([
         {
           id: "tx-1",
-          date: new Date("2026-03-01"),
+          date: DateOnly.from("2026-03-01"),
           label: "Rent",
           amount: Money.fromEuros(-800),
           sourceBank: "credit-mutuel",
         },
         {
           id: "tx-2",
-          date: new Date("2026-04-01"),
+          date: DateOnly.from("2026-04-01"),
           label: "Rent April",
           amount: Money.fromEuros(-800),
           sourceBank: "credit-mutuel",

@@ -8,7 +8,7 @@ import { categorizePrompt } from "../prompt/categorize-prompt.js";
 function serializeTransaction(txn: Transaction) {
   return {
     id: txn.id,
-    date: txn.date.toISOString().slice(0, 10),
+    date: txn.date,
     label: txn.label,
     amount: txn.amount.toEuros(),
     categoryId: txn.categoryId ?? null,

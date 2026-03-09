@@ -3,6 +3,7 @@ import { JsonRenderer } from "../../src/presentation/renderer/json-renderer.js";
 import { Budget } from "../../src/domain/entity/budget.js";
 import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
 import { Month } from "../../src/domain/value-object/month.js";
+import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 
@@ -52,7 +53,7 @@ describe("JsonRenderer", () => {
     const txns = [
       {
         id: "1",
-        date: new Date("2026-03-01"),
+        date: DateOnly.from("2026-03-01"),
         label: "Rent",
         amount: Money.fromEuros(-750),
         categoryId: "n01",
@@ -87,7 +88,7 @@ describe("JsonRenderer", () => {
     const txns = [
       {
         id: "1",
-        date: new Date("2026-03-01"),
+        date: DateOnly.from("2026-03-01"),
         label: "Salary",
         amount: Money.fromEuros(3000),
         categoryId: "inc01",
@@ -95,7 +96,7 @@ describe("JsonRenderer", () => {
       },
       {
         id: "2",
-        date: new Date("2026-03-02"),
+        date: DateOnly.from("2026-03-02"),
         label: "Rent",
         amount: Money.fromEuros(-800),
         categoryId: "n01",
@@ -131,7 +132,7 @@ describe("JsonRenderer", () => {
     const txns = [
       {
         id: "1",
-        date: new Date("2026-03-01"),
+        date: DateOnly.from("2026-03-01"),
         label: "Rent",
         amount: Money.fromEuros(-900),
         categoryId: "n01",

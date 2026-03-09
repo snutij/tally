@@ -1,4 +1,5 @@
 import { Transaction } from "./entity/transaction.js";
+import { DateOnly } from "./value-object/date-only.js";
 import { Money } from "./value-object/money.js";
 
 /**
@@ -7,7 +8,8 @@ import { Money } from "./value-object/money.js";
  * Includes 2 uncategorized transactions for edge-case testing.
  */
 export function mockTransactions(year: number, month: number): Transaction[] {
-  const d = (day: number) => new Date(year, month - 1, day);
+  const d = (day: number) =>
+    DateOnly.from(`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
   const bank = "mock";
 
   return [
