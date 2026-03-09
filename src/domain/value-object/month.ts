@@ -20,6 +20,10 @@ export class Month {
     return parseInt(this.value.slice(5, 7), 10);
   }
 
+  daysInMonth(): number {
+    return new Date(this.year, this.month, 0).getDate();
+  }
+
   equals(other: Month): boolean {
     return this.value === other.value;
   }

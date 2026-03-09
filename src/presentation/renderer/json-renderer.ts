@@ -43,6 +43,14 @@ export class JsonRenderer implements Renderer {
         budgetedPercent: g.budgetedPercent,
         actualPercent: g.actualPercent,
       })),
+      categories: report.categories.map((c) => ({
+        categoryId: c.categoryId,
+        categoryName: c.categoryName,
+        group: c.group,
+        budgeted: c.budgeted.toEuros(),
+        actual: c.actual.toEuros(),
+        delta: c.delta.toEuros(),
+      })),
       uncategorized: report.uncategorized.toEuros(),
       totalIncomeBudgeted: report.totalIncomeBudgeted.toEuros(),
       totalIncomeActual: report.totalIncomeActual.toEuros(),
@@ -50,6 +58,41 @@ export class JsonRenderer implements Renderer {
       totalExpenseActual: report.totalExpenseActual.toEuros(),
       net: report.net.toEuros(),
       transactionCount: report.transactionCount,
+      kpis: {
+        savingsRate: report.kpis.savingsRate,
+        fiftyThirtyTwenty: report.kpis.fiftyThirtyTwenty,
+        adherenceRate: report.kpis.adherenceRate,
+        topSpendingCategories: report.kpis.topSpendingCategories.map((c) => ({
+          categoryId: c.categoryId,
+          categoryName: c.categoryName,
+          group: c.group,
+          actual: c.actual.toEuros(),
+        })),
+        dailyAverageSpending: report.kpis.dailyAverageSpending.toEuros(),
+        largestExpenses: report.kpis.largestExpenses.map((e) => ({
+          id: e.id,
+          date: e.date.toISOString().slice(0, 10),
+          label: e.label,
+          amount: e.amount.toEuros(),
+        })),
+        uncategorizedRatio: report.kpis.uncategorizedRatio,
+        categoryVariance: {
+          overruns: report.kpis.categoryVariance.overruns.map((v) => ({
+            categoryId: v.categoryId,
+            categoryName: v.categoryName,
+            budgeted: v.budgeted.toEuros(),
+            actual: v.actual.toEuros(),
+            variance: v.variance.toEuros(),
+          })),
+          underruns: report.kpis.categoryVariance.underruns.map((v) => ({
+            categoryId: v.categoryId,
+            categoryName: v.categoryName,
+            budgeted: v.budgeted.toEuros(),
+            actual: v.actual.toEuros(),
+            variance: v.variance.toEuros(),
+          })),
+        },
+      },
     };
   }
 }

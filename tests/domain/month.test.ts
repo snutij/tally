@@ -30,4 +30,19 @@ describe("Month", () => {
   it("converts to string", () => {
     expect(Month.from("2026-03").toString()).toBe("2026-03");
   });
+
+  it("returns days in month for regular months", () => {
+    expect(Month.from("2024-01").daysInMonth()).toBe(31);
+    expect(Month.from("2024-04").daysInMonth()).toBe(30);
+    expect(Month.from("2024-06").daysInMonth()).toBe(30);
+    expect(Month.from("2024-12").daysInMonth()).toBe(31);
+  });
+
+  it("returns 29 for February in a leap year", () => {
+    expect(Month.from("2024-02").daysInMonth()).toBe(29);
+  });
+
+  it("returns 28 for February in a non-leap year", () => {
+    expect(Month.from("2025-02").daysInMonth()).toBe(28);
+  });
 });

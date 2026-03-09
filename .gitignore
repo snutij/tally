@@ -7,6 +7,12 @@
 *.csv
 !tests/fixtures/*.csv
 
+# Coverage
+coverage/
+
+# OpenSpec
+openspec/
+
 # Node
 node_modules/
 dist/
