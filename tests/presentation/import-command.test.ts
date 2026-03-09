@@ -28,6 +28,7 @@ describe("createImportCommand", () => {
     splitByCategoryStatus: vi.fn(),
     save: vi.fn(),
   };
+  const mockSeedMockData = { execute: vi.fn() };
   const mockRenderer = { render: vi.fn((d: unknown) => JSON.stringify(d)) };
 
   beforeEach(() => {
@@ -36,7 +37,7 @@ describe("createImportCommand", () => {
   });
 
   function run(...args: string[]) {
-    const cmd = createImportCommand(mockImportTransactions, mockRenderer);
+    const cmd = createImportCommand(mockImportTransactions, mockSeedMockData, mockRenderer);
     const program = new Command().addCommand(cmd);
     return program.parseAsync(["node", "tally", "import", ...args]);
   }
@@ -135,10 +136,29 @@ describe("createImportCommand", () => {
     expect(console.log).toHaveBeenCalledWith("Skipping 1 already-categorized transactions.");
   });
 
+  it("mock subcommand seeds data with explicit month", async () => {
+    mockSeedMockData.execute.mockReturnValue({
+      transactionCount: 17,
+      budgetCreated: true,
+    });
+    await run("mock", "2026-03");
+    expect(mockSeedMockData.execute).toHaveBeenCalled();
+    expect(console.log).toHaveBeenCalled();
+  });
+
+  it("mock subcommand defaults to current month", async () => {
+    mockSeedMockData.execute.mockReturnValue({
+      transactionCount: 17,
+      budgetCreated: true,
+    });
+    await run("mock");
+    expect(mockSeedMockData.execute).toHaveBeenCalled();
+  });
+
   it("returns early when no bank/file args", async () => {
     mockImportTransactions.parse.mockClear();
     // Running with no arguments beyond "import" — the action gets bank=undefined, file=undefined
-    const cmd = createImportCommand(mockImportTransactions, mockRenderer);
+    const cmd = createImportCommand(mockImportTransactions, mockSeedMockData, mockRenderer);
     const program = new Command().addCommand(cmd);
     await program.parseAsync(["node", "tally", "import"]);
     expect(mockImportTransactions.parse).not.toHaveBeenCalled();

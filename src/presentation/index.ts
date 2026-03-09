@@ -8,6 +8,7 @@ import { CreditMutuelImporter } from "../infrastructure/bank/credit-mutuel.js";
 import { PlanBudget } from "../application/usecase/plan-budget.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
+import { SeedMockData } from "../application/usecase/seed-mock-data.js";
 import { JsonRenderer } from "./renderer/json-renderer.js";
 import { createBudgetCommand } from "./command/budget-command.js";
 import { createImportCommand } from "./command/import-command.js";
@@ -34,6 +35,7 @@ const importers = new Map<string, BankImportGateway>([
 const planBudget = new PlanBudget(budgetRepo);
 const importTransactions = new ImportTransactions(importers, txnRepo);
 const generateReport = new GenerateReport(budgetRepo, txnRepo);
+const seedMockData = new SeedMockData(txnRepo, budgetRepo);
 
 // --- CLI ---
 const program = new Command();
@@ -43,7 +45,7 @@ program
   .version("0.1.0");
 
 program.addCommand(createBudgetCommand(planBudget, renderer));
-program.addCommand(createImportCommand(importTransactions, renderer));
+program.addCommand(createImportCommand(importTransactions, seedMockData, renderer));
 program.addCommand(createReportCommand(generateReport, renderer));
 program.addCommand(createTransactionsCommand(txnRepo, renderer));
 program.addCommand(createDbCommand());

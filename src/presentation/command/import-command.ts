@@ -1,10 +1,13 @@
 import { Command } from "commander";
 import { ImportTransactions } from "../../application/usecase/import-transactions.js";
+import { SeedMockData } from "../../application/usecase/seed-mock-data.js";
+import { Month } from "../../domain/value-object/month.js";
 import { Renderer } from "../renderer/renderer.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
 
 export function createImportCommand(
   importTransactions: ImportTransactions,
+  seedMockData: SeedMockData,
   renderer: Renderer,
 ): Command {
   const cmd = new Command("import").description("Import bank transactions");
@@ -15,6 +18,25 @@ export function createImportCommand(
     .action(() => {
       const banks = importTransactions.listBanks();
       console.log(renderer.render({ banks }));
+    });
+
+  cmd
+    .command("mock")
+    .description("Seed DB with pre-categorized mock data for testing")
+    .argument("[month]", "Month in YYYY-MM format (defaults to current month)")
+    .action((monthStr?: string) => {
+      const month = Month.from(
+        monthStr ?? new Date().toISOString().slice(0, 7),
+      );
+      const result = seedMockData.execute(month);
+      console.log(
+        renderer.render({
+          mock: true,
+          month: month.value,
+          transactionCount: result.transactionCount,
+          budgetCreated: result.budgetCreated,
+        }),
+      );
     });
 
   cmd
