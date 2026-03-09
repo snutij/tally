@@ -1,9 +1,8 @@
 #!/usr/bin/env npx tsx
 import { existsSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
-import { homedir } from "node:os";
 import { Command } from "commander";
 
+import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { openDatabase } from "../infrastructure/persistence/sqlite-repository.js";
 import { CreditMutuelImporter } from "../infrastructure/bank/credit-mutuel.js";
 import { PlanBudget } from "../application/usecase/plan-budget.js";
@@ -14,15 +13,14 @@ import { createBudgetCommand } from "./command/budget-command.js";
 import { createImportCommand } from "./command/import-command.js";
 import { createReportCommand } from "./command/report-command.js";
 import { createTransactionsCommand } from "./command/transactions-command.js";
+import { createDbCommand } from "./command/db-command.js";
 import { BankImportGateway } from "../application/gateway/bank-import.js";
 import { DomainError } from "../domain/error/index.js";
 
 // --- Data directory (XDG convention) ---
-const dataDir = join(homedir(), ".local", "share", "tally");
 if (!existsSync(dataDir)) {
   mkdirSync(dataDir, { recursive: true });
 }
-const dbPath = join(dataDir, "tally.db");
 
 // --- Composition root ---
 const { budgetRepo, txnRepo } = openDatabase(dbPath);
@@ -48,6 +46,7 @@ program.addCommand(createBudgetCommand(planBudget, renderer));
 program.addCommand(createImportCommand(importTransactions, renderer));
 program.addCommand(createReportCommand(generateReport, renderer));
 program.addCommand(createTransactionsCommand(txnRepo, renderer));
+program.addCommand(createDbCommand());
 
 program.parseAsync().catch((error: unknown) => {
   if (error instanceof DomainError) {
