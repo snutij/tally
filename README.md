@@ -6,22 +6,23 @@ Budget vs. actual tracking from your terminal. Import bank CSVs, allocate by cat
 
 ```bash
 npm install
+npm link
 
 # Initialize a monthly budget (27 default categories, grouped: needs/wants/investments)
-npx tsx src/presentation/index.ts budget init 2026-03
+tally budget init 2026-03
 
 # View it
-npx tsx src/presentation/index.ts budget show 2026-03
+tally budget show 2026-03
 
 # Import transactions from your bank
-npx tsx src/presentation/index.ts import credit-mutuel statement.csv
-npx tsx src/presentation/index.ts import fortuneo export.csv
+tally import credit-mutuel statement.csv
+tally import fortuneo export.csv
 
 # See available bank adapters
-npx tsx src/presentation/index.ts import list
+tally import list
 
 # Budget vs actual report
-npx tsx src/presentation/index.ts report 2026-03
+tally report 2026-03
 ```
 
 Output is JSON — pipe to `jq` for slicing, or consume programmatically.
