@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
@@ -42,8 +42,8 @@ describe("GenerateReport", () => {
     ]);
 
     const report = useCase.execute(month);
-    expect(report.totalExpenseBudgeted.cents).toBe(80000);
-    expect(report.totalExpenseActual.cents).toBe(80000);
+    expect(report.totalExpenseBudgeted.cents).toBe(80_000);
+    expect(report.totalExpenseActual.cents).toBe(80_000);
   });
 
   it("returns empty report when no budget exists", () => {

@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import Database from "better-sqlite3";
+import type Database from "better-sqlite3";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import { PlanBudget } from "../../src/application/usecase/plan-budget.js";

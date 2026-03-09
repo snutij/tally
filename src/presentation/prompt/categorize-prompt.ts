@@ -1,6 +1,6 @@
 import select from "@inquirer/select";
 import { ExitPromptError } from "@inquirer/core";
-import { Transaction } from "../../domain/entity/transaction.js";
+import type { Transaction } from "../../domain/entity/transaction.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
 
@@ -60,11 +60,11 @@ export async function categorizePrompt(
         result.push({ ...txn, categoryId: answer });
       }
     }
-  } catch (err) {
-    if (err instanceof ExitPromptError) {
+  } catch (error) {
+    if (error instanceof ExitPromptError) {
       return { categorized: result, interrupted: true };
     }
-    throw err;
+    throw error;
   }
 
   return { categorized: result, interrupted: false };

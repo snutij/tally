@@ -1,12 +1,13 @@
 import { Budget } from "../../domain/entity/budget.js";
-import {
+import type {
   CategorySummary,
   GroupSummary,
-  MonthlyReport,
-  ReportKpis,
+  ReportKpis} from "../../domain/entity/monthly-report.js";
+import {
+  MonthlyReport
 } from "../../domain/entity/monthly-report.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
-import { Money } from "../../domain/value-object/money.js";
+import type { Money } from "../../domain/value-object/money.js";
 import type { Renderer } from "./renderer.js";
 
 const MONTH_NAMES = [
@@ -16,8 +17,8 @@ const MONTH_NAMES = [
 
 export class HtmlRenderer implements Renderer {
   render(data: unknown): string {
-    if (data instanceof MonthlyReport) return this.renderReport(data);
-    if (data instanceof Budget) return this.renderBudget(data);
+    if (data instanceof MonthlyReport) {return this.renderReport(data);}
+    if (data instanceof Budget) {return this.renderBudget(data);}
     return this.wrapHtml("Data", `<pre>${esc(JSON.stringify(data, null, 2))}</pre>`);
   }
 
@@ -39,7 +40,7 @@ export class HtmlRenderer implements Renderer {
 
   private heroHeader(r: { month: unknown }, eyebrow: string): string {
     const [year, m] = `${r.month}`.split("-");
-    const monthName = MONTH_NAMES[parseInt(m, 10) - 1] ?? m;
+    const monthName = MONTH_NAMES[Number.parseInt(m, 10) - 1] ?? m;
     return `<header class="hero">
   <div class="hero-eyebrow">${esc(eyebrow)}</div>
   <h1 class="hero-month">${esc(monthName)} ${esc(year)}</h1>
@@ -47,9 +48,6 @@ export class HtmlRenderer implements Renderer {
   }
 
   private kpiSection(kpis: ReportKpis): string {
-    const card = (label: string, value: string, highlight = false) =>
-      `<div class="kpi${highlight ? " kpi-highlight" : ""}"><div class="kpi-value">${value}</div><div class="kpi-label">${label}</div></div>`;
-
     const cards = [
       card("Savings Rate", fmtPct(kpis.savingsRate), true),
       card("Budget Adherence", fmtPct(kpis.adherenceRate)),
@@ -68,7 +66,7 @@ export class HtmlRenderer implements Renderer {
     const n = kpis.fiftyThirtyTwenty.needs ?? 0;
     const w = kpis.fiftyThirtyTwenty.wants ?? 0;
     const inv = kpis.fiftyThirtyTwenty.investments ?? 0;
-    if (n === 0 && w === 0 && inv === 0) return "";
+    if (n === 0 && w === 0 && inv === 0) {return "";}
 
     return `<div class="allocation">
   <div class="alloc-title">50 / 30 / 20 Allocation</div>
@@ -135,7 +133,7 @@ export class HtmlRenderer implements Renderer {
   private insightsSection(kpis: ReportKpis): string {
     const hasSpending = kpis.topSpendingCategories.length > 0;
     const hasExpenses = kpis.largestExpenses.length > 0;
-    if (!hasSpending && !hasExpenses) return "";
+    if (!hasSpending && !hasExpenses) {return "";}
 
     const spending = hasSpending
       ? `<div class="insight-card"><h3>Top Spending</h3>${kpis.topSpendingCategories
@@ -162,19 +160,16 @@ export class HtmlRenderer implements Renderer {
   }
 
   private uncategorizedSection(amount: Money): string {
-    if (amount.isZero()) return "";
+    if (amount.isZero()) {return "";}
     return `<section class="uncategorized"><span class="uncat-dot"></span><p>Uncategorized transactions total: <strong>${amount.format()}</strong></p></section>`;
   }
 
   private reportFooter(r: MonthlyReport): string {
-    const item = (label: string, value: string, cls = "") =>
-      `<div class="total-item"><span class="total-label">${label}</span><span class="total-value${cls ? ` ${cls}` : ""}">${value}</span></div>`;
-
     const netCls = r.net.isPositive()
       ? "positive"
-      : r.net.isNegative()
+      : (r.net.isNegative()
         ? "negative"
-        : "";
+        : "");
 
     return `<footer class="footer-totals">
   <div class="totals-grid">
@@ -195,7 +190,7 @@ export class HtmlRenderer implements Renderer {
     const grouped = new Map<string, typeof b.lines>();
     for (const line of b.lines) {
       const g = line.category.group;
-      if (!grouped.has(g)) grouped.set(g, []);
+      if (!grouped.has(g)) {grouped.set(g, []);}
       grouped.get(g)!.push(line);
     }
 
@@ -603,15 +598,15 @@ ${body}
 
 function esc(s: string): string {
   return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replaceAll(/&/g, "&amp;")
+    .replaceAll(/</g, "&lt;")
+    .replaceAll(/>/g, "&gt;")
+    .replaceAll(/"/g, "&quot;");
 }
 
 function deltaColor(delta: Money): string {
-  if (delta.isPositive()) return "under-budget";
-  if (delta.isNegative()) return "over-budget";
+  if (delta.isPositive()) {return "under-budget";}
+  if (delta.isNegative()) {return "over-budget";}
   return "";
 }
 
@@ -619,8 +614,16 @@ function fmtPct(v: number | null): string {
   return v === null ? "N/A" : `${v}%`;
 }
 
+function card(label: string, value: string, highlight = false): string {
+  return `<div class="kpi${highlight ? " kpi-highlight" : ""}"><div class="kpi-value">${value}</div><div class="kpi-label">${label}</div></div>`;
+}
+
+function item(label: string, value: string, cls = ""): string {
+  return `<div class="total-item"><span class="total-label">${label}</span><span class="total-value${cls ? ` ${cls}` : ""}">${value}</span></div>`;
+}
+
 function fmtDelta(delta: Money, signed: boolean): string {
-  if (!signed || delta.isZero()) return delta.format();
-  if (delta.isPositive()) return `+${delta.format()}`;
+  if (!signed || delta.isZero()) {return delta.format();}
+  if (delta.isPositive()) {return `+${delta.format()}`;}
   return delta.format();
 }

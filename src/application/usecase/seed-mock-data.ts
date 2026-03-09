@@ -1,10 +1,10 @@
 import { Budget } from "../../domain/entity/budget.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
-import { mockTransactions, MOCK_BUDGET_AMOUNTS } from "../../domain/mock-dataset.js";
+import { MOCK_BUDGET_AMOUNTS, mockTransactions } from "../../domain/mock-dataset.js";
 import { Money } from "../../domain/value-object/money.js";
-import { Month } from "../../domain/value-object/month.js";
-import { BudgetRepository } from "../gateway/budget-repository.js";
-import { TransactionRepository } from "../gateway/transaction-repository.js";
+import type { Month } from "../../domain/value-object/month.js";
+import type { BudgetRepository } from "../gateway/budget-repository.js";
+import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
 export class SeedMockData {
   constructor(

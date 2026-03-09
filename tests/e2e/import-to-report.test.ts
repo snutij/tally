@@ -1,14 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import Database from "better-sqlite3";
+import type Database from "better-sqlite3";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { CreditMutuelImporter } from "../../src/infrastructure/bank/credit-mutuel.js";
-import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 
 describe("e2e: import → categorize → budget → report", () => {
@@ -43,10 +42,10 @@ describe("e2e: import → categorize → budget → report", () => {
     expect(parsed).toHaveLength(4);
 
     const categorized = parsed.map((t) => {
-      if (t.label.includes("RENT")) return { ...t, categoryId: "n01" };
-      if (t.label.includes("GROCERY")) return { ...t, categoryId: "n02" };
-      if (t.label.includes("SALARY")) return { ...t, categoryId: "inc01" };
-      if (t.label.includes("RESTAURANT")) return { ...t, categoryId: "w02" };
+      if (t.label.includes("RENT")) {return { ...t, categoryId: "n01" };}
+      if (t.label.includes("GROCERY")) {return { ...t, categoryId: "n02" };}
+      if (t.label.includes("SALARY")) {return { ...t, categoryId: "inc01" };}
+      if (t.label.includes("RESTAURANT")) {return { ...t, categoryId: "w02" };}
       return t;
     });
 
@@ -64,9 +63,9 @@ describe("e2e: import → categorize → budget → report", () => {
     expect(report.net.cents).toBe(
       parsed.reduce((sum, t) => sum + t.amount.cents, 0),
     );
-    expect(report.totalIncomeActual.cents).toBe(250000); // 2500€ salary
+    expect(report.totalIncomeActual.cents).toBe(250_000); // 2500€ salary
     expect(report.totalExpenseActual.cents).toBe(
-      80000 + 5230 + 3550, // rent + grocery + restaurant
+      80_000 + 5230 + 3550, // rent + grocery + restaurant
     );
     expect(report.uncategorized.cents).toBe(0);
   });
@@ -81,7 +80,7 @@ describe("e2e: import → categorize → budget → report", () => {
 
     expect(report.transactionCount).toBe(4);
     expect(report.uncategorized.cents).toBe(
-      80000 + 5230 + 250000 + 3550,
+      80_000 + 5230 + 250_000 + 3550,
     );
   });
 
@@ -89,8 +88,8 @@ describe("e2e: import → categorize → budget → report", () => {
     // First import: categorize only 2
     const parsed = importTxns.parse("credit-mutuel", CSV);
     const partial = parsed.map((t) => {
-      if (t.label.includes("RENT")) return { ...t, categoryId: "n01" };
-      if (t.label.includes("SALARY")) return { ...t, categoryId: "inc01" };
+      if (t.label.includes("RENT")) {return { ...t, categoryId: "n01" };}
+      if (t.label.includes("SALARY")) {return { ...t, categoryId: "inc01" };}
       return t;
     });
     importTxns.save(partial);
@@ -102,6 +101,6 @@ describe("e2e: import → categorize → budget → report", () => {
 
     expect(alreadyCategorized).toHaveLength(2);
     expect(uncategorized).toHaveLength(2);
-    expect(alreadyCategorized.map((t) => t.categoryId).sort()).toEqual(["inc01", "n01"]);
+    expect(alreadyCategorized.map((t) => t.categoryId).toSorted()).toEqual(["inc01", "n01"]);
   });
 });

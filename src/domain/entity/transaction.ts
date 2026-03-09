@@ -1,5 +1,5 @@
-import { DateOnly } from "../value-object/date-only.js";
-import { Money } from "../value-object/money.js";
+import type { DateOnly } from "../value-object/date-only.js";
+import type { Money } from "../value-object/money.js";
 
 export interface Transaction {
   readonly id: string;

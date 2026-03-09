@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
 import { createBudgetCommand } from "../../src/presentation/command/budget-command.js";
 import { Budget } from "../../src/domain/entity/budget.js";

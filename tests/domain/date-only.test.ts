@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 
 describe("DateOnly", () => {

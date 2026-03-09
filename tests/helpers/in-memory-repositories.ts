@@ -1,8 +1,8 @@
-import { BudgetRepository } from "../../src/application/gateway/budget-repository.js";
-import { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
-import { Budget } from "../../src/domain/entity/budget.js";
-import { Transaction } from "../../src/domain/entity/transaction.js";
-import { Month } from "../../src/domain/value-object/month.js";
+import type { BudgetRepository } from "../../src/application/gateway/budget-repository.js";
+import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
+import type { Budget } from "../../src/domain/entity/budget.js";
+import type { Transaction } from "../../src/domain/entity/transaction.js";
+import type { Month } from "../../src/domain/value-object/month.js";
 
 export class InMemoryBudgetRepository implements BudgetRepository {
   private store = new Map<string, Budget>();

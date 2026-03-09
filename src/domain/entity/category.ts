@@ -1,4 +1,4 @@
-import { CategoryGroup } from "../value-object/category-group.js";
+import type { CategoryGroup } from "../value-object/category-group.js";
 
 export interface Category {
   readonly id: string;

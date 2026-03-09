@@ -1,7 +1,7 @@
-import { Category } from "./category.js";
-import { CategoryGroup } from "../value-object/category-group.js";
+import type { Category } from "./category.js";
+import type { CategoryGroup } from "../value-object/category-group.js";
 import { Money } from "../value-object/money.js";
-import { Month } from "../value-object/month.js";
+import type { Month } from "../value-object/month.js";
 
 export interface BudgetLine {
   readonly category: Category;

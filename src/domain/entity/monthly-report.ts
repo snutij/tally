@@ -1,9 +1,9 @@
-import { Budget } from "./budget.js";
-import { Transaction } from "./transaction.js";
+import type { Budget } from "./budget.js";
+import type { Transaction } from "./transaction.js";
 import { CategoryGroup } from "../value-object/category-group.js";
-import { DateOnly } from "../value-object/date-only.js";
+import type { DateOnly } from "../value-object/date-only.js";
 import { Money } from "../value-object/money.js";
-import { Month } from "../value-object/month.js";
+import type { Month } from "../value-object/month.js";
 
 const EXPENSE_GROUPS: CategoryGroup[] = [
   CategoryGroup.NEEDS,
@@ -146,11 +146,11 @@ export class MonthlyReport {
           budgetedPercent: typeBudgetTotal.isZero()
             ? 0
             : Math.round(
-                (budgeted.cents / typeBudgetTotal.cents) * 10000,
+                (budgeted.cents / typeBudgetTotal.cents) * 10_000,
               ) / 100,
           actualPercent: typeActualTotal.isZero()
             ? 0
-            : Math.round((actual.cents / typeActualTotal.cents) * 10000) /
+            : Math.round((actual.cents / typeActualTotal.cents) * 10_000) /
               100,
         };
       },
@@ -223,8 +223,6 @@ function computeKpis(ctx: {
 
   const incomeZero = totalIncomeActual.isZero();
 
-  const pct = (n: number, d: number) => Math.round((n / d) * 10000) / 100;
-
   const savingsRate = incomeZero
     ? null
     : pct(
@@ -266,7 +264,7 @@ function computeKpis(ctx: {
 
   const topSpendingCategories = categories
     .filter((c) => c.group !== CategoryGroup.INCOME)
-    .sort((a, b) => b.actual.cents - a.actual.cents)
+    .toSorted((a, b) => b.actual.cents - a.actual.cents)
     .slice(0, 5)
     .map((c) => ({
       categoryId: c.categoryId,
@@ -281,7 +279,7 @@ function computeKpis(ctx: {
 
   const largestExpenses = transactions
     .filter((t) => t.amount.isNegative())
-    .sort((a, b) => a.amount.cents - b.amount.cents)
+    .toSorted((a, b) => a.amount.cents - b.amount.cents)
     .slice(0, 5)
     .map((t) => ({
       id: t.id,
@@ -295,21 +293,13 @@ function computeKpis(ctx: {
       ? null
       : pct(uncategorizedCount, transactions.length);
 
-  const varianceOf = (c: CategorySummary) => ({
-    categoryId: c.categoryId,
-    categoryName: c.categoryName,
-    budgeted: c.budgeted,
-    actual: c.actual,
-    variance: c.actual.subtract(c.budgeted),
-  });
-
   const expenseCategories = categories.filter(
     (c) => c.group !== CategoryGroup.INCOME,
   );
 
   const overruns = expenseCategories
     .filter((c) => c.actual.cents > c.budgeted.cents)
-    .sort(
+    .toSorted(
       (a, b) =>
         b.actual.cents - b.budgeted.cents - (a.actual.cents - a.budgeted.cents),
     )
@@ -318,7 +308,7 @@ function computeKpis(ctx: {
 
   const underruns = expenseCategories
     .filter((c) => c.actual.cents < c.budgeted.cents)
-    .sort(
+    .toSorted(
       (a, b) =>
         a.actual.cents - a.budgeted.cents - (b.actual.cents - b.budgeted.cents),
     )
@@ -334,5 +324,19 @@ function computeKpis(ctx: {
     largestExpenses,
     uncategorizedRatio,
     categoryVariance: { overruns, underruns },
+  };
+}
+
+function pct(n: number, d: number): number {
+  return Math.round((n / d) * 10_000) / 100;
+}
+
+function varianceOf(c: CategorySummary) {
+  return {
+    categoryId: c.categoryId,
+    categoryName: c.categoryName,
+    budgeted: c.budgeted,
+    actual: c.actual,
+    variance: c.actual.subtract(c.budgeted),
   };
 }

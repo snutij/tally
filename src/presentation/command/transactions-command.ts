@@ -1,8 +1,8 @@
 import { Command } from "commander";
-import { Transaction } from "../../domain/entity/transaction.js";
-import { TransactionRepository } from "../../application/gateway/transaction-repository.js";
+import type { Transaction } from "../../domain/entity/transaction.js";
+import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
 import { Month } from "../../domain/value-object/month.js";
-import { Renderer } from "../renderer/renderer.js";
+import type { Renderer } from "../renderer/renderer.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
 
 function serializeTransaction(txn: Transaction) {

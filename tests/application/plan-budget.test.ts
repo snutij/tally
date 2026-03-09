@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { BudgetAlreadyExists } from "../../src/domain/error/index.js";

@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import Database from "better-sqlite3";
+import type Database from "better-sqlite3";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
@@ -41,10 +41,10 @@ describe("e2e: HTML report output", () => {
   it("renders a full report as valid HTML", () => {
     const parsed = importTxns.parse("credit-mutuel", CSV);
     const categorized = parsed.map((t) => {
-      if (t.label.includes("RENT")) return { ...t, categoryId: "n01" };
-      if (t.label.includes("GROCERY")) return { ...t, categoryId: "n02" };
-      if (t.label.includes("SALARY")) return { ...t, categoryId: "inc01" };
-      if (t.label.includes("RESTAURANT")) return { ...t, categoryId: "w02" };
+      if (t.label.includes("RENT")) {return { ...t, categoryId: "n01" };}
+      if (t.label.includes("GROCERY")) {return { ...t, categoryId: "n02" };}
+      if (t.label.includes("SALARY")) {return { ...t, categoryId: "inc01" };}
+      if (t.label.includes("RESTAURANT")) {return { ...t, categoryId: "w02" };}
       return t;
     });
     importTxns.save(categorized);

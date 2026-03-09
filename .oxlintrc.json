@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "pedantic": "warn",
+    "perf": "warn",
+    "style": "warn",
+    "restriction": "warn",
+    "nursery": "warn"
+  },
+  "rules": {
+    "no-console": "off",
+    "no-magic-numbers": "off",
+    "no-ternary": "off",
+    "no-inline-comments": "off",
+    "no-undefined": "off",
+    "no-plusplus": "off",
+    "no-empty-function": "off",
+    "no-await-in-loop": "off",
+    "capitalized-comments": "off",
+    "sort-keys": "off",
+    "init-declarations": "off",
+    "max-lines": "off",
+    "max-lines-per-function": "off",
+    "max-statements": "off",
+    "max-params": "off",
+    "max-classes-per-file": "off",
+    "no-undef": "off",
+    "func-style": "off",
+    "oxc/no-async-await": "off",
+    "oxc/no-rest-spread-properties": "off",
+    "oxc/no-optional-chaining": "off",
+    "oxc/no-map-spread": "off",
+    "typescript-eslint/parameter-properties": "off"
+  }
+}

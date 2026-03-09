@@ -1,7 +1,7 @@
 import { Command } from "commander";
-import { GenerateReport } from "../../application/usecase/generate-report.js";
+import type { GenerateReport } from "../../application/usecase/generate-report.js";
 import { Month } from "../../domain/value-object/month.js";
-import { Renderer } from "../renderer/renderer.js";
+import type { Renderer } from "../renderer/renderer.js";
 
 export function createReportCommand(
   generateReport: GenerateReport,

@@ -1,14 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  DomainError,
-  InvalidMonth,
   BudgetAlreadyExists,
-  UnknownBankAdapter,
+  DomainError,
   InvalidCsvData,
+  InvalidMonth,
+  UnknownBankAdapter,
 } from "../../src/domain/error/index.js";
 
 describe("DomainError hierarchy", () => {
-  const cases: Array<[string, DomainError]> = [
+  const cases: [string, DomainError][] = [
     ["InvalidMonth", new InvalidMonth("bad")],
     ["BudgetAlreadyExists", new BudgetAlreadyExists("2026-03")],
     ["UnknownBankAdapter", new UnknownBankAdapter("nope")],

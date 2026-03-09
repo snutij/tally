@@ -7,9 +7,9 @@ export function parseFrenchDate(dateStr: string): DateOnly {
     throw new InvalidCsvData(`expected DD/MM/YYYY date, got "${dateStr}"`);
   }
   const [day, month, year] = parts;
-  const y = parseInt(year, 10);
-  const m = parseInt(month, 10);
-  const d = parseInt(day, 10);
+  const y = Number.parseInt(year, 10);
+  const m = Number.parseInt(month, 10);
+  const d = Number.parseInt(day, 10);
   if (isNaN(y) || isNaN(m) || isNaN(d)) {
     throw new InvalidCsvData(`non-numeric date components in "${dateStr}"`);
   }
@@ -17,8 +17,8 @@ export function parseFrenchDate(dateStr: string): DateOnly {
 }
 
 export function parseEuroAmount(str: string): number {
-  const cleaned = str.replace(/\s/g, "").replace(",", ".");
-  const value = parseFloat(cleaned);
+  const cleaned = str.replaceAll(/\s/g, "").replace(",", ".");
+  const value = Number.parseFloat(cleaned);
   if (isNaN(value)) {
     throw new InvalidCsvData(`expected numeric amount, got "${str}"`);
   }

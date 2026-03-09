@@ -1,7 +1,7 @@
-import { Transaction } from "../../domain/entity/transaction.js";
+import type { Transaction } from "../../domain/entity/transaction.js";
 import { UnknownBankAdapter } from "../../domain/error/index.js";
-import { BankImportGateway } from "../gateway/bank-import.js";
-import { TransactionRepository } from "../gateway/transaction-repository.js";
+import type { BankImportGateway } from "../gateway/bank-import.js";
+import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
 export class ImportTransactions {
   constructor(

@@ -9,13 +9,13 @@ import { PlanBudget } from "../application/usecase/plan-budget.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
 import { SeedMockData } from "../application/usecase/seed-mock-data.js";
-import { createRenderer, VALID_FORMATS } from "./renderer/create-renderer.js";
+import { VALID_FORMATS, createRenderer } from "./renderer/create-renderer.js";
 import { createBudgetCommand } from "./command/budget-command.js";
 import { createImportCommand } from "./command/import-command.js";
 import { createReportCommand } from "./command/report-command.js";
 import { createTransactionsCommand } from "./command/transactions-command.js";
 import { createDbCommand } from "./command/db-command.js";
-import { BankImportGateway } from "../application/gateway/bank-import.js";
+import type { BankImportGateway } from "../application/gateway/bank-import.js";
 import { DomainError } from "../domain/error/index.js";
 
 // --- Data directory (XDG convention) ---

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { Month } from "../../src/domain/value-object/month.js";
 import { InvalidMonth } from "../../src/domain/error/index.js";
 

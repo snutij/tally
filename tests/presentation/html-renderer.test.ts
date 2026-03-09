@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { Budget } from "../../src/domain/entity/budget.js";
 import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";

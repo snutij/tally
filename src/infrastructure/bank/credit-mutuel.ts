@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { parse } from "csv-parse/sync";
-import { Transaction } from "../../domain/entity/transaction.js";
+import type { Transaction } from "../../domain/entity/transaction.js";
 import { Money } from "../../domain/value-object/money.js";
-import { BankImportGateway } from "../../application/gateway/bank-import.js";
+import type { BankImportGateway } from "../../application/gateway/bank-import.js";
 import { deterministicTransactionId } from "./transaction-id.js";
-import { parseFrenchDate, parseEuroAmount } from "./csv-helpers.js";
+import { parseEuroAmount, parseFrenchDate } from "./csv-helpers.js";
 
 export class CreditMutuelImporter implements BankImportGateway {
   readonly bankName = "credit-mutuel";
@@ -19,7 +19,7 @@ export class CreditMutuelImporter implements BankImportGateway {
       delimiter: ";",
       skip_empty_lines: true,
       trim: true,
-    }) as Array<Record<string, string>>;
+    }) as Record<string, string>[];
 
     const seen = new Map<string, number>();
 
@@ -49,25 +49,25 @@ export class CreditMutuelImporter implements BankImportGateway {
 
   private findColumn(row: Record<string, string>, candidates: string[]): string {
     for (const key of candidates) {
-      if (row[key] !== undefined) return row[key];
+      if (row[key] !== undefined) {return row[key];}
     }
     // Fallback: fuzzy match for encoding issues (e.g. Libell\xe9 vs Libellé)
     const rowKeys = Object.keys(row);
     for (const candidate of candidates) {
-      const normalized = candidate.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const normalized = candidate.normalize("NFD").replaceAll(/[\u0300-\u036F]/g, "");
       const match = rowKeys.find(
         (k) =>
-          k.normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalized,
+          k.normalize("NFD").replaceAll(/[\u0300-\u036F]/g, "") === normalized,
       );
-      if (match) return row[match];
+      if (match) {return row[match];}
     }
     return "";
   }
 
   private decode(buffer: Buffer): string {
-    const utf8 = buffer.toString("utf-8");
+    const utf8 = buffer.toString("utf8");
     // If UTF-8 decoding produces replacement characters, try Latin-1
-    if (utf8.includes("\ufffd")) {
+    if (utf8.includes("\uFFFD")) {
       return buffer.toString("latin1");
     }
     return utf8;

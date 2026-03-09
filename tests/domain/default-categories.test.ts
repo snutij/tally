@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 

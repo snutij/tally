@@ -1,7 +1,7 @@
 import { Command } from "commander";
-import { PlanBudget } from "../../application/usecase/plan-budget.js";
+import type { PlanBudget } from "../../application/usecase/plan-budget.js";
 import { Month } from "../../domain/value-object/month.js";
-import { Renderer } from "../renderer/renderer.js";
+import type { Renderer } from "../renderer/renderer.js";
 
 export function createBudgetCommand(
   planBudget: PlanBudget,

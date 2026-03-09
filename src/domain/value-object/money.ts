@@ -3,7 +3,7 @@ export class Money {
 
   static fromCents(cents: number): Money {
     if (!Number.isInteger(cents)) {
-      throw new Error("Money must be an integer number of cents");
+      throw new TypeError("Money must be an integer number of cents");
     }
     return new Money(cents);
   }

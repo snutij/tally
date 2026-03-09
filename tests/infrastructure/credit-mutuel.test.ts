@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { join } from "node:path";
 import { CreditMutuelImporter } from "../../src/infrastructure/bank/credit-mutuel.js";
 
@@ -18,14 +18,14 @@ describe("CreditMutuelImporter", () => {
   it("parses debit amounts as negative", () => {
     const transactions = importer.parse(fixturePath);
     const rent = transactions[0];
-    expect(rent.amount.cents).toBe(-80000);
+    expect(rent.amount.cents).toBe(-80_000);
     expect(rent.label).toBe("RENT MARCH 2026");
   });
 
   it("parses credit amounts as positive", () => {
     const transactions = importer.parse(fixturePath);
     const salary = transactions[2];
-    expect(salary.amount.cents).toBe(250000);
+    expect(salary.amount.cents).toBe(250_000);
     expect(salary.label).toBe("SALARY TRANSFER");
   });
 
@@ -44,7 +44,7 @@ describe("CreditMutuelImporter", () => {
     const transactions = importer.parse(latin1Path);
     expect(transactions).toHaveLength(1);
     expect(transactions[0].label).toBe("LOYER MARS 2026");
-    expect(transactions[0].amount.cents).toBe(-80000);
+    expect(transactions[0].amount.cents).toBe(-80_000);
   });
 
   it("uses fuzzy column match when header has decomposed accent", () => {

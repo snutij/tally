@@ -13,11 +13,11 @@ export class Month {
   }
 
   get year(): number {
-    return parseInt(this.value.slice(0, 4), 10);
+    return Number.parseInt(this.value.slice(0, 4), 10);
   }
 
   get month(): number {
-    return parseInt(this.value.slice(5, 7), 10);
+    return Number.parseInt(this.value.slice(5, 7), 10);
   }
 
   daysInMonth(): number {

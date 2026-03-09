@@ -1,8 +1,8 @@
 import { Command } from "commander";
-import { ImportTransactions } from "../../application/usecase/import-transactions.js";
-import { SeedMockData } from "../../application/usecase/seed-mock-data.js";
+import type { ImportTransactions } from "../../application/usecase/import-transactions.js";
+import type { SeedMockData } from "../../application/usecase/seed-mock-data.js";
 import { Month } from "../../domain/value-object/month.js";
-import { Renderer } from "../renderer/renderer.js";
+import type { Renderer } from "../renderer/renderer.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
 
 export function createImportCommand(
@@ -44,7 +44,7 @@ export function createImportCommand(
     .argument("[file]", "Path to CSV file")
     .option("--no-categorize", "Skip interactive categorization")
     .action(async (bank?: string, file?: string, opts?: { categorize: boolean }) => {
-      if (!bank || !file) return;
+      if (!bank || !file) {return;}
 
       const parsed = importTransactions.parse(bank, file);
 

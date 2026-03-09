@@ -1,4 +1,4 @@
-import { Category } from "./entity/category.js";
+import type { Category } from "./entity/category.js";
 import { CategoryGroup } from "./value-object/category-group.js";
 
 function cat(

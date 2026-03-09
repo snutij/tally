@@ -1,5 +1,5 @@
-import { Budget } from "../../domain/entity/budget.js";
-import { Month } from "../../domain/value-object/month.js";
+import type { Budget } from "../../domain/entity/budget.js";
+import type { Month } from "../../domain/value-object/month.js";
 
 export interface BudgetRepository {
   save(budget: Budget): void;

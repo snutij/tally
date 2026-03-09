@@ -1,12 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import Database from "better-sqlite3";
-import {
-  openDatabase,
+import type Database from "better-sqlite3";
+import type {
   SqliteBudgetRepository,
-  SqliteTransactionRepository,
+  SqliteTransactionRepository} from "../../src/infrastructure/persistence/sqlite-repository.js";
+import {
+  openDatabase
 } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { Budget } from "../../src/domain/entity/budget.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
@@ -23,9 +24,9 @@ describe("SqliteRepository", () => {
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-test-"));
     const result = openDatabase(join(tmpDir, "test.db"));
-    db = result.db;
-    budgetRepo = result.budgetRepo;
-    txnRepo = result.txnRepo;
+    ({ db } = result);
+    ({ budgetRepo } = result);
+    ({ txnRepo } = result);
   });
 
   afterEach(() => {
@@ -51,7 +52,7 @@ describe("SqliteRepository", () => {
       expect(found!.month.value).toBe("2026-03");
       expect(found!.lines).toHaveLength(1);
       expect(found!.lines[0].category.id).toBe("rent");
-      expect(found!.lines[0].amount.cents).toBe(80000);
+      expect(found!.lines[0].amount.cents).toBe(80_000);
     });
 
     it("returns null for non-existent month", () => {

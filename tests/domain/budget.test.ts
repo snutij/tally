@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { Budget } from "../../src/domain/entity/budget.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { Money } from "../../src/domain/value-object/money.js";
@@ -28,14 +28,14 @@ describe("Budget", () => {
 
   it("computes total by group", () => {
     const budget = new Budget(month, lines);
-    expect(budget.totalByGroup(CategoryGroup.NEEDS).cents).toBe(120000);
-    expect(budget.totalByGroup(CategoryGroup.WANTS).cents).toBe(15000);
-    expect(budget.totalByGroup(CategoryGroup.INVESTMENTS).cents).toBe(20000);
+    expect(budget.totalByGroup(CategoryGroup.NEEDS).cents).toBe(120_000);
+    expect(budget.totalByGroup(CategoryGroup.WANTS).cents).toBe(15_000);
+    expect(budget.totalByGroup(CategoryGroup.INVESTMENTS).cents).toBe(20_000);
   });
 
   it("computes total", () => {
     const budget = new Budget(month, lines);
-    expect(budget.total().cents).toBe(155000);
+    expect(budget.total().cents).toBe(155_000);
   });
 
   it("handles empty budget", () => {

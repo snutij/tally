@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { mockTransactions, MOCK_BUDGET_AMOUNTS } from "../../src/domain/mock-dataset.js";
+import { describe, expect, it } from "vitest";
+import { MOCK_BUDGET_AMOUNTS, mockTransactions } from "../../src/domain/mock-dataset.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 

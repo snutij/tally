@@ -1,4 +1,4 @@
-import { Transaction } from "../../domain/entity/transaction.js";
+import type { Transaction } from "../../domain/entity/transaction.js";
 
 export interface BankImportGateway {
   readonly bankName: string;

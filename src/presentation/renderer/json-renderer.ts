@@ -1,6 +1,6 @@
 import { Budget } from "../../domain/entity/budget.js";
 import { MonthlyReport } from "../../domain/entity/monthly-report.js";
-import { Renderer } from "./renderer.js";
+import type { Renderer } from "./renderer.js";
 
 export class JsonRenderer implements Renderer {
   render(data: unknown): string {

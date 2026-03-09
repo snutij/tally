@@ -1,13 +1,14 @@
 import Database from "better-sqlite3";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
-import { Budget, BudgetLine } from "../../domain/entity/budget.js";
-import { Transaction } from "../../domain/entity/transaction.js";
-import { CategoryGroup } from "../../domain/value-object/category-group.js";
+import type { BudgetLine } from "../../domain/entity/budget.js";
+import { Budget } from "../../domain/entity/budget.js";
+import type { Transaction } from "../../domain/entity/transaction.js";
+import type { CategoryGroup } from "../../domain/value-object/category-group.js";
 import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
-import { Month } from "../../domain/value-object/month.js";
-import { BudgetRepository } from "../../application/gateway/budget-repository.js";
-import { TransactionRepository } from "../../application/gateway/transaction-repository.js";
+import type { Month } from "../../domain/value-object/month.js";
+import type { BudgetRepository } from "../../application/gateway/budget-repository.js";
+import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
 
 function migrate(db: Database.Database): void {
   db.exec(`
@@ -84,7 +85,7 @@ export class SqliteBudgetRepository implements BudgetRepository {
       .prepare(`SELECT month FROM budgets WHERE month = ?`)
       .get(month.value) as { month: string } | undefined;
 
-    if (!row) return null;
+    if (!row) {return null;}
 
     const lineRows = this.db
       .prepare(
@@ -93,12 +94,12 @@ export class SqliteBudgetRepository implements BudgetRepository {
          JOIN categories c ON c.id = bl.category_id
          WHERE bl.month = ?`,
       )
-      .all(month.value) as Array<{
+      .all(month.value) as {
       category_id: string;
       amount_cents: number;
       name: string;
       group: string;
-    }>;
+    }[];
 
     const lines: BudgetLine[] = lineRows.map((r) => ({
       category: {
@@ -145,21 +146,21 @@ export class SqliteTransactionRepository implements TransactionRepository {
 
 
   findByIds(ids: string[]): Transaction[] {
-    if (ids.length === 0) return [];
+    if (ids.length === 0) {return [];}
     const placeholders = ids.map(() => "?").join(", ");
     const rows = this.db
       .prepare(
         `SELECT id, date, label, amount_cents, category_id, source_bank
          FROM transactions WHERE id IN (${placeholders})`,
       )
-      .all(...ids) as Array<{
+      .all(...ids) as {
       id: string;
       date: string;
       label: string;
       amount_cents: number;
       category_id: string | null;
       source_bank: string;
-    }>;
+    }[];
 
     return rows.map((r) => ({
       id: r.id,
@@ -178,14 +179,14 @@ export class SqliteTransactionRepository implements TransactionRepository {
         `SELECT id, date, label, amount_cents, category_id, source_bank
          FROM transactions WHERE date LIKE ?`,
       )
-      .all(pattern) as Array<{
+      .all(pattern) as {
       id: string;
       date: string;
       label: string;
       amount_cents: number;
       category_id: string | null;
       source_bank: string;
-    }>;
+    }[];
 
     return rows.map((r) => ({
       id: r.id,

@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
 import { Budget } from "../../src/domain/entity/budget.js";
-import { Transaction } from "../../src/domain/entity/transaction.js";
+import type { Transaction } from "../../src/domain/entity/transaction.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
@@ -50,21 +50,21 @@ describe("MonthlyReport", () => {
     const needs = report.groups.find(
       (g) => g.group === CategoryGroup.NEEDS,
     )!;
-    expect(needs.budgeted.cents).toBe(80000);
-    expect(needs.actual.cents).toBe(80000);
+    expect(needs.budgeted.cents).toBe(80_000);
+    expect(needs.actual.cents).toBe(80_000);
     expect(needs.delta.cents).toBe(0);
 
     const wants = report.groups.find(
       (g) => g.group === CategoryGroup.WANTS,
     )!;
-    expect(wants.budgeted.cents).toBe(20000);
-    expect(wants.actual.cents).toBe(15000);
+    expect(wants.budgeted.cents).toBe(20_000);
+    expect(wants.actual.cents).toBe(15_000);
     expect(wants.delta.cents).toBe(5000);
 
     expect(report.uncategorized.cents).toBe(0);
-    expect(report.totalExpenseBudgeted.cents).toBe(150000);
-    expect(report.totalExpenseActual.cents).toBe(95000);
-    expect(report.net.cents).toBe(-95000);
+    expect(report.totalExpenseBudgeted.cents).toBe(150_000);
+    expect(report.totalExpenseActual.cents).toBe(95_000);
+    expect(report.net.cents).toBe(-95_000);
     expect(report.transactionCount).toBe(2);
   });
 
@@ -90,8 +90,8 @@ describe("MonthlyReport", () => {
     const report = MonthlyReport.compute(budget, transactions);
 
     expect(report.uncategorized.cents).toBe(7500);
-    expect(report.totalExpenseActual.cents).toBe(80000);
-    expect(report.net.cents).toBe(-87500);
+    expect(report.totalExpenseActual.cents).toBe(80_000);
+    expect(report.net.cents).toBe(-87_500);
     expect(report.transactionCount).toBe(2);
   });
 
@@ -100,7 +100,7 @@ describe("MonthlyReport", () => {
 
     expect(report.totalExpenseActual.cents).toBe(0);
     expect(report.uncategorized.cents).toBe(0);
-    expect(report.totalExpenseBudgeted.cents).toBe(150000);
+    expect(report.totalExpenseBudgeted.cents).toBe(150_000);
     expect(report.net.cents).toBe(0);
     expect(report.transactionCount).toBe(0);
   });
@@ -157,11 +157,11 @@ describe("MonthlyReport", () => {
 
     const report = MonthlyReport.compute(budgetWithIncome, transactions);
 
-    expect(report.totalIncomeBudgeted.cents).toBe(250000);
-    expect(report.totalIncomeActual.cents).toBe(250000);
-    expect(report.totalExpenseBudgeted.cents).toBe(80000);
-    expect(report.totalExpenseActual.cents).toBe(80000);
-    expect(report.net.cents).toBe(170000);
+    expect(report.totalIncomeBudgeted.cents).toBe(250_000);
+    expect(report.totalIncomeActual.cents).toBe(250_000);
+    expect(report.totalExpenseBudgeted.cents).toBe(80_000);
+    expect(report.totalExpenseActual.cents).toBe(80_000);
+    expect(report.net.cents).toBe(170_000);
 
     const income = report.groups.find(
       (g) => g.group === CategoryGroup.INCOME,
@@ -231,17 +231,17 @@ describe("MonthlyReport", () => {
       const rent = report.categories.find((c) => c.categoryId === "n01")!;
       expect(rent.categoryName).toBe("Rent");
       expect(rent.group).toBe(CategoryGroup.NEEDS);
-      expect(rent.budgeted.cents).toBe(80000);
-      expect(rent.actual.cents).toBe(75000);
+      expect(rent.budgeted.cents).toBe(80_000);
+      expect(rent.actual.cents).toBe(75_000);
       expect(rent.delta.cents).toBe(5000);
 
       const eating = report.categories.find((c) => c.categoryId === "w02")!;
-      expect(eating.actual.cents).toBe(12000);
+      expect(eating.actual.cents).toBe(12_000);
       expect(eating.delta.cents).toBe(8000);
 
       const stock = report.categories.find((c) => c.categoryId === "i03")!;
       expect(stock.actual.cents).toBe(0);
-      expect(stock.delta.cents).toBe(50000);
+      expect(stock.delta.cents).toBe(50_000);
     });
 
     it("returns empty categories for empty budget", () => {
@@ -485,14 +485,14 @@ describe("MonthlyReport", () => {
       expect(report.kpis.categoryVariance.overruns[0].categoryId).toBe("n01");
       expect(
         report.kpis.categoryVariance.overruns[0].variance.cents,
-      ).toBe(10000);
+      ).toBe(10_000);
 
       // w02: 50 < 200 → underrun of -150; i03: 0 < 500 → underrun of -500
       expect(report.kpis.categoryVariance.underruns).toHaveLength(2);
       expect(report.kpis.categoryVariance.underruns[0].categoryId).toBe("i03"); // biggest underrun
       expect(
         report.kpis.categoryVariance.underruns[0].variance.cents,
-      ).toBe(-50000);
+      ).toBe(-50_000);
     });
 
     it("returns empty variance for empty budget", () => {
