@@ -1,0 +1,138 @@
+import { describe, it, expect } from "vitest";
+import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
+import { Budget } from "../../src/domain/entity/budget.js";
+import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
+import { Month } from "../../src/domain/value-object/month.js";
+import { DateOnly } from "../../src/domain/value-object/date-only.js";
+import { Money } from "../../src/domain/value-object/money.js";
+import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
+
+describe("HtmlRenderer", () => {
+  const renderer = new HtmlRenderer();
+
+  const budget = new Budget(Month.from("2026-03"), [
+    {
+      category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
+      amount: Money.fromEuros(800),
+    },
+    {
+      category: { id: "inc01", name: "Salary", group: CategoryGroup.INCOME },
+      amount: Money.fromEuros(3000),
+    },
+  ]);
+
+  const txns = [
+    {
+      id: "1",
+      date: DateOnly.from("2026-03-01"),
+      label: "Salary",
+      amount: Money.fromEuros(3000),
+      categoryId: "inc01",
+      sourceBank: "cm",
+    },
+    {
+      id: "2",
+      date: DateOnly.from("2026-03-02"),
+      label: "Rent",
+      amount: Money.fromEuros(-750),
+      categoryId: "n01",
+      sourceBank: "cm",
+    },
+  ];
+
+  describe("render(MonthlyReport)", () => {
+    const report = MonthlyReport.compute(budget, txns);
+    const html = renderer.render(report);
+
+    it("produces a valid HTML5 document", () => {
+      expect(html).toMatch(/^<!DOCTYPE html>/);
+      expect(html).toContain("<html");
+      expect(html).toContain("<head>");
+      expect(html).toContain("<body>");
+    });
+
+    it("includes inline styles", () => {
+      expect(html).toContain("<style>");
+      expect(html).not.toContain('<link rel="stylesheet"');
+    });
+
+    it("contains KPI section", () => {
+      expect(html).toContain("Key Indicators");
+      expect(html).toContain("Savings Rate");
+      expect(html).toContain("Budget Adherence");
+      expect(html).toContain("Daily Avg Spending");
+    });
+
+    it("contains group summary table", () => {
+      expect(html).toContain("Group Summary");
+      expect(html).toContain("NEEDS");
+      expect(html).toContain("INCOME");
+    });
+
+    it("contains category breakdown table", () => {
+      expect(html).toContain("Category Breakdown");
+      expect(html).toContain("Rent");
+      expect(html).toContain("Salary");
+    });
+
+    it("uses Money.format() for amounts", () => {
+      expect(html).toContain("800.00 €");
+      expect(html).toContain("750.00 €");
+    });
+
+    it("applies color classes for deltas", () => {
+      expect(html).toContain("under-budget");
+    });
+  });
+
+  describe("render(MonthlyReport) — uncategorized", () => {
+    it("shows uncategorized section when non-zero", () => {
+      const uncatTxns = [
+        {
+          id: "3",
+          date: DateOnly.from("2026-03-05"),
+          label: "Mystery",
+          amount: Money.fromEuros(-100),
+          categoryId: undefined,
+          sourceBank: "cm",
+        },
+      ];
+      const report = MonthlyReport.compute(budget, uncatTxns);
+      const html = renderer.render(report);
+      expect(html).toContain("Uncategorized");
+      expect(html).toContain("100.00 €");
+    });
+
+    it("omits uncategorized section when zero", () => {
+      const report = MonthlyReport.compute(budget, txns);
+      const html = renderer.render(report);
+      expect(html).not.toContain('class="uncategorized"');
+    });
+  });
+
+  describe("render(Budget)", () => {
+    const html = renderer.render(budget);
+
+    it("produces a valid HTML5 document", () => {
+      expect(html).toMatch(/^<!DOCTYPE html>/);
+    });
+
+    it("contains budget lines", () => {
+      expect(html).toContain("Rent");
+      expect(html).toContain("800.00 €");
+      expect(html).toContain("Salary");
+      expect(html).toContain("3000.00 €");
+    });
+
+    it("contains total row", () => {
+      expect(html).toContain("Total");
+      expect(html).toContain("3800.00 €");
+    });
+  });
+
+  it("passes through plain objects as JSON pre block", () => {
+    const html = renderer.render({ foo: "bar" });
+    expect(html).toContain("<pre>");
+    expect(html).toContain("foo");
+  });
+});

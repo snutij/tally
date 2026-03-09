@@ -9,7 +9,7 @@ import { PlanBudget } from "../application/usecase/plan-budget.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
 import { SeedMockData } from "../application/usecase/seed-mock-data.js";
-import { JsonRenderer } from "./renderer/json-renderer.js";
+import { createRenderer, VALID_FORMATS } from "./renderer/create-renderer.js";
 import { createBudgetCommand } from "./command/budget-command.js";
 import { createImportCommand } from "./command/import-command.js";
 import { createReportCommand } from "./command/report-command.js";
@@ -25,7 +25,6 @@ if (!existsSync(dataDir)) {
 
 // --- Composition root ---
 const { budgetRepo, txnRepo } = openDatabase(dbPath);
-const renderer = new JsonRenderer();
 
 const creditMutuel = new CreditMutuelImporter();
 const importers = new Map<string, BankImportGateway>([
@@ -42,7 +41,17 @@ const program = new Command();
 program
   .name("tally")
   .description("Personal finance CLI — budget tracking & reporting")
-  .version("0.1.0");
+  .version("0.1.0")
+  .option("--format <type>", `Output format (${VALID_FORMATS.join(", ")})`, "json");
+
+// Lazy renderer — resolved after Commander parses --format
+let _renderer: ReturnType<typeof createRenderer> | undefined;
+const renderer = {
+  render(data: unknown): string {
+    _renderer ??= createRenderer(program.opts().format);
+    return _renderer.render(data);
+  },
+};
 
 program.addCommand(createBudgetCommand(planBudget, renderer));
 program.addCommand(createImportCommand(importTransactions, seedMockData, renderer));
