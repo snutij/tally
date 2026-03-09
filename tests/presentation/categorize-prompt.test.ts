@@ -100,6 +100,29 @@ describe("categorizePrompt", () => {
     expect(result.categorized[0].categoryId).toBe("inc01");
   });
 
+  it("formats positive amount with + sign in prompt header", async () => {
+    selectMock.mockResolvedValueOnce("inc01");
+    const { categorizePrompt } = await import(
+      "../../src/presentation/prompt/categorize-prompt.js"
+    );
+
+    await categorizePrompt([txn({ amount: Money.fromEuros(100) })]);
+
+    expect(selectMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("+100.00"),
+      }),
+    );
+  });
+
+  it("re-throws non-ExitPromptError", async () => {
+    selectMock.mockRejectedValueOnce(new Error("boom"));
+    const { categorizePrompt } = await import(
+      "../../src/presentation/prompt/categorize-prompt.js"
+    );
+    await expect(categorizePrompt([txn()])).rejects.toThrow("boom");
+  });
+
   it("returns partial results on Ctrl+C (ExitPromptError)", async () => {
     const { ExitPromptError } = await import("@inquirer/core");
 

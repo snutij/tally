@@ -49,6 +49,10 @@ describe("Money", () => {
     expect(Money.fromCents(-100).isNegative()).toBe(true);
   });
 
+  it("negates a positive amount", () => {
+    expect(Money.fromEuros(5).negate().toEuros()).toBe(-5);
+  });
+
   it("avoids floating point issues with fromEuros", () => {
     // 0.1 + 0.2 = 0.30000000000000004 in JS
     const m = Money.fromEuros(0.1).add(Money.fromEuros(0.2));

@@ -92,6 +92,10 @@ describe("SqliteRepository", () => {
       expect(aprilTxns[0].id).toBe("tx-2");
     });
 
+    it("returns empty array when findByIds called with empty array", () => {
+      expect(txnRepo.findByIds([])).toEqual([]);
+    });
+
     it("returns empty array for month with no transactions", () => {
       expect(txnRepo.findByMonth(Month.from("2026-03"))).toEqual([]);
     });
