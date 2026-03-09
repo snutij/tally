@@ -16,6 +16,7 @@ import { createImportCommand } from "./command/import-command.js";
 import { createReportCommand } from "./command/report-command.js";
 import { createTransactionsCommand } from "./command/transactions-command.js";
 import { BankImportGateway } from "../application/gateway/bank-import.js";
+import { DomainError } from "../domain/error/index.js";
 
 // --- Data directory (XDG convention) ---
 const dataDir = join(homedir(), ".local", "share", "tally");
@@ -51,4 +52,11 @@ program.addCommand(createImportCommand(importTransactions, renderer));
 program.addCommand(createReportCommand(generateReport, renderer));
 program.addCommand(createTransactionsCommand(txnRepo, renderer));
 
-program.parse();
+program.parseAsync().catch((error: unknown) => {
+  if (error instanceof DomainError) {
+    console.error(error.message);
+    process.exitCode = 1;
+  } else {
+    throw error;
+  }
+});

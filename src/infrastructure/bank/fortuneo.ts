@@ -4,6 +4,7 @@ import { Transaction } from "../../domain/entity/transaction.js";
 import { Money } from "../../domain/value-object/money.js";
 import { BankImportGateway } from "../../application/gateway/bank-import.js";
 import { deterministicTransactionId } from "./transaction-id.js";
+import { parseFrenchDate, parseEuroAmount } from "./csv-helpers.js";
 
 export class FortuneoImporter implements BankImportGateway {
   readonly bankName = "fortuneo";
@@ -27,14 +28,12 @@ export class FortuneoImporter implements BankImportGateway {
       const debit = row["Débit"] ?? row["Debit"] ?? "";
       const credit = row["Crédit"] ?? row["Credit"] ?? "";
 
-      const [day, month, year] = dateStr.split("/");
-      const date = new Date(Date.UTC(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10)));
+      const { date, isoDate } = parseFrenchDate(dateStr);
 
-      const debitAmount = debit ? parseFloat(debit.replace(",", ".")) : 0;
-      const creditAmount = credit ? parseFloat(credit.replace(",", ".")) : 0;
+      const debitAmount = debit ? parseEuroAmount(debit) : 0;
+      const creditAmount = credit ? parseEuroAmount(credit) : 0;
       const amount = Money.fromEuros(creditAmount - Math.abs(debitAmount));
 
-      const isoDate = `${year}-${month}-${day}`;
       const key = `${this.bankName}|${isoDate}|${label}|${amount.cents}`;
       const seq = seen.get(key) ?? 0;
       seen.set(key, seq + 1);

@@ -4,6 +4,7 @@ import { Transaction } from "../../domain/entity/transaction.js";
 import { Money } from "../../domain/value-object/money.js";
 import { BankImportGateway } from "../../application/gateway/bank-import.js";
 import { deterministicTransactionId } from "./transaction-id.js";
+import { parseFrenchDate, parseEuroAmount } from "./csv-helpers.js";
 
 export class CreditMutuelImporter implements BankImportGateway {
   readonly bankName = "credit-mutuel";
@@ -28,14 +29,9 @@ export class CreditMutuelImporter implements BankImportGateway {
       const label = this.findColumn(row, ["Libellé", "Libelle"]);
       const montant = this.findColumn(row, ["Montant"]);
 
-      const [day, month, year] = dateStr.split("/");
-      const date = new Date(Date.UTC(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10)));
+      const { date, isoDate } = parseFrenchDate(dateStr);
+      const amount = Money.fromEuros(parseEuroAmount(montant));
 
-      const amount = Money.fromEuros(
-        parseFloat(montant.replace(/\s/g, "").replace(",", ".")) || 0,
-      );
-
-      const isoDate = `${year}-${month}-${day}`;
       const key = `${this.bankName}|${isoDate}|${label}|${amount.cents}`;
       const seq = seen.get(key) ?? 0;
       seen.set(key, seq + 1);

@@ -1,35 +1,13 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
-import { BudgetRepository } from "../../src/application/gateway/budget-repository.js";
-import { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
-import { Budget } from "../../src/domain/entity/budget.js";
-import { Transaction } from "../../src/domain/entity/transaction.js";
-import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
-
-class InMemoryBudgetRepository implements BudgetRepository {
-  private store = new Map<string, Budget>();
-  save(budget: Budget): void {
-    this.store.set(budget.month.value, budget);
-  }
-  findByMonth(month: Month): Budget | null {
-    return this.store.get(month.value) ?? null;
-  }
-  exists(month: Month): boolean {
-    return this.store.has(month.value);
-  }
-}
-
-class InMemoryTransactionRepository implements TransactionRepository {
-  private store: Transaction[] = [];
-  saveAll(transactions: Transaction[]): void {
-    this.store.push(...transactions);
-  }
-  findByMonth(_month: Month): Transaction[] {
-    return this.store;
-  }
-}
+import { Budget } from "../../src/domain/entity/budget.js";
+import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
+import {
+  InMemoryBudgetRepository,
+  InMemoryTransactionRepository,
+} from "../helpers/in-memory-repositories.js";
 
 describe("GenerateReport", () => {
   let budgetRepo: InMemoryBudgetRepository;

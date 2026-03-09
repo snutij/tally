@@ -1,26 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
-import { BudgetRepository } from "../../src/application/gateway/budget-repository.js";
-import { Budget } from "../../src/domain/entity/budget.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { BudgetAlreadyExists } from "../../src/domain/error/index.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
-
-class InMemoryBudgetRepository implements BudgetRepository {
-  private store = new Map<string, Budget>();
-
-  save(budget: Budget): void {
-    this.store.set(budget.month.value, budget);
-  }
-
-  findByMonth(month: Month): Budget | null {
-    return this.store.get(month.value) ?? null;
-  }
-
-  exists(month: Month): boolean {
-    return this.store.has(month.value);
-  }
-}
+import { InMemoryBudgetRepository } from "../helpers/in-memory-repositories.js";
 
 describe("PlanBudget", () => {
   let repo: InMemoryBudgetRepository;

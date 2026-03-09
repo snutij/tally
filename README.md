@@ -38,6 +38,17 @@ npm test           # run once
 npm run test:watch # watch mode
 ```
 
+## Architecture
+
+Hexagonal (ports & adapters), four layers:
+
+- **Domain** — entities, value objects, and domain errors. No dependencies on frameworks or I/O.
+- **Application** — use cases that orchestrate domain logic. Depends only on domain and port interfaces (gateways).
+- **Infrastructure** — concrete adapters: SQLite persistence, bank CSV importers.
+- **Presentation** — CLI (Commander) that wires everything together in a composition root.
+
+Tests use in-memory implementations of the repository ports, so they run without a database.
+
 ## Disclaimer
 
 This is a personal project, provided as-is with no warranty. It is not financial software — it does not give financial advice, validate tax data, or guarantee accuracy. Use at your own risk. The author is not responsible for any data loss, incorrect calculations, or decisions made based on its output.

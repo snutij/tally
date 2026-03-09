@@ -1,20 +1,30 @@
-export class InvalidMonth extends Error {
+export class DomainError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
+export class InvalidMonth extends DomainError {
   constructor(input: string) {
     super(`Invalid month format: "${input}". Expected YYYY-MM.`);
-    this.name = "InvalidMonth";
   }
 }
 
-export class BudgetAlreadyExists extends Error {
+export class BudgetAlreadyExists extends DomainError {
   constructor(month: string) {
     super(`Budget already exists for ${month}.`);
-    this.name = "BudgetAlreadyExists";
   }
 }
 
-export class UnknownBankAdapter extends Error {
+export class UnknownBankAdapter extends DomainError {
   constructor(bankName: string) {
     super(`Unknown bank adapter: "${bankName}".`);
-    this.name = "UnknownBankAdapter";
+  }
+}
+
+export class InvalidCsvData extends DomainError {
+  constructor(detail: string) {
+    super(`Invalid CSV data: ${detail}`);
   }
 }

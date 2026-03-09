@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { BankImportGateway } from "../../src/application/gateway/bank-import.js";
-import { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
-import { Month } from "../../src/domain/value-object/month.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { UnknownBankAdapter } from "../../src/domain/error/index.js";
+import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 
 class StubImporter implements BankImportGateway {
   readonly bankName = "test-bank";
@@ -26,18 +25,6 @@ class StubImporter implements BankImportGateway {
         sourceBank: "test-bank",
       },
     ];
-  }
-}
-
-class InMemoryTransactionRepository implements TransactionRepository {
-  readonly saved: Transaction[] = [];
-
-  saveAll(transactions: Transaction[]): void {
-    this.saved.push(...transactions);
-  }
-
-  findByMonth(_month: Month): Transaction[] {
-    return this.saved;
   }
 }
 

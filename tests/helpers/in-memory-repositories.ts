@@ -1,0 +1,33 @@
+import { BudgetRepository } from "../../src/application/gateway/budget-repository.js";
+import { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
+import { Budget } from "../../src/domain/entity/budget.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
+import { Month } from "../../src/domain/value-object/month.js";
+
+export class InMemoryBudgetRepository implements BudgetRepository {
+  private store = new Map<string, Budget>();
+
+  save(budget: Budget): void {
+    this.store.set(budget.month.value, budget);
+  }
+
+  findByMonth(month: Month): Budget | null {
+    return this.store.get(month.value) ?? null;
+  }
+
+  exists(month: Month): boolean {
+    return this.store.has(month.value);
+  }
+}
+
+export class InMemoryTransactionRepository implements TransactionRepository {
+  readonly saved: Transaction[] = [];
+
+  saveAll(transactions: Transaction[]): void {
+    this.saved.push(...transactions);
+  }
+
+  findByMonth(_month: Month): Transaction[] {
+    return this.saved;
+  }
+}
