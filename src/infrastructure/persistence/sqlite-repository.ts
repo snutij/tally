@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { Budget, BudgetLine } from "../../domain/entity/budget.js";
 import { Transaction } from "../../domain/entity/transaction.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
@@ -38,6 +39,13 @@ function migrate(db: Database.Database): void {
       FOREIGN KEY (category_id) REFERENCES categories(id)
     );
   `);
+
+  const upsert = db.prepare(
+    `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
+  );
+  for (const cat of DEFAULT_CATEGORIES) {
+    upsert.run(cat.id, cat.name, cat.group);
+  }
 }
 
 export class SqliteBudgetRepository implements BudgetRepository {
@@ -132,6 +140,34 @@ export class SqliteTransactionRepository implements TransactionRepository {
       }
     });
     tx();
+  }
+
+
+  findByIds(ids: string[]): Transaction[] {
+    if (ids.length === 0) return [];
+    const placeholders = ids.map(() => "?").join(", ");
+    const rows = this.db
+      .prepare(
+        `SELECT id, date, label, amount_cents, category_id, source_bank
+         FROM transactions WHERE id IN (${placeholders})`,
+      )
+      .all(...ids) as Array<{
+      id: string;
+      date: string;
+      label: string;
+      amount_cents: number;
+      category_id: string | null;
+      source_bank: string;
+    }>;
+
+    return rows.map((r) => ({
+      id: r.id,
+      date: new Date(r.date),
+      label: r.label,
+      amount: Money.fromCents(r.amount_cents),
+      categoryId: r.category_id ?? undefined,
+      sourceBank: r.source_bank,
+    }));
   }
 
   findByMonth(month: Month): Transaction[] {

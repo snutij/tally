@@ -27,6 +27,11 @@ export class InMemoryTransactionRepository implements TransactionRepository {
     this.saved.push(...transactions);
   }
 
+  findByIds(ids: string[]): Transaction[] {
+    const idSet = new Set(ids);
+    return this.saved.filter((t) => idSet.has(t.id));
+  }
+
   findByMonth(_month: Month): Transaction[] {
     return this.saved;
   }

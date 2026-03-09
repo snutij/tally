@@ -24,20 +24,28 @@ export function createImportCommand(
     .action(async (bank?: string, file?: string, opts?: { categorize: boolean }) => {
       if (!bank || !file) return;
 
-      const transactions = importTransactions.parse(bank, file);
+      const parsed = importTransactions.parse(bank, file);
 
       if (opts?.categorize === false || !process.stdout.isTTY) {
-        const result = importTransactions.save(transactions);
+        const result = importTransactions.save(parsed);
         console.log(renderer.render(result));
         return;
       }
 
-      const { categorized, interrupted } = await categorizePrompt(transactions);
+      const { alreadyCategorized, uncategorized } =
+        importTransactions.splitByCategoryStatus(parsed);
 
-      const result = importTransactions.save(categorized);
+      if (alreadyCategorized.length > 0) {
+        console.log(`Skipping ${alreadyCategorized.length} already-categorized transactions.`);
+      }
+
+      const { categorized, interrupted } = await categorizePrompt(uncategorized);
+
+      const toSave = [...alreadyCategorized, ...categorized];
+      const result = importTransactions.save(toSave);
 
       if (interrupted) {
-        console.log(`\nInterrupted — saved ${result.count} of ${transactions.length} transactions.`);
+        console.log(`\nInterrupted — saved ${result.count} of ${parsed.length} transactions.`);
       } else {
         console.log(renderer.render(result));
       }
