@@ -7,6 +7,9 @@
 *.csv
 !tests/fixtures/*.csv
 
+# Generated reports
+report.html
+
 # Coverage
 coverage/
 
