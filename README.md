@@ -16,7 +16,6 @@ tally budget show 2026-03
 
 # Import transactions from your bank
 tally import credit-mutuel statement.csv
-tally import fortuneo export.csv
 
 # See available bank adapters
 tally import list

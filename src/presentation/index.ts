@@ -6,7 +6,6 @@ import { Command } from "commander";
 
 import { openDatabase } from "../infrastructure/persistence/sqlite-repository.js";
 import { CreditMutuelImporter } from "../infrastructure/bank/credit-mutuel.js";
-import { FortuneoImporter } from "../infrastructure/bank/fortuneo.js";
 import { PlanBudget } from "../application/usecase/plan-budget.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
@@ -30,10 +29,8 @@ const { budgetRepo, txnRepo } = openDatabase(dbPath);
 const renderer = new JsonRenderer();
 
 const creditMutuel = new CreditMutuelImporter();
-const fortuneo = new FortuneoImporter();
 const importers = new Map<string, BankImportGateway>([
   [creditMutuel.bankName, creditMutuel],
-  [fortuneo.bankName, fortuneo],
 ]);
 
 const planBudget = new PlanBudget(budgetRepo);
