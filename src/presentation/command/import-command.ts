@@ -25,9 +25,7 @@ export function createImportCommand(
     .description("Seed DB with pre-categorized mock data for testing")
     .argument("[month]", "Month in YYYY-MM format (defaults to current month)")
     .action((monthStr?: string) => {
-      const month = Month.from(
-        monthStr ?? new Date().toISOString().slice(0, 7),
-      );
+      const month = Month.from(monthStr ?? new Date().toISOString().slice(0, 7));
       const result = seedMockData.execute(month);
       console.log(
         renderer.render({
@@ -44,7 +42,9 @@ export function createImportCommand(
     .argument("[file]", "Path to CSV file")
     .option("--no-categorize", "Skip interactive categorization")
     .action(async (bank?: string, file?: string, opts?: { categorize: boolean }) => {
-      if (!bank || !file) {return;}
+      if (!bank || !file) {
+        return;
+      }
 
       const parsed = importTransactions.parse(bank, file);
 

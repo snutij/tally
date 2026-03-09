@@ -80,8 +80,6 @@ describe("createTransactionsCommand", () => {
 
     await run("categorize", "2026-03");
 
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining("Interrupted"),
-    );
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Interrupted"));
   });
 });

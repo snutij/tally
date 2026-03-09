@@ -41,10 +41,18 @@ describe("e2e: HTML report output", () => {
   it("renders a full report as valid HTML", () => {
     const parsed = importTxns.parse("credit-mutuel", CSV);
     const categorized = parsed.map((t) => {
-      if (t.label.includes("RENT")) {return { ...t, categoryId: "n01" };}
-      if (t.label.includes("GROCERY")) {return { ...t, categoryId: "n02" };}
-      if (t.label.includes("SALARY")) {return { ...t, categoryId: "inc01" };}
-      if (t.label.includes("RESTAURANT")) {return { ...t, categoryId: "w02" };}
+      if (t.label.includes("RENT")) {
+        return { ...t, categoryId: "n01" };
+      }
+      if (t.label.includes("GROCERY")) {
+        return { ...t, categoryId: "n02" };
+      }
+      if (t.label.includes("SALARY")) {
+        return { ...t, categoryId: "inc01" };
+      }
+      if (t.label.includes("RESTAURANT")) {
+        return { ...t, categoryId: "w02" };
+      }
       return t;
     });
     importTxns.save(categorized);

@@ -107,9 +107,7 @@ describe("createImportCommand", () => {
       process.stdout.isTTY = originalIsTTY;
     }
 
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining("Interrupted"),
-    );
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Interrupted"));
   });
 
   it("skips already-categorized transactions and logs count", async () => {

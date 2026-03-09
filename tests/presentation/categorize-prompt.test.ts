@@ -68,9 +68,7 @@ describe("categorizePrompt", () => {
 
   it("assigns categoryId when a category is selected", async () => {
     selectMock.mockResolvedValueOnce("n02");
-    const { categorizePrompt } = await import(
-      "../../src/presentation/prompt/categorize-prompt.js"
-    );
+    const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
 
     const result = await categorizePrompt([txn()]);
 
@@ -81,9 +79,7 @@ describe("categorizePrompt", () => {
 
   it("does not assign categoryId when skip is selected", async () => {
     selectMock.mockResolvedValueOnce("__skip__");
-    const { categorizePrompt } = await import(
-      "../../src/presentation/prompt/categorize-prompt.js"
-    );
+    const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
 
     const result = await categorizePrompt([txn()]);
 
@@ -92,9 +88,7 @@ describe("categorizePrompt", () => {
 
   it("assigns inc01 categoryId when income is selected", async () => {
     selectMock.mockResolvedValueOnce("inc01");
-    const { categorizePrompt } = await import(
-      "../../src/presentation/prompt/categorize-prompt.js"
-    );
+    const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
 
     const result = await categorizePrompt([txn()]);
 
@@ -103,9 +97,7 @@ describe("categorizePrompt", () => {
 
   it("formats positive amount with + sign in prompt header", async () => {
     selectMock.mockResolvedValueOnce("inc01");
-    const { categorizePrompt } = await import(
-      "../../src/presentation/prompt/categorize-prompt.js"
-    );
+    const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
 
     await categorizePrompt([txn({ amount: Money.fromEuros(100) })]);
 
@@ -118,22 +110,16 @@ describe("categorizePrompt", () => {
 
   it("re-throws non-ExitPromptError", async () => {
     selectMock.mockRejectedValueOnce(new Error("boom"));
-    const { categorizePrompt } = await import(
-      "../../src/presentation/prompt/categorize-prompt.js"
-    );
+    const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
     await expect(categorizePrompt([txn()])).rejects.toThrow("boom");
   });
 
   it("returns partial results on Ctrl+C (ExitPromptError)", async () => {
     const { ExitPromptError } = await import("@inquirer/core");
 
-    selectMock
-      .mockResolvedValueOnce("n01")
-      .mockRejectedValueOnce(new ExitPromptError(""));
+    selectMock.mockResolvedValueOnce("n01").mockRejectedValueOnce(new ExitPromptError(""));
 
-    const { categorizePrompt } = await import(
-      "../../src/presentation/prompt/categorize-prompt.js"
-    );
+    const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
 
     const result = await categorizePrompt([txn({ id: "t1" }), txn({ id: "t2" })]);
 

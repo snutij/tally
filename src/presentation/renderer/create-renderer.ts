@@ -12,9 +12,7 @@ export const VALID_FORMATS = Object.keys(renderers);
 export function createRenderer(format: string): Renderer {
   const factory = renderers[format];
   if (!factory) {
-    throw new Error(
-      `Unknown format "${format}". Valid formats: ${VALID_FORMATS.join(", ")}`,
-    );
+    throw new Error(`Unknown format "${format}". Valid formats: ${VALID_FORMATS.join(", ")}`);
   }
   return factory();
 }

@@ -49,17 +49,20 @@ export class CreditMutuelImporter implements BankImportGateway {
 
   private findColumn(row: Record<string, string>, candidates: string[]): string {
     for (const key of candidates) {
-      if (row[key] !== undefined) {return row[key];}
+      if (row[key] !== undefined) {
+        return row[key];
+      }
     }
     // Fallback: fuzzy match for encoding issues (e.g. Libell\xe9 vs Libellé)
     const rowKeys = Object.keys(row);
     for (const candidate of candidates) {
       const normalized = candidate.normalize("NFD").replaceAll(/[\u0300-\u036F]/g, "");
       const match = rowKeys.find(
-        (k) =>
-          k.normalize("NFD").replaceAll(/[\u0300-\u036F]/g, "") === normalized,
+        (k) => k.normalize("NFD").replaceAll(/[\u0300-\u036F]/g, "") === normalized,
       );
-      if (match) {return row[match];}
+      if (match) {
+        return row[match];
+      }
     }
     return "";
   }

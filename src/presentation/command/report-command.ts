@@ -3,10 +3,7 @@ import type { GenerateReport } from "../../application/usecase/generate-report.j
 import { Month } from "../../domain/value-object/month.js";
 import type { Renderer } from "../renderer/renderer.js";
 
-export function createReportCommand(
-  generateReport: GenerateReport,
-  renderer: Renderer,
-): Command {
+export function createReportCommand(generateReport: GenerateReport, renderer: Renderer): Command {
   return new Command("report")
     .description("Generate a monthly budget vs actual report")
     .argument("<month>", "Month in YYYY-MM format")

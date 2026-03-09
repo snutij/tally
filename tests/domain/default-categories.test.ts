@@ -8,30 +8,22 @@ describe("Default Categories", () => {
   });
 
   it("has 17 NEEDS categories", () => {
-    const needs = DEFAULT_CATEGORIES.filter(
-      (c) => c.group === CategoryGroup.NEEDS,
-    );
+    const needs = DEFAULT_CATEGORIES.filter((c) => c.group === CategoryGroup.NEEDS);
     expect(needs).toHaveLength(17);
   });
 
   it("has 8 WANTS categories", () => {
-    const wants = DEFAULT_CATEGORIES.filter(
-      (c) => c.group === CategoryGroup.WANTS,
-    );
+    const wants = DEFAULT_CATEGORIES.filter((c) => c.group === CategoryGroup.WANTS);
     expect(wants).toHaveLength(8);
   });
 
   it("has 4 INVESTMENTS categories", () => {
-    const investments = DEFAULT_CATEGORIES.filter(
-      (c) => c.group === CategoryGroup.INVESTMENTS,
-    );
+    const investments = DEFAULT_CATEGORIES.filter((c) => c.group === CategoryGroup.INVESTMENTS);
     expect(investments).toHaveLength(4);
   });
 
   it("has 4 INCOME categories", () => {
-    const income = DEFAULT_CATEGORIES.filter(
-      (c) => c.group === CategoryGroup.INCOME,
-    );
+    const income = DEFAULT_CATEGORIES.filter((c) => c.group === CategoryGroup.INCOME);
     expect(income).toHaveLength(4);
   });
 

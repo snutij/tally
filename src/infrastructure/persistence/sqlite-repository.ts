@@ -62,13 +62,9 @@ export class SqliteBudgetRepository implements BudgetRepository {
         upsertCat.run(line.category.id, line.category.name, line.category.group);
       }
 
-      this.db.prepare(`INSERT OR REPLACE INTO budgets (month) VALUES (?)`).run(
-        budget.month.value,
-      );
+      this.db.prepare(`INSERT OR REPLACE INTO budgets (month) VALUES (?)`).run(budget.month.value);
 
-      this.db
-        .prepare(`DELETE FROM budget_lines WHERE month = ?`)
-        .run(budget.month.value);
+      this.db.prepare(`DELETE FROM budget_lines WHERE month = ?`).run(budget.month.value);
 
       const insertLine = this.db.prepare(
         `INSERT INTO budget_lines (month, category_id, amount_cents) VALUES (?, ?, ?)`,
@@ -81,11 +77,13 @@ export class SqliteBudgetRepository implements BudgetRepository {
   }
 
   findByMonth(month: Month): Budget | null {
-    const row = this.db
-      .prepare(`SELECT month FROM budgets WHERE month = ?`)
-      .get(month.value) as { month: string } | undefined;
+    const row = this.db.prepare(`SELECT month FROM budgets WHERE month = ?`).get(month.value) as
+      | { month: string }
+      | undefined;
 
-    if (!row) {return null;}
+    if (!row) {
+      return null;
+    }
 
     const lineRows = this.db
       .prepare(
@@ -114,9 +112,7 @@ export class SqliteBudgetRepository implements BudgetRepository {
   }
 
   exists(month: Month): boolean {
-    const row = this.db
-      .prepare(`SELECT 1 FROM budgets WHERE month = ?`)
-      .get(month.value);
+    const row = this.db.prepare(`SELECT 1 FROM budgets WHERE month = ?`).get(month.value);
     return row !== undefined;
   }
 }
@@ -144,9 +140,10 @@ export class SqliteTransactionRepository implements TransactionRepository {
     tx();
   }
 
-
   findByIds(ids: string[]): Transaction[] {
-    if (ids.length === 0) {return [];}
+    if (ids.length === 0) {
+      return [];
+    }
     const placeholders = ids.map(() => "?").join(", ");
     const rows = this.db
       .prepare(

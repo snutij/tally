@@ -27,9 +27,7 @@ if (!existsSync(dataDir)) {
 const { budgetRepo, txnRepo } = openDatabase(dbPath);
 
 const creditMutuel = new CreditMutuelImporter();
-const importers = new Map<string, BankImportGateway>([
-  [creditMutuel.bankName, creditMutuel],
-]);
+const importers = new Map<string, BankImportGateway>([[creditMutuel.bankName, creditMutuel]]);
 
 const planBudget = new PlanBudget(budgetRepo);
 const importTransactions = new ImportTransactions(importers, txnRepo);

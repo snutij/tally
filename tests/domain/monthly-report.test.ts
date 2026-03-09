@@ -47,16 +47,12 @@ describe("MonthlyReport", () => {
 
     const report = MonthlyReport.compute(budget, transactions);
 
-    const needs = report.groups.find(
-      (g) => g.group === CategoryGroup.NEEDS,
-    )!;
+    const needs = report.groups.find((g) => g.group === CategoryGroup.NEEDS)!;
     expect(needs.budgeted.cents).toBe(80_000);
     expect(needs.actual.cents).toBe(80_000);
     expect(needs.delta.cents).toBe(0);
 
-    const wants = report.groups.find(
-      (g) => g.group === CategoryGroup.WANTS,
-    )!;
+    const wants = report.groups.find((g) => g.group === CategoryGroup.WANTS)!;
     expect(wants.budgeted.cents).toBe(20_000);
     expect(wants.actual.cents).toBe(15_000);
     expect(wants.delta.cents).toBe(5000);
@@ -117,9 +113,7 @@ describe("MonthlyReport", () => {
   it("computes expense percentage against expense totals only", () => {
     const report = MonthlyReport.compute(budget, []);
 
-    const needs = report.groups.find(
-      (g) => g.group === CategoryGroup.NEEDS,
-    )!;
+    const needs = report.groups.find((g) => g.group === CategoryGroup.NEEDS)!;
     // 800 / 1500 = 53.33%
     expect(needs.budgetedPercent).toBeCloseTo(53.33, 1);
   });
@@ -163,15 +157,11 @@ describe("MonthlyReport", () => {
     expect(report.totalExpenseActual.cents).toBe(80_000);
     expect(report.net.cents).toBe(170_000);
 
-    const income = report.groups.find(
-      (g) => g.group === CategoryGroup.INCOME,
-    )!;
+    const income = report.groups.find((g) => g.group === CategoryGroup.INCOME)!;
     expect(income.budgetedPercent).toBe(100);
     expect(income.actualPercent).toBe(100);
 
-    const needs = report.groups.find(
-      (g) => g.group === CategoryGroup.NEEDS,
-    )!;
+    const needs = report.groups.find((g) => g.group === CategoryGroup.NEEDS)!;
     expect(needs.budgetedPercent).toBe(100);
   });
 
@@ -196,9 +186,7 @@ describe("MonthlyReport", () => {
 
     const report = MonthlyReport.compute(customBudget, transactions);
 
-    const wants = report.groups.find(
-      (g) => g.group === CategoryGroup.WANTS,
-    )!;
+    const wants = report.groups.find((g) => g.group === CategoryGroup.WANTS)!;
     expect(wants.actual.cents).toBe(5000);
     expect(report.uncategorized.cents).toBe(0);
   });
@@ -411,10 +399,7 @@ describe("MonthlyReport", () => {
     it("computes daily average spending", () => {
       const report = MonthlyReport.compute(budgetWithIncome, fullTransactions);
       // total expenses = 1600, March has 31 days → 1600/31 ≈ 51.61
-      expect(report.kpis.dailyAverageSpending.toEuros()).toBeCloseTo(
-        1600 / 31,
-        1,
-      );
+      expect(report.kpis.dailyAverageSpending.toEuros()).toBeCloseTo(1600 / 31, 1);
     });
 
     it("returns zero daily average when no expenses", () => {
@@ -483,16 +468,12 @@ describe("MonthlyReport", () => {
       // n01: 900 > 800 → overrun of 100
       expect(report.kpis.categoryVariance.overruns).toHaveLength(1);
       expect(report.kpis.categoryVariance.overruns[0].categoryId).toBe("n01");
-      expect(
-        report.kpis.categoryVariance.overruns[0].variance.cents,
-      ).toBe(10_000);
+      expect(report.kpis.categoryVariance.overruns[0].variance.cents).toBe(10_000);
 
       // w02: 50 < 200 → underrun of -150; i03: 0 < 500 → underrun of -500
       expect(report.kpis.categoryVariance.underruns).toHaveLength(2);
       expect(report.kpis.categoryVariance.underruns[0].categoryId).toBe("i03"); // biggest underrun
-      expect(
-        report.kpis.categoryVariance.underruns[0].variance.cents,
-      ).toBe(-50_000);
+      expect(report.kpis.categoryVariance.underruns[0].variance.cents).toBe(-50_000);
     });
 
     it("returns empty variance for empty budget", () => {

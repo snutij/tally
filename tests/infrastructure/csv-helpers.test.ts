@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  parseEuroAmount,
-  parseFrenchDate,
-} from "../../src/infrastructure/bank/csv-helpers.js";
+import { parseEuroAmount, parseFrenchDate } from "../../src/infrastructure/bank/csv-helpers.js";
 import { InvalidCsvData } from "../../src/domain/error/index.js";
 
 describe("parseFrenchDate", () => {

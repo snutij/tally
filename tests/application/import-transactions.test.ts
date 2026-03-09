@@ -36,10 +36,7 @@ describe("ImportTransactions", () => {
   beforeEach(() => {
     const importer = new StubImporter();
     txnRepo = new InMemoryTransactionRepository();
-    useCase = new ImportTransactions(
-      new Map([[importer.bankName, importer]]),
-      txnRepo,
-    );
+    useCase = new ImportTransactions(new Map([[importer.bankName, importer]]), txnRepo);
   });
 
   it("parses transactions from bank adapter", () => {
@@ -55,9 +52,7 @@ describe("ImportTransactions", () => {
   });
 
   it("throws UnknownBankAdapter for unknown bank", () => {
-    expect(() => useCase.parse("unknown-bank", "dummy.csv")).toThrow(
-      UnknownBankAdapter,
-    );
+    expect(() => useCase.parse("unknown-bank", "dummy.csv")).toThrow(UnknownBankAdapter);
   });
 
   it("lists available banks", () => {

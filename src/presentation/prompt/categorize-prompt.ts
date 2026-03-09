@@ -11,9 +11,7 @@ const GROUP_LABELS: Record<CategoryGroup, string> = {
   INCOME: "— Income —",
 };
 
-type Choice =
-  | { value: string; name: string }
-  | { type: "separator"; separator: string };
+type Choice = { value: string; name: string } | { type: "separator"; separator: string };
 
 export function buildCategoryChoices(): Choice[] {
   const choices: Choice[] = [];
@@ -36,9 +34,7 @@ export interface CategorizeResult {
   interrupted: boolean;
 }
 
-export async function categorizePrompt(
-  transactions: Transaction[],
-): Promise<CategorizeResult> {
+export async function categorizePrompt(transactions: Transaction[]): Promise<CategorizeResult> {
   const choices = buildCategoryChoices();
   const result: Transaction[] = [];
 

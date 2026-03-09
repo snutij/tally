@@ -2,23 +2,36 @@ import { Budget } from "../../domain/entity/budget.js";
 import type {
   CategorySummary,
   GroupSummary,
-  ReportKpis} from "../../domain/entity/monthly-report.js";
-import {
-  MonthlyReport
+  ReportKpis,
 } from "../../domain/entity/monthly-report.js";
+import { MonthlyReport } from "../../domain/entity/monthly-report.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
 import type { Money } from "../../domain/value-object/money.js";
 import type { Renderer } from "./renderer.js";
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export class HtmlRenderer implements Renderer {
   render(data: unknown): string {
-    if (data instanceof MonthlyReport) {return this.renderReport(data);}
-    if (data instanceof Budget) {return this.renderBudget(data);}
+    if (data instanceof MonthlyReport) {
+      return this.renderReport(data);
+    }
+    if (data instanceof Budget) {
+      return this.renderBudget(data);
+    }
     return this.wrapHtml("Data", `<pre>${esc(JSON.stringify(data, null, 2))}</pre>`);
   }
 
@@ -66,7 +79,9 @@ export class HtmlRenderer implements Renderer {
     const n = kpis.fiftyThirtyTwenty.needs ?? 0;
     const w = kpis.fiftyThirtyTwenty.wants ?? 0;
     const inv = kpis.fiftyThirtyTwenty.investments ?? 0;
-    if (n === 0 && w === 0 && inv === 0) {return "";}
+    if (n === 0 && w === 0 && inv === 0) {
+      return "";
+    }
 
     return `<div class="allocation">
   <div class="alloc-title">50 / 30 / 20 Allocation</div>
@@ -133,7 +148,9 @@ export class HtmlRenderer implements Renderer {
   private insightsSection(kpis: ReportKpis): string {
     const hasSpending = kpis.topSpendingCategories.length > 0;
     const hasExpenses = kpis.largestExpenses.length > 0;
-    if (!hasSpending && !hasExpenses) {return "";}
+    if (!hasSpending && !hasExpenses) {
+      return "";
+    }
 
     const spending = hasSpending
       ? `<div class="insight-card"><h3>Top Spending</h3>${kpis.topSpendingCategories
@@ -160,16 +177,14 @@ export class HtmlRenderer implements Renderer {
   }
 
   private uncategorizedSection(amount: Money): string {
-    if (amount.isZero()) {return "";}
+    if (amount.isZero()) {
+      return "";
+    }
     return `<section class="uncategorized"><span class="uncat-dot"></span><p>Uncategorized transactions total: <strong>${amount.format()}</strong></p></section>`;
   }
 
   private reportFooter(r: MonthlyReport): string {
-    const netCls = r.net.isPositive()
-      ? "positive"
-      : (r.net.isNegative()
-        ? "negative"
-        : "");
+    const netCls = r.net.isPositive() ? "positive" : r.net.isNegative() ? "negative" : "";
 
     return `<footer class="footer-totals">
   <div class="totals-grid">
@@ -190,7 +205,9 @@ export class HtmlRenderer implements Renderer {
     const grouped = new Map<string, typeof b.lines>();
     for (const line of b.lines) {
       const g = line.category.group;
-      if (!grouped.has(g)) {grouped.set(g, []);}
+      if (!grouped.has(g)) {
+        grouped.set(g, []);
+      }
       grouped.get(g)!.push(line);
     }
 
@@ -605,8 +622,12 @@ function esc(s: string): string {
 }
 
 function deltaColor(delta: Money): string {
-  if (delta.isPositive()) {return "under-budget";}
-  if (delta.isNegative()) {return "over-budget";}
+  if (delta.isPositive()) {
+    return "under-budget";
+  }
+  if (delta.isNegative()) {
+    return "over-budget";
+  }
   return "";
 }
 
@@ -623,7 +644,11 @@ function item(label: string, value: string, cls = ""): string {
 }
 
 function fmtDelta(delta: Money, signed: boolean): string {
-  if (!signed || delta.isZero()) {return delta.format();}
-  if (delta.isPositive()) {return `+${delta.format()}`;}
+  if (!signed || delta.isZero()) {
+    return delta.format();
+  }
+  if (delta.isPositive()) {
+    return `+${delta.format()}`;
+  }
   return delta.format();
 }

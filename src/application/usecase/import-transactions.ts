@@ -25,9 +25,7 @@ export class ImportTransactions {
     uncategorized: Transaction[];
   } {
     const existing = this.txnRepo.findByIds(transactions.map((t) => t.id));
-    const categorizedIds = new Set(
-      existing.filter((t) => t.categoryId).map((t) => t.id),
-    );
+    const categorizedIds = new Set(existing.filter((t) => t.categoryId).map((t) => t.id));
     const alreadyCategorized: Transaction[] = [];
     const uncategorized: Transaction[] = [];
     for (const t of transactions) {

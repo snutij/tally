@@ -42,10 +42,18 @@ describe("e2e: import → categorize → budget → report", () => {
     expect(parsed).toHaveLength(4);
 
     const categorized = parsed.map((t) => {
-      if (t.label.includes("RENT")) {return { ...t, categoryId: "n01" };}
-      if (t.label.includes("GROCERY")) {return { ...t, categoryId: "n02" };}
-      if (t.label.includes("SALARY")) {return { ...t, categoryId: "inc01" };}
-      if (t.label.includes("RESTAURANT")) {return { ...t, categoryId: "w02" };}
+      if (t.label.includes("RENT")) {
+        return { ...t, categoryId: "n01" };
+      }
+      if (t.label.includes("GROCERY")) {
+        return { ...t, categoryId: "n02" };
+      }
+      if (t.label.includes("SALARY")) {
+        return { ...t, categoryId: "inc01" };
+      }
+      if (t.label.includes("RESTAURANT")) {
+        return { ...t, categoryId: "w02" };
+      }
       return t;
     });
 
@@ -60,9 +68,7 @@ describe("e2e: import → categorize → budget → report", () => {
     const report = generateReport.execute(month);
 
     expect(report.transactionCount).toBe(4);
-    expect(report.net.cents).toBe(
-      parsed.reduce((sum, t) => sum + t.amount.cents, 0),
-    );
+    expect(report.net.cents).toBe(parsed.reduce((sum, t) => sum + t.amount.cents, 0));
     expect(report.totalIncomeActual.cents).toBe(250_000); // 2500€ salary
     expect(report.totalExpenseActual.cents).toBe(
       80_000 + 5230 + 3550, // rent + grocery + restaurant
@@ -79,25 +85,26 @@ describe("e2e: import → categorize → budget → report", () => {
     const report = generateReport.execute(month);
 
     expect(report.transactionCount).toBe(4);
-    expect(report.uncategorized.cents).toBe(
-      80_000 + 5230 + 250_000 + 3550,
-    );
+    expect(report.uncategorized.cents).toBe(80_000 + 5230 + 250_000 + 3550);
   });
 
   it("re-import preserves previously categorized transactions", () => {
     // First import: categorize only 2
     const parsed = importTxns.parse("credit-mutuel", CSV);
     const partial = parsed.map((t) => {
-      if (t.label.includes("RENT")) {return { ...t, categoryId: "n01" };}
-      if (t.label.includes("SALARY")) {return { ...t, categoryId: "inc01" };}
+      if (t.label.includes("RENT")) {
+        return { ...t, categoryId: "n01" };
+      }
+      if (t.label.includes("SALARY")) {
+        return { ...t, categoryId: "inc01" };
+      }
       return t;
     });
     importTxns.save(partial);
 
     // Re-import: split should detect already-categorized
     const reparsed = importTxns.parse("credit-mutuel", CSV);
-    const { alreadyCategorized, uncategorized } =
-      importTxns.splitByCategoryStatus(reparsed);
+    const { alreadyCategorized, uncategorized } = importTxns.splitByCategoryStatus(reparsed);
 
     expect(alreadyCategorized).toHaveLength(2);
     expect(uncategorized).toHaveLength(2);

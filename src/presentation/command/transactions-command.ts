@@ -20,9 +20,7 @@ export function createTransactionsCommand(
   txnRepo: TransactionRepository,
   renderer: Renderer,
 ): Command {
-  const cmd = new Command("transactions").description(
-    "List and manage transactions",
-  );
+  const cmd = new Command("transactions").description("List and manage transactions");
 
   cmd
     .argument("<month>", "Month in YYYY-MM format")
@@ -43,7 +41,12 @@ export function createTransactionsCommand(
       const uncategorized = transactions.filter((t) => !t.categoryId);
 
       if (uncategorized.length === 0) {
-        console.log(renderer.render({ message: "All transactions are categorized", total: transactions.length }));
+        console.log(
+          renderer.render({
+            message: "All transactions are categorized",
+            total: transactions.length,
+          }),
+        );
         return;
       }
 
@@ -53,7 +56,9 @@ export function createTransactionsCommand(
       txnRepo.saveAll(updated);
 
       if (interrupted) {
-        console.log(`\nInterrupted — saved ${updated.length} of ${uncategorized.length} uncategorized transactions.`);
+        console.log(
+          `\nInterrupted — saved ${updated.length} of ${uncategorized.length} uncategorized transactions.`,
+        );
       } else {
         console.log(
           renderer.render({

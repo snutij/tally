@@ -101,9 +101,7 @@ export class MonthlyReport {
     let uncategorizedCount = 0;
 
     for (const txn of transactions) {
-      const group = txn.categoryId
-        ? categoryGroupMap.get(txn.categoryId)
-        : undefined;
+      const group = txn.categoryId ? categoryGroupMap.get(txn.categoryId) : undefined;
       const absAmount = Money.fromCents(Math.abs(txn.amount.cents));
       if (group) {
         actualByGroup.set(group, actualByGroup.get(group)!.add(absAmount));
@@ -126,35 +124,26 @@ export class MonthlyReport {
     const totalIncomeBudgeted = budget.totalByGroup(CategoryGroup.INCOME);
     const totalIncomeActual = actualByGroup.get(CategoryGroup.INCOME)!;
 
-    const groups: GroupSummary[] = Object.values(CategoryGroup).map(
-      (group) => {
-        const budgeted = budget.totalByGroup(group);
-        const actual = actualByGroup.get(group)!;
-        const isIncome = group === CategoryGroup.INCOME;
-        const typeBudgetTotal = isIncome
-          ? totalIncomeBudgeted
-          : totalExpenseBudgeted;
-        const typeActualTotal = isIncome
-          ? totalIncomeActual
-          : totalExpenseActual;
+    const groups: GroupSummary[] = Object.values(CategoryGroup).map((group) => {
+      const budgeted = budget.totalByGroup(group);
+      const actual = actualByGroup.get(group)!;
+      const isIncome = group === CategoryGroup.INCOME;
+      const typeBudgetTotal = isIncome ? totalIncomeBudgeted : totalExpenseBudgeted;
+      const typeActualTotal = isIncome ? totalIncomeActual : totalExpenseActual;
 
-        return {
-          group,
-          budgeted,
-          actual,
-          delta: budgeted.subtract(actual),
-          budgetedPercent: typeBudgetTotal.isZero()
-            ? 0
-            : Math.round(
-                (budgeted.cents / typeBudgetTotal.cents) * 10_000,
-              ) / 100,
-          actualPercent: typeActualTotal.isZero()
-            ? 0
-            : Math.round((actual.cents / typeActualTotal.cents) * 10_000) /
-              100,
-        };
-      },
-    );
+      return {
+        group,
+        budgeted,
+        actual,
+        delta: budgeted.subtract(actual),
+        budgetedPercent: typeBudgetTotal.isZero()
+          ? 0
+          : Math.round((budgeted.cents / typeBudgetTotal.cents) * 10_000) / 100,
+        actualPercent: typeActualTotal.isZero()
+          ? 0
+          : Math.round((actual.cents / typeActualTotal.cents) * 10_000) / 100,
+      };
+    });
 
     const categories: CategorySummary[] = budget.lines.map((line) => {
       const actual = actualByCategory.get(line.category.id) ?? Money.zero();
@@ -168,10 +157,7 @@ export class MonthlyReport {
       };
     });
 
-    const net = transactions.reduce(
-      (sum, txn) => sum.add(txn.amount),
-      Money.zero(),
-    );
+    const net = transactions.reduce((sum, txn) => sum.add(txn.amount), Money.zero());
 
     const kpis = computeKpis({
       budget,
@@ -225,38 +211,26 @@ function computeKpis(ctx: {
 
   const savingsRate = incomeZero
     ? null
-    : pct(
-        totalIncomeActual.cents - totalExpenseActual.cents,
-        totalIncomeActual.cents,
-      );
+    : pct(totalIncomeActual.cents - totalExpenseActual.cents, totalIncomeActual.cents);
 
   const fiftyThirtyTwenty = incomeZero
     ? { needs: null, wants: null, investments: null }
     : {
-        needs: pct(
-          actualByGroup.get(CategoryGroup.NEEDS)!.cents,
-          totalIncomeActual.cents,
-        ),
-        wants: pct(
-          actualByGroup.get(CategoryGroup.WANTS)!.cents,
-          totalIncomeActual.cents,
-        ),
+        needs: pct(actualByGroup.get(CategoryGroup.NEEDS)!.cents, totalIncomeActual.cents),
+        wants: pct(actualByGroup.get(CategoryGroup.WANTS)!.cents, totalIncomeActual.cents),
         investments: pct(
           actualByGroup.get(CategoryGroup.INVESTMENTS)!.cents,
           totalIncomeActual.cents,
         ),
       };
 
-  const expenseLines = budget.lines.filter(
-    (l) => l.category.group !== CategoryGroup.INCOME,
-  );
+  const expenseLines = budget.lines.filter((l) => l.category.group !== CategoryGroup.INCOME);
   const adherenceRate =
     expenseLines.length === 0
       ? null
       : pct(
           expenseLines.filter((l) => {
-            const actual =
-              actualByCategory.get(l.category.id) ?? Money.zero();
+            const actual = actualByCategory.get(l.category.id) ?? Money.zero();
             return actual.cents <= l.amount.cents;
           }).length,
           expenseLines.length,
@@ -289,29 +263,19 @@ function computeKpis(ctx: {
     }));
 
   const uncategorizedRatio =
-    transactions.length === 0
-      ? null
-      : pct(uncategorizedCount, transactions.length);
+    transactions.length === 0 ? null : pct(uncategorizedCount, transactions.length);
 
-  const expenseCategories = categories.filter(
-    (c) => c.group !== CategoryGroup.INCOME,
-  );
+  const expenseCategories = categories.filter((c) => c.group !== CategoryGroup.INCOME);
 
   const overruns = expenseCategories
     .filter((c) => c.actual.cents > c.budgeted.cents)
-    .toSorted(
-      (a, b) =>
-        b.actual.cents - b.budgeted.cents - (a.actual.cents - a.budgeted.cents),
-    )
+    .toSorted((a, b) => b.actual.cents - b.budgeted.cents - (a.actual.cents - a.budgeted.cents))
     .slice(0, 3)
     .map(varianceOf);
 
   const underruns = expenseCategories
     .filter((c) => c.actual.cents < c.budgeted.cents)
-    .toSorted(
-      (a, b) =>
-        a.actual.cents - a.budgeted.cents - (b.actual.cents - b.budgeted.cents),
-    )
+    .toSorted((a, b) => a.actual.cents - a.budgeted.cents - (b.actual.cents - b.budgeted.cents))
     .slice(0, 3)
     .map(varianceOf);
 

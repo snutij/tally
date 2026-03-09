@@ -2,21 +2,23 @@
   "name": "tally",
   "version": "0.1.0",
   "description": "Personal finance CLI — budget tracking & reporting",
-  "type": "module",
+  "keywords": [],
+  "license": "MIT",
+  "author": "",
   "bin": {
     "tally": "./src/presentation/index.ts"
   },
+  "type": "module",
   "scripts": {
     "start": "tsx src/presentation/index.ts",
+    "fmt": "oxfmt --write",
+    "fmt:check": "oxfmt --check",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
   },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
     "@inquirer/select": "^5.1.0",
     "better-sqlite3": "^12.6.2",
@@ -27,6 +29,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.3.5",
     "@vitest/coverage-v8": "^4.0.18",
+    "oxfmt": "^0.36.0",
     "oxlint": "^1.51.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
