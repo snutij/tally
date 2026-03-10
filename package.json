@@ -10,7 +10,8 @@
   },
   "type": "module",
   "scripts": {
-    "start": "tsx src/presentation/index.ts",
+    "db:reset": "tally db reset",
+    "db:seed": "tally import mock",
     "fmt": "oxfmt --write",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",

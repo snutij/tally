@@ -369,7 +369,6 @@ section { margin-bottom: 2.5rem; }`;
   background: var(--border);
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
 }
 .kpi {
   background: var(--bg-card);
@@ -394,7 +393,54 @@ section { margin-bottom: 2.5rem; }`;
 .kpi-highlight .kpi-value {
   font-size: 2rem;
   color: var(--accent);
-}`;
+}
+.kpi { position: relative; overflow: visible; }
+.kpi:first-child { border-radius: 10px 0 0 10px; }
+.kpi:last-child { border-radius: 0 10px 10px 0; }
+.kpi-help-wrap {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+.kpi-help {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  border: 1px solid var(--text-dim);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.6rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s;
+}
+.kpi-help:hover, .kpi-help:focus { border-color: var(--accent); color: var(--accent); outline: none; }
+.kpi-tooltip {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 0.5rem);
+  transform: translateY(-50%);
+  z-index: 10;
+  width: max-content;
+  max-width: 240px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--text-secondary);
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.kpi-help:hover + .kpi-tooltip, .kpi-help:focus + .kpi-tooltip { display: block; }`;
   }
 
   private cssAllocationBar(): string {
@@ -640,6 +686,7 @@ tfoot th, tfoot td {
   .uncategorized { background: #fff6e0; border-color: #ddb84e; }
   td, thead th { border-color: #e5e7eb; }
   .num, .insight-value { color: #333; }
+  .kpi-help, .kpi-tooltip { display: none !important; }
   .attribution { display: none; }
 }`;
   }
@@ -669,8 +716,41 @@ function fmtPct(v: number | null): string {
   return v === null ? "N/A" : `${v}%`;
 }
 
+interface TooltipContent {
+  purpose: string;
+  target: string;
+  tip: string;
+}
+
+const KPI_TOOLTIPS: Record<string, TooltipContent> = {
+  "Budget Adherence": {
+    purpose: "Percentage of categories where actual spending stayed within budget",
+    target: "Aim for 90%+",
+    tip: "Review overspent categories and adjust budgets or spending",
+  },
+  "Daily Avg Spending": {
+    purpose: "Total monthly expenses divided by days in the month",
+    target: "Keep below your daily income equivalent",
+    tip: "Track daily purchases and set a daily spending cap",
+  },
+  "Savings Rate": {
+    purpose: "Percentage of income kept after all expenses",
+    target: "Aim for 20%+",
+    tip: "Reduce discretionary spending or increase income",
+  },
+  Uncategorized: {
+    purpose: "Percentage of transactions not assigned to any category",
+    target: "Aim for 0%",
+    tip: "Run 'tally transactions categorize' to assign categories",
+  },
+};
+
 function card(label: string, value: string, highlight = false): string {
-  return `<div class="kpi${highlight ? " kpi-highlight" : ""}"><div class="kpi-value">${value}</div><div class="kpi-label">${label}</div></div>`;
+  const tooltip = KPI_TOOLTIPS[label];
+  const tooltipHtml = tooltip
+    ? `<span class="kpi-help-wrap"><button class="kpi-help" aria-label="About ${esc(label)}" type="button">?</button><div class="kpi-tooltip" role="tooltip"><strong>${esc(tooltip.purpose)}</strong><br>${esc(tooltip.target)}<br><em>${esc(tooltip.tip)}</em></div></span>`
+    : "";
+  return `<div class="kpi${highlight ? " kpi-highlight" : ""}">${tooltipHtml}<div class="kpi-value">${value}</div><div class="kpi-label">${label}</div></div>`;
 }
 
 function item(label: string, value: string, cls = ""): string {

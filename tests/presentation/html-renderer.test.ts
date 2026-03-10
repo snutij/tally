@@ -63,6 +63,21 @@ describe("HtmlRenderer", () => {
       expect(html).toContain("Daily Avg Spending");
     });
 
+    it("renders tooltip trigger and content for each KPI", () => {
+      for (const label of [
+        "Savings Rate",
+        "Budget Adherence",
+        "Daily Avg Spending",
+        "Uncategorized",
+      ]) {
+        expect(html).toContain(`aria-label="About ${label}"`);
+        expect(html).toContain('role="tooltip"');
+      }
+      expect(html).toContain("Percentage of income kept after all expenses");
+      expect(html).toContain("Aim for 90%+");
+      expect(html).toContain("tally transactions categorize");
+    });
+
     it("contains group summary table", () => {
       expect(html).toContain("Group Summary");
       expect(html).toContain("NEEDS");
@@ -128,6 +143,13 @@ describe("HtmlRenderer", () => {
       expect(html).toContain("Total");
       expect(html).toContain("3800.00 €");
     });
+  });
+
+  it("does not render tooltip markup in Budget view body", () => {
+    const html = renderer.render(budget);
+    const body = html.split("<body>")[1];
+    expect(body).not.toContain("kpi-help");
+    expect(body).not.toContain("kpi-tooltip");
   });
 
   it("passes through plain objects as JSON pre block", () => {
