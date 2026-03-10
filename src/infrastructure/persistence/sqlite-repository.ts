@@ -3,7 +3,7 @@ import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import type { BudgetLine } from "../../domain/entity/budget.js";
 import { Budget } from "../../domain/entity/budget.js";
 import type { Transaction } from "../../domain/entity/transaction.js";
-import type { CategoryGroup } from "../../domain/value-object/category-group.js";
+import { CategoryGroup } from "../../domain/value-object/category-group.js";
 import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
 import type { Month } from "../../domain/value-object/month.js";
@@ -103,7 +103,7 @@ export class SqliteBudgetRepository implements BudgetRepository {
       category: {
         id: r.category_id,
         name: r.name,
-        group: r.group as CategoryGroup,
+        group: assertCategoryGroup(r.group),
       },
       amount: Money.fromCents(r.amount_cents),
     }));
@@ -210,4 +210,13 @@ export function openDatabase(dbPath: string): {
     budgetRepo: new SqliteBudgetRepository(db),
     txnRepo: new SqliteTransactionRepository(db),
   };
+}
+
+const VALID_GROUPS = new Set<string>(Object.values(CategoryGroup));
+
+function assertCategoryGroup(value: string): CategoryGroup {
+  if (!VALID_GROUPS.has(value)) {
+    throw new Error(`Invalid CategoryGroup in database: "${value}"`);
+  }
+  return value as CategoryGroup;
 }

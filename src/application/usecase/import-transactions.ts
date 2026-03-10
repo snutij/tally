@@ -29,8 +29,8 @@ export class ImportTransactions {
     const alreadyCategorized: Transaction[] = [];
     const uncategorized: Transaction[] = [];
     for (const t of transactions) {
-      if (categorizedIds.has(t.id)) {
-        const ex = existing.find((e) => e.id === t.id)!;
+      const ex = categorizedIds.has(t.id) ? existing.find((e) => e.id === t.id) : undefined;
+      if (ex) {
         alreadyCategorized.push(ex);
       } else {
         uncategorized.push(t);

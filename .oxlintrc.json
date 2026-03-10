@@ -32,6 +32,7 @@
     "oxc/no-rest-spread-properties": "off",
     "oxc/no-optional-chaining": "off",
     "oxc/no-map-spread": "off",
-    "typescript-eslint/parameter-properties": "off"
+    "typescript-eslint/parameter-properties": "off",
+    "typescript-eslint/no-non-null-assertion": "error"
   }
 }

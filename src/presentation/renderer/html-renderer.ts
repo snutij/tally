@@ -208,7 +208,7 @@ export class HtmlRenderer implements Renderer {
       if (!grouped.has(g)) {
         grouped.set(g, []);
       }
-      grouped.get(g)!.push(line);
+      grouped.get(g)?.push(line);
     }
 
     let rows = "";

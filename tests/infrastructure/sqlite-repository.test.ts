@@ -63,6 +63,20 @@ describe("SqliteRepository", () => {
       budgetRepo.save(new Budget(month, []));
       expect(budgetRepo.exists(month)).toBe(true);
     });
+
+    it("throws on corrupted CategoryGroup in DB", () => {
+      budgetRepo.save(new Budget(month, []));
+
+      // Directly corrupt the DB
+      db.prepare(
+        `INSERT INTO categories (id, name, "group") VALUES ('bad', 'Bad', 'INVALID_GROUP')`,
+      ).run();
+      db.prepare(
+        `INSERT INTO budget_lines (month, category_id, amount_cents) VALUES ('2026-03', 'bad', 100)`,
+      ).run();
+
+      expect(() => budgetRepo.findByMonth(month)).toThrow("Invalid CategoryGroup");
+    });
   });
 
   describe("TransactionRepository", () => {

@@ -103,10 +103,11 @@ export class MonthlyReport {
     for (const txn of transactions) {
       const group = txn.categoryId ? categoryGroupMap.get(txn.categoryId) : undefined;
       const absAmount = Money.fromCents(Math.abs(txn.amount.cents));
-      if (group) {
-        actualByGroup.set(group, actualByGroup.get(group)!.add(absAmount));
-        const prev = actualByCategory.get(txn.categoryId!) ?? Money.zero();
-        actualByCategory.set(txn.categoryId!, prev.add(absAmount));
+      if (group && txn.categoryId) {
+        const current = actualByGroup.get(group) ?? Money.zero();
+        actualByGroup.set(group, current.add(absAmount));
+        const prev = actualByCategory.get(txn.categoryId) ?? Money.zero();
+        actualByCategory.set(txn.categoryId, prev.add(absAmount));
       } else {
         uncategorized = uncategorized.add(absAmount);
         uncategorizedCount++;
@@ -118,15 +119,15 @@ export class MonthlyReport {
       Money.zero(),
     );
     const totalExpenseActual = EXPENSE_GROUPS.reduce(
-      (sum, g) => sum.add(actualByGroup.get(g)!),
+      (sum, g) => sum.add(actualByGroup.get(g) ?? Money.zero()),
       Money.zero(),
     );
     const totalIncomeBudgeted = budget.totalByGroup(CategoryGroup.INCOME);
-    const totalIncomeActual = actualByGroup.get(CategoryGroup.INCOME)!;
+    const totalIncomeActual = actualByGroup.get(CategoryGroup.INCOME) ?? Money.zero();
 
     const groups: GroupSummary[] = Object.values(CategoryGroup).map((group) => {
       const budgeted = budget.totalByGroup(group);
-      const actual = actualByGroup.get(group)!;
+      const actual = actualByGroup.get(group) ?? Money.zero();
       const isIncome = group === CategoryGroup.INCOME;
       const typeBudgetTotal = isIncome ? totalIncomeBudgeted : totalExpenseBudgeted;
       const typeActualTotal = isIncome ? totalIncomeActual : totalExpenseActual;
@@ -216,10 +217,16 @@ function computeKpis(ctx: {
   const fiftyThirtyTwenty = incomeZero
     ? { needs: null, wants: null, investments: null }
     : {
-        needs: pct(actualByGroup.get(CategoryGroup.NEEDS)!.cents, totalIncomeActual.cents),
-        wants: pct(actualByGroup.get(CategoryGroup.WANTS)!.cents, totalIncomeActual.cents),
+        needs: pct(
+          (actualByGroup.get(CategoryGroup.NEEDS) ?? Money.zero()).cents,
+          totalIncomeActual.cents,
+        ),
+        wants: pct(
+          (actualByGroup.get(CategoryGroup.WANTS) ?? Money.zero()).cents,
+          totalIncomeActual.cents,
+        ),
         investments: pct(
-          actualByGroup.get(CategoryGroup.INVESTMENTS)!.cents,
+          (actualByGroup.get(CategoryGroup.INVESTMENTS) ?? Money.zero()).cents,
           totalIncomeActual.cents,
         ),
       };

@@ -52,4 +52,57 @@ describe("GenerateReport", () => {
     expect(report.totalExpenseBudgeted.cents).toBe(0);
     expect(report.totalExpenseActual.cents).toBe(0);
   });
+
+  it("only includes transactions from the requested month", () => {
+    const march = Month.from("2026-03");
+    budgetRepo.save(
+      new Budget(march, [
+        {
+          category: { id: "rent", name: "Rent", group: CategoryGroup.NEEDS },
+          amount: Money.fromEuros(800),
+        },
+      ]),
+    );
+    txnRepo.saveAll([
+      {
+        id: "1",
+        date: DateOnly.from("2026-03-01"),
+        label: "March Rent",
+        amount: Money.fromEuros(-800),
+        categoryId: "rent",
+        sourceBank: "test",
+      },
+      {
+        id: "2",
+        date: DateOnly.from("2026-04-01"),
+        label: "April Rent",
+        amount: Money.fromEuros(-800),
+        categoryId: "rent",
+        sourceBank: "test",
+      },
+    ]);
+
+    const report = useCase.execute(march);
+    expect(report.transactionCount).toBe(1);
+    expect(report.totalExpenseActual.cents).toBe(80_000);
+  });
+
+  it("handles uncategorized transactions gracefully", () => {
+    const month = Month.from("2026-03");
+    budgetRepo.save(new Budget(month, []));
+    txnRepo.saveAll([
+      {
+        id: "1",
+        date: DateOnly.from("2026-03-15"),
+        label: "Mystery",
+        amount: Money.fromEuros(-50),
+        sourceBank: "test",
+      },
+    ]);
+
+    const report = useCase.execute(month);
+    expect(report.transactionCount).toBe(1);
+    expect(report.uncategorized.cents).toBe(5000);
+    expect(report.totalExpenseActual.cents).toBe(0);
+  });
 });
