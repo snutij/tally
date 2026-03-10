@@ -24,9 +24,11 @@ dist/
 .DS_Store
 Thumbs.db
 
-# IDE
+# IDE / Tools
 .idea/
 .vscode/
+.serena/
+.claude/
 *.swp
 
 # Env
