@@ -5,7 +5,7 @@ import { Month } from "../../domain/value-object/month.js";
 import type { Renderer } from "../renderer/renderer.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
 
-function serializeTransaction(txn: Transaction) {
+function serializeTransaction(txn: Transaction): Record<string, unknown> {
   return {
     id: txn.id,
     date: txn.date,

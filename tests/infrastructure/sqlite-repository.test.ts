@@ -3,11 +3,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import type Database from "better-sqlite3";
-import type {
-  SqliteBudgetRepository,
-  SqliteTransactionRepository,
+import {
+  type SqliteBudgetRepository,
+  type SqliteTransactionRepository,
+  openDatabase,
 } from "../../src/infrastructure/persistence/sqlite-repository.js";
-import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { Budget } from "../../src/domain/entity/budget.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
@@ -48,10 +48,13 @@ describe("SqliteRepository", () => {
       const found = budgetRepo.findByMonth(month);
 
       expect(found).not.toBeNull();
-      expect(found!.month.value).toBe("2026-03");
-      expect(found!.lines).toHaveLength(1);
-      expect(found!.lines[0].category.id).toBe("rent");
-      expect(found!.lines[0].amount.cents).toBe(80_000);
+      if (!found) {
+        return;
+      }
+      expect(found.month.value).toBe("2026-03");
+      expect(found.lines).toHaveLength(1);
+      expect(found.lines[0].category.id).toBe("rent");
+      expect(found.lines[0].amount.cents).toBe(80_000);
     });
 
     it("returns null for non-existent month", () => {

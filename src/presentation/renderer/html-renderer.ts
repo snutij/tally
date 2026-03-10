@@ -1,10 +1,10 @@
 import { Budget } from "../../domain/entity/budget.js";
-import type {
-  CategorySummary,
-  GroupSummary,
-  ReportKpis,
+import {
+  type CategorySummary,
+  type GroupSummary,
+  MonthlyReport,
+  type ReportKpis,
 } from "../../domain/entity/monthly-report.js";
-import { MonthlyReport } from "../../domain/entity/monthly-report.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
 import type { Money } from "../../domain/value-object/money.js";
 import type { Renderer } from "./renderer.js";
@@ -615,10 +615,10 @@ ${body}
 
 function esc(s: string): string {
   return s
-    .replaceAll(/&/g, "&amp;")
-    .replaceAll(/</g, "&lt;")
-    .replaceAll(/>/g, "&gt;")
-    .replaceAll(/"/g, "&quot;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 function deltaColor(delta: Money): string {

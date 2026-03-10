@@ -37,7 +37,10 @@ describe("PlanBudget", () => {
 
     const found = useCase.get(month);
     expect(found).not.toBeNull();
-    expect(found!.month.value).toBe("2026-03");
+    if (!found) {
+      return;
+    }
+    expect(found.month.value).toBe("2026-03");
   });
 
   it("returns null for non-existent budget", () => {

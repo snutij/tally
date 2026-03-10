@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
 
 vi.mock("node:fs", async () => {
-  const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+  const actual: typeof import("node:fs") = await vi.importActual("node:fs");
   return { ...actual, existsSync: vi.fn(), unlinkSync: vi.fn() };
 });
 
@@ -21,7 +21,7 @@ describe("createDbCommand", () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
   });
 
-  function run(...args: string[]) {
+  function run(...args: string[]): Promise<unknown> {
     const cmd = createDbCommand();
     const program = new Command().addCommand(cmd);
     return program.parseAsync(["node", "tally", "db", ...args]);

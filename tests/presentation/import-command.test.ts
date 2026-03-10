@@ -37,7 +37,7 @@ describe("createImportCommand", () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
   });
 
-  function run(...args: string[]) {
+  function run(...args: string[]): Promise<unknown> {
     const cmd = createImportCommand(mockImportTransactions, mockSeedMockData, mockRenderer);
     const program = new Command().addCommand(cmd);
     return program.parseAsync(["node", "tally", "import", ...args]);

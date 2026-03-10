@@ -10,7 +10,7 @@ export function parseFrenchDate(dateStr: string): DateOnly {
   const y = Number.parseInt(year, 10);
   const m = Number.parseInt(month, 10);
   const d = Number.parseInt(day, 10);
-  if (isNaN(y) || isNaN(m) || isNaN(d)) {
+  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) {
     throw new InvalidCsvData(`non-numeric date components in "${dateStr}"`);
   }
   return DateOnly.from(`${year}-${month}-${day}`);
@@ -19,7 +19,7 @@ export function parseFrenchDate(dateStr: string): DateOnly {
 export function parseEuroAmount(str: string): number {
   const cleaned = str.replaceAll(/\s/g, "").replace(",", ".");
   const value = Number.parseFloat(cleaned);
-  if (isNaN(value)) {
+  if (Number.isNaN(value)) {
     throw new InvalidCsvData(`expected numeric amount, got "${str}"`);
   }
   return value;

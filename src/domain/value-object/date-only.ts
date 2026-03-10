@@ -6,7 +6,7 @@ export class DateOnly {
   static from(input: string | Date): DateOnly {
     if (input instanceof Date) {
       if (Number.isNaN(input.getTime())) {
-        throw new Error("Invalid Date object");
+        throw new TypeError("Invalid Date object");
       }
       return new DateOnly(input.toISOString().slice(0, 10));
     }

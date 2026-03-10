@@ -47,12 +47,20 @@ describe("MonthlyReport", () => {
 
     const report = MonthlyReport.compute(budget, transactions);
 
-    const needs = report.groups.find((g) => g.group === CategoryGroup.NEEDS)!;
+    const needs = report.groups.find((g) => g.group === CategoryGroup.NEEDS);
+    expect(needs).toBeDefined();
+    if (!needs) {
+      return;
+    }
     expect(needs.budgeted.cents).toBe(80_000);
     expect(needs.actual.cents).toBe(80_000);
     expect(needs.delta.cents).toBe(0);
 
-    const wants = report.groups.find((g) => g.group === CategoryGroup.WANTS)!;
+    const wants = report.groups.find((g) => g.group === CategoryGroup.WANTS);
+    expect(wants).toBeDefined();
+    if (!wants) {
+      return;
+    }
     expect(wants.budgeted.cents).toBe(20_000);
     expect(wants.actual.cents).toBe(15_000);
     expect(wants.delta.cents).toBe(5000);
@@ -113,7 +121,11 @@ describe("MonthlyReport", () => {
   it("computes expense percentage against expense totals only", () => {
     const report = MonthlyReport.compute(budget, []);
 
-    const needs = report.groups.find((g) => g.group === CategoryGroup.NEEDS)!;
+    const needs = report.groups.find((g) => g.group === CategoryGroup.NEEDS);
+    expect(needs).toBeDefined();
+    if (!needs) {
+      return;
+    }
     // 800 / 1500 = 53.33%
     expect(needs.budgetedPercent).toBeCloseTo(53.33, 1);
   });
@@ -157,11 +169,19 @@ describe("MonthlyReport", () => {
     expect(report.totalExpenseActual.cents).toBe(80_000);
     expect(report.net.cents).toBe(170_000);
 
-    const income = report.groups.find((g) => g.group === CategoryGroup.INCOME)!;
+    const income = report.groups.find((g) => g.group === CategoryGroup.INCOME);
+    expect(income).toBeDefined();
+    if (!income) {
+      return;
+    }
     expect(income.budgetedPercent).toBe(100);
     expect(income.actualPercent).toBe(100);
 
-    const needs = report.groups.find((g) => g.group === CategoryGroup.NEEDS)!;
+    const needs = report.groups.find((g) => g.group === CategoryGroup.NEEDS);
+    expect(needs).toBeDefined();
+    if (!needs) {
+      return;
+    }
     expect(needs.budgetedPercent).toBe(100);
   });
 
@@ -186,7 +206,11 @@ describe("MonthlyReport", () => {
 
     const report = MonthlyReport.compute(customBudget, transactions);
 
-    const wants = report.groups.find((g) => g.group === CategoryGroup.WANTS)!;
+    const wants = report.groups.find((g) => g.group === CategoryGroup.WANTS);
+    expect(wants).toBeDefined();
+    if (!wants) {
+      return;
+    }
     expect(wants.actual.cents).toBe(5000);
     expect(report.uncategorized.cents).toBe(0);
   });
@@ -216,18 +240,30 @@ describe("MonthlyReport", () => {
 
       expect(report.categories).toHaveLength(3);
 
-      const rent = report.categories.find((c) => c.categoryId === "n01")!;
+      const rent = report.categories.find((c) => c.categoryId === "n01");
+      expect(rent).toBeDefined();
+      if (!rent) {
+        return;
+      }
       expect(rent.categoryName).toBe("Rent");
       expect(rent.group).toBe(CategoryGroup.NEEDS);
       expect(rent.budgeted.cents).toBe(80_000);
       expect(rent.actual.cents).toBe(75_000);
       expect(rent.delta.cents).toBe(5000);
 
-      const eating = report.categories.find((c) => c.categoryId === "w02")!;
+      const eating = report.categories.find((c) => c.categoryId === "w02");
+      expect(eating).toBeDefined();
+      if (!eating) {
+        return;
+      }
       expect(eating.actual.cents).toBe(12_000);
       expect(eating.delta.cents).toBe(8000);
 
-      const stock = report.categories.find((c) => c.categoryId === "i03")!;
+      const stock = report.categories.find((c) => c.categoryId === "i03");
+      expect(stock).toBeDefined();
+      if (!stock) {
+        return;
+      }
       expect(stock.actual.cents).toBe(0);
       expect(stock.delta.cents).toBe(50_000);
     });

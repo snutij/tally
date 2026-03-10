@@ -17,7 +17,7 @@ export class JsonRenderer implements Renderer {
     return data;
   }
 
-  private serializeBudget(budget: Budget) {
+  private serializeBudget(budget: Budget): Record<string, unknown> {
     return {
       month: budget.month,
       lines: budget.lines.map((line) => ({
@@ -28,7 +28,7 @@ export class JsonRenderer implements Renderer {
     };
   }
 
-  private serializeReport(report: MonthlyReport) {
+  private serializeReport(report: MonthlyReport): Record<string, unknown> {
     return {
       month: report.month,
       groups: report.groups,

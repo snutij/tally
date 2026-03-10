@@ -1,7 +1,6 @@
 import Database from "better-sqlite3";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
-import type { BudgetLine } from "../../domain/entity/budget.js";
-import { Budget } from "../../domain/entity/budget.js";
+import { Budget, type BudgetLine } from "../../domain/entity/budget.js";
 import type { Transaction } from "../../domain/entity/transaction.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
 import { DateOnly } from "../../domain/value-object/date-only.js";

@@ -17,7 +17,7 @@ describe("createBudgetCommand", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
-  function run(...args: string[]) {
+  function run(...args: string[]): Promise<unknown> {
     const cmd = createBudgetCommand(mockPlanBudget, mockRenderer);
     const program = new Command().addCommand(cmd);
     return program.parseAsync(["node", "tally", "budget", ...args]);

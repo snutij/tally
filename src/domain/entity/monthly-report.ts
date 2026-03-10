@@ -302,7 +302,7 @@ function pct(n: number, d: number): number {
   return Math.round((n / d) * 10_000) / 100;
 }
 
-function varianceOf(c: CategorySummary) {
+function varianceOf(c: CategorySummary): CategoryVarianceEntry {
   return {
     categoryId: c.categoryId,
     categoryName: c.categoryName,

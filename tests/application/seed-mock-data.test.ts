@@ -37,7 +37,10 @@ describe("SeedMockData", () => {
 
     const budget = planBudget.get(month);
     expect(budget).not.toBeNull();
-    expect(budget!.lines.some((l) => l.amount.cents > 0)).toBe(true);
+    if (!budget) {
+      return;
+    }
+    expect(budget.lines.some((l) => l.amount.cents > 0)).toBe(true);
   });
 
   it("skips budget creation when budget already exists", () => {

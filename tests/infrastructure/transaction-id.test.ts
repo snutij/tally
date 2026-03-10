@@ -8,16 +8,16 @@ describe("deterministicTransactionId", () => {
   });
 
   it("is deterministic — same input gives same output", () => {
-    const a = deterministicTransactionId("bank", "2026-03-01", "Rent", -80000, 0);
-    const b = deterministicTransactionId("bank", "2026-03-01", "Rent", -80000, 0);
+    const a = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 0);
+    const b = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 0);
     expect(a).toBe(b);
   });
 
   it("produces different IDs for different inputs", () => {
-    const a = deterministicTransactionId("bank", "2026-03-01", "Rent", -80000, 0);
-    const b = deterministicTransactionId("bank", "2026-03-01", "Rent", -80000, 1);
-    const c = deterministicTransactionId("bank", "2026-03-01", "Groceries", -80000, 0);
-    const d = deterministicTransactionId("other", "2026-03-01", "Rent", -80000, 0);
+    const a = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 0);
+    const b = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 1);
+    const c = deterministicTransactionId("bank", "2026-03-01", "Groceries", -80_000, 0);
+    const d = deterministicTransactionId("other", "2026-03-01", "Rent", -80_000, 0);
     expect(new Set([a, b, c, d]).size).toBe(4);
   });
 
@@ -27,7 +27,7 @@ describe("deterministicTransactionId", () => {
   });
 
   it("handles special characters in label", () => {
-    const id = deterministicTransactionId("bank", "2026-03-01", "Café résumé €100", -10000, 0);
+    const id = deterministicTransactionId("bank", "2026-03-01", "Café résumé €100", -10_000, 0);
     expect(id).toMatch(/^[0-9a-f]{32}$/);
   });
 });

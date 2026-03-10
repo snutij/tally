@@ -35,7 +35,7 @@ describe("createTransactionsCommand", () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
   });
 
-  function run(...args: string[]) {
+  function run(...args: string[]): Promise<unknown> {
     const cmd = createTransactionsCommand(mockTxnRepo, mockRenderer);
     const program = new Command().addCommand(cmd);
     return program.parseAsync(["node", "tally", "transactions", ...args]);
