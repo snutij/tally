@@ -1,13 +1,13 @@
 repos:
   - repo: local
     hooks:
-      - id: oxfmt
-        name: oxfmt (format check)
-        entry: npx oxfmt --check
+      - id: fmt
+        name: format check
+        entry: npm run fmt:check
         language: system
         pass_filenames: false
-      - id: oxlint
-        name: oxlint
-        entry: npx oxlint
+      - id: lint
+        name: lint
+        entry: npm run lint
         language: system
         pass_filenames: false
