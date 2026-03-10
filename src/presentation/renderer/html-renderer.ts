@@ -53,7 +53,7 @@ export class HtmlRenderer implements Renderer {
 
   private heroHeader(r: { month: unknown }, eyebrow: string): string {
     const [year, m] = `${r.month}`.split("-");
-    const monthName = MONTH_NAMES[Number.parseInt(m, 10) - 1] ?? m;
+    const monthName = MONTH_NAMES[Number.parseInt(m, 10) - 1];
     return `<header class="hero">
   <div class="hero-eyebrow">${esc(eyebrow)}</div>
   <h1 class="hero-month">${esc(monthName)} ${esc(year)}</h1>

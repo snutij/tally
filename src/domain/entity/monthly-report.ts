@@ -11,6 +11,11 @@ const EXPENSE_GROUPS: CategoryGroup[] = [
   CategoryGroup.INVESTMENTS,
 ];
 
+/** Get value from a pre-initialized map (all keys guaranteed present). */
+function mapGet<K, V>(map: Map<K, V>, key: K): V {
+  return map.get(key) as V;
+}
+
 export interface GroupSummary {
   readonly group: CategoryGroup;
   readonly budgeted: Money;
@@ -119,15 +124,15 @@ export class MonthlyReport {
       Money.zero(),
     );
     const totalExpenseActual = EXPENSE_GROUPS.reduce(
-      (sum, g) => sum.add(actualByGroup.get(g) ?? Money.zero()),
+      (sum, g) => sum.add(mapGet(actualByGroup, g)),
       Money.zero(),
     );
     const totalIncomeBudgeted = budget.totalByGroup(CategoryGroup.INCOME);
-    const totalIncomeActual = actualByGroup.get(CategoryGroup.INCOME) ?? Money.zero();
+    const totalIncomeActual = mapGet(actualByGroup, CategoryGroup.INCOME);
 
     const groups: GroupSummary[] = Object.values(CategoryGroup).map((group) => {
       const budgeted = budget.totalByGroup(group);
-      const actual = actualByGroup.get(group) ?? Money.zero();
+      const actual = mapGet(actualByGroup, group);
       const isIncome = group === CategoryGroup.INCOME;
       const typeBudgetTotal = isIncome ? totalIncomeBudgeted : totalExpenseBudgeted;
       const typeActualTotal = isIncome ? totalIncomeActual : totalExpenseActual;
@@ -213,7 +218,7 @@ function accumulateActuals(budget: Budget, transactions: Transaction[]): Actuals
     const group = txn.categoryId ? categoryGroupMap.get(txn.categoryId) : undefined;
     const absAmount = Money.fromCents(Math.abs(txn.amount.cents));
     if (group && txn.categoryId) {
-      const current = actualByGroup.get(group) ?? Money.zero();
+      const current = mapGet(actualByGroup, group);
       actualByGroup.set(group, current.add(absAmount));
       const prev = actualByCategory.get(txn.categoryId) ?? Money.zero();
       actualByCategory.set(txn.categoryId, prev.add(absAmount));
@@ -257,17 +262,11 @@ function computeKpis(ctx: {
     ? { investments: null, needs: null, wants: null }
     : {
         investments: pct(
-          (actualByGroup.get(CategoryGroup.INVESTMENTS) ?? Money.zero()).cents,
+          mapGet(actualByGroup, CategoryGroup.INVESTMENTS).cents,
           totalIncomeActual.cents,
         ),
-        needs: pct(
-          (actualByGroup.get(CategoryGroup.NEEDS) ?? Money.zero()).cents,
-          totalIncomeActual.cents,
-        ),
-        wants: pct(
-          (actualByGroup.get(CategoryGroup.WANTS) ?? Money.zero()).cents,
-          totalIncomeActual.cents,
-        ),
+        needs: pct(mapGet(actualByGroup, CategoryGroup.NEEDS).cents, totalIncomeActual.cents),
+        wants: pct(mapGet(actualByGroup, CategoryGroup.WANTS).cents, totalIncomeActual.cents),
       };
 
   const expenseLines = budget.lines.filter((l) => l.category.group !== CategoryGroup.INCOME);

@@ -116,6 +116,78 @@ describe("HtmlRenderer", () => {
     });
   });
 
+  describe("render(MonthlyReport) — insights edge cases", () => {
+    it("shows largest expenses but no top spending when all uncategorized", () => {
+      const incomeOnly = new Budget(Month.from("2026-03"), [
+        {
+          amount: Money.fromEuros(3000),
+          category: { group: CategoryGroup.INCOME, id: "inc01", name: "Salary" },
+        },
+      ]);
+      const uncatTxns = [
+        {
+          amount: Money.fromEuros(-200),
+          date: DateOnly.from("2026-03-05"),
+          id: "1",
+          label: "Mystery purchase",
+          sourceBank: "cm",
+        },
+      ];
+      const report = MonthlyReport.compute(incomeOnly, uncatTxns);
+      const html = renderer.render(report);
+      const body = html.split("<body>")[1];
+      expect(body).toContain("Largest Expenses");
+      expect(body).not.toContain("Top Spending");
+    });
+
+    it("shows top spending but no largest expenses when only refunds", () => {
+      const expenseBudget = new Budget(Month.from("2026-03"), [
+        {
+          amount: Money.fromEuros(800),
+          category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
+        },
+      ]);
+      // Positive amount categorized as expense = refund, adds to category actual but not largestExpenses
+      const refundTxns = [
+        {
+          amount: Money.fromEuros(100),
+          categoryId: "n01",
+          date: DateOnly.from("2026-03-05"),
+          id: "1",
+          label: "Rent refund",
+          sourceBank: "cm",
+        },
+      ];
+      const report = MonthlyReport.compute(expenseBudget, refundTxns);
+      const html = renderer.render(report);
+      const body = html.split("<body>")[1];
+      expect(body).toContain("Top Spending");
+      expect(body).not.toContain("Largest Expenses");
+    });
+  });
+
+  describe("render(Budget) — multiple lines per group", () => {
+    it("groups budget lines under the same group header", () => {
+      const multiLineBudget = new Budget(Month.from("2026-03"), [
+        {
+          amount: Money.fromEuros(800),
+          category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
+        },
+        {
+          amount: Money.fromEuros(200),
+          category: { group: CategoryGroup.NEEDS, id: "n02", name: "Groceries" },
+        },
+      ]);
+      const html = renderer.render(multiLineBudget);
+      const body = html.split("<body>")[1];
+      // Only one NEEDS group header, but both lines present
+      const needsMatches = body.match(/NEEDS/g);
+      expect(needsMatches).toHaveLength(1);
+      expect(body).toContain("Rent");
+      expect(body).toContain("Groceries");
+    });
+  });
+
   describe("render(MonthlyReport) — uncategorized", () => {
     it("shows uncategorized section when non-zero", () => {
       const uncatTxns = [
