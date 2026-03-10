@@ -100,6 +100,22 @@ describe("HtmlRenderer", () => {
     });
   });
 
+  describe("render(MonthlyReport) — no transactions", () => {
+    it("omits insights section when there are no expense transactions", () => {
+      const incomeOnly = new Budget(Month.from("2026-03"), [
+        {
+          amount: Money.fromEuros(3000),
+          category: { group: CategoryGroup.INCOME, id: "inc01", name: "Salary" },
+        },
+      ]);
+      const report = MonthlyReport.compute(incomeOnly, []);
+      const html = renderer.render(report);
+      const body = html.split("<body>")[1];
+      expect(body).not.toContain("Top Spending");
+      expect(body).not.toContain("Largest Expenses");
+    });
+  });
+
   describe("render(MonthlyReport) — uncategorized", () => {
     it("shows uncategorized section when non-zero", () => {
       const uncatTxns = [

@@ -747,9 +747,7 @@ const KPI_TOOLTIPS: Record<string, TooltipContent> = {
 
 function card(label: string, value: string, highlight = false): string {
   const tooltip = KPI_TOOLTIPS[label];
-  const tooltipHtml = tooltip
-    ? `<span class="kpi-help-wrap"><button class="kpi-help" aria-label="About ${esc(label)}" type="button">?</button><div class="kpi-tooltip" role="tooltip"><strong>${esc(tooltip.purpose)}</strong><br>${esc(tooltip.target)}<br><em>${esc(tooltip.tip)}</em></div></span>`
-    : "";
+  const tooltipHtml = `<span class="kpi-help-wrap"><button class="kpi-help" aria-label="About ${esc(label)}" type="button">?</button><div class="kpi-tooltip" role="tooltip"><strong>${esc(tooltip.purpose)}</strong><br>${esc(tooltip.target)}<br><em>${esc(tooltip.tip)}</em></div></span>`;
   return `<div class="kpi${highlight ? " kpi-highlight" : ""}">${tooltipHtml}<div class="kpi-value">${value}</div><div class="kpi-label">${label}</div></div>`;
 }
 
