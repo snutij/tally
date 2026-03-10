@@ -25,18 +25,18 @@ describe("GenerateReport", () => {
     const month = Month.from("2026-03");
     const budget = new Budget(month, [
       {
-        category: { id: "rent", name: "Rent", group: CategoryGroup.NEEDS },
         amount: Money.fromEuros(800),
+        category: { group: CategoryGroup.NEEDS, id: "rent", name: "Rent" },
       },
     ]);
     budgetRepo.save(budget);
     txnRepo.saveAll([
       {
-        id: "1",
-        date: DateOnly.from("2026-03-01"),
-        label: "Rent",
         amount: Money.fromEuros(-800),
         categoryId: "rent",
+        date: DateOnly.from("2026-03-01"),
+        id: "1",
+        label: "Rent",
         sourceBank: "test",
       },
     ]);
@@ -58,26 +58,26 @@ describe("GenerateReport", () => {
     budgetRepo.save(
       new Budget(march, [
         {
-          category: { id: "rent", name: "Rent", group: CategoryGroup.NEEDS },
           amount: Money.fromEuros(800),
+          category: { group: CategoryGroup.NEEDS, id: "rent", name: "Rent" },
         },
       ]),
     );
     txnRepo.saveAll([
       {
-        id: "1",
-        date: DateOnly.from("2026-03-01"),
-        label: "March Rent",
         amount: Money.fromEuros(-800),
         categoryId: "rent",
+        date: DateOnly.from("2026-03-01"),
+        id: "1",
+        label: "March Rent",
         sourceBank: "test",
       },
       {
-        id: "2",
-        date: DateOnly.from("2026-04-01"),
-        label: "April Rent",
         amount: Money.fromEuros(-800),
         categoryId: "rent",
+        date: DateOnly.from("2026-04-01"),
+        id: "2",
+        label: "April Rent",
         sourceBank: "test",
       },
     ]);
@@ -92,10 +92,10 @@ describe("GenerateReport", () => {
     budgetRepo.save(new Budget(month, []));
     txnRepo.saveAll([
       {
-        id: "1",
-        date: DateOnly.from("2026-03-15"),
-        label: "Mystery",
         amount: Money.fromEuros(-50),
+        date: DateOnly.from("2026-03-15"),
+        id: "1",
+        label: "Mystery",
         sourceBank: "test",
       },
     ]);

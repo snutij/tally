@@ -16,8 +16,8 @@ export class PlanBudget {
     const budget = new Budget(
       month,
       DEFAULT_CATEGORIES.map((category) => ({
-        category,
         amount: Money.zero(),
+        category,
       })),
     );
 

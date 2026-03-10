@@ -13,10 +13,10 @@ import { createTransactionsCommand } from "../../src/presentation/command/transa
 
 function txn(overrides: Partial<Transaction> = {}): Transaction {
   return {
-    id: "t1",
-    date: DateOnly.from("2026-03-15"),
-    label: "TEST",
     amount: Money.fromEuros(-42),
+    date: DateOnly.from("2026-03-15"),
+    id: "t1",
+    label: "TEST",
     sourceBank: "test",
     ...overrides,
   };
@@ -24,9 +24,9 @@ function txn(overrides: Partial<Transaction> = {}): Transaction {
 
 describe("createTransactionsCommand", () => {
   const mockTxnRepo = {
-    saveAll: vi.fn(),
     findByIds: vi.fn(),
     findByMonth: vi.fn(),
+    saveAll: vi.fn(),
   };
   const mockRenderer = { render: vi.fn((d: unknown) => JSON.stringify(d)) };
 

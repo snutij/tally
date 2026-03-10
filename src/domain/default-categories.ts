@@ -2,7 +2,7 @@ import type { Category } from "./entity/category.js";
 import { CategoryGroup } from "./value-object/category-group.js";
 
 function cat(id: string, name: string, group: CategoryGroup): Category {
-  return { id, name, group };
+  return { group, id, name };
 }
 
 const N = CategoryGroup.NEEDS;

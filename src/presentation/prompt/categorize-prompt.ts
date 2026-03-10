@@ -5,10 +5,10 @@ import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
 
 const GROUP_LABELS: Record<CategoryGroup, string> = {
+  INCOME: "— Income —",
+  INVESTMENTS: "— Investments —",
   NEEDS: "— Needs —",
   WANTS: "— Wants —",
-  INVESTMENTS: "— Investments —",
-  INCOME: "— Income —",
 };
 
 type Choice = { value: string; name: string } | { type: "separator"; separator: string };
@@ -17,14 +17,14 @@ export function buildCategoryChoices(): Choice[] {
   const choices: Choice[] = [];
 
   for (const group of Object.values(CategoryGroup)) {
-    choices.push({ type: "separator" as const, separator: GROUP_LABELS[group] });
+    choices.push({ separator: GROUP_LABELS[group], type: "separator" as const });
     for (const cat of DEFAULT_CATEGORIES.filter((c) => c.group === group)) {
-      choices.push({ value: cat.id, name: cat.name });
+      choices.push({ name: cat.name, value: cat.id });
     }
   }
 
-  choices.push({ type: "separator" as const, separator: "" });
-  choices.push({ value: "__skip__", name: "(skip)" });
+  choices.push({ separator: "", type: "separator" as const });
+  choices.push({ name: "(skip)", value: "__skip__" });
 
   return choices;
 }
@@ -39,15 +39,15 @@ export async function categorizePrompt(transactions: Transaction[]): Promise<Cat
   const result: Transaction[] = [];
 
   try {
-    for (let i = 0; i < transactions.length; i++) {
+    for (let i = 0; i < transactions.length; i += 1) {
       const txn = transactions[i];
       const sign = txn.amount.isNegative() ? "" : "+";
       const header = `${i + 1}/${transactions.length}  ${sign}${txn.amount.format()}  ${txn.label}  (${txn.date})`;
 
       const answer = await select({
-        message: header,
         choices,
         loop: true,
+        message: header,
       });
 
       if (answer === "__skip__") {

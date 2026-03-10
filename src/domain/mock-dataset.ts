@@ -2,160 +2,187 @@ import type { Transaction } from "./entity/transaction.js";
 import { DateOnly } from "./value-object/date-only.js";
 import { Money } from "./value-object/money.js";
 
+type DateFn = (day: number) => DateOnly;
+
+function incomeTransactions(prefix: string, d: DateFn, bank: string): Transaction[] {
+  return [
+    {
+      amount: Money.fromEuros(3200),
+      categoryId: "inc01",
+      date: d(1),
+      id: `${prefix}-inc-1`,
+      label: "Salary",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(750),
+      categoryId: "inc02",
+      date: d(15),
+      id: `${prefix}-inc-2`,
+      label: "Rental income",
+      sourceBank: bank,
+    },
+  ];
+}
+
+function needsTransactions(prefix: string, d: DateFn, bank: string): Transaction[] {
+  return [
+    {
+      amount: Money.fromEuros(-950),
+      categoryId: "n01",
+      date: d(1),
+      id: `${prefix}-n-1`,
+      label: "Rent payment",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-87.5),
+      categoryId: "n02",
+      date: d(3),
+      id: `${prefix}-n-2`,
+      label: "Groceries Carrefour",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-62.3),
+      categoryId: "n02",
+      date: d(10),
+      id: `${prefix}-n-3`,
+      label: "Groceries Lidl",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-85),
+      categoryId: "n12",
+      date: d(5),
+      id: `${prefix}-n-4`,
+      label: "EDF electricity",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-19.99),
+      categoryId: "n10",
+      date: d(5),
+      id: `${prefix}-n-5`,
+      label: "Mobile phone",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-120),
+      categoryId: "n06",
+      date: d(8),
+      id: `${prefix}-n-6`,
+      label: "Health insurance",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-65),
+      categoryId: "n07",
+      date: d(12),
+      id: `${prefix}-n-7`,
+      label: "Gas station",
+      sourceBank: bank,
+    },
+  ];
+}
+
+function wantsTransactions(prefix: string, d: DateFn, bank: string): Transaction[] {
+  return [
+    {
+      amount: Money.fromEuros(-45),
+      categoryId: "w02",
+      date: d(7),
+      id: `${prefix}-w-1`,
+      label: "Restaurant La Belle",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-22),
+      categoryId: "w03",
+      date: d(14),
+      id: `${prefix}-w-2`,
+      label: "Cinema tickets",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-13.49),
+      categoryId: "w06",
+      date: d(20),
+      id: `${prefix}-w-3`,
+      label: "Netflix subscription",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-67.8),
+      categoryId: "w01",
+      date: d(25),
+      id: `${prefix}-w-4`,
+      label: "Amazon shopping",
+      sourceBank: bank,
+    },
+  ];
+}
+
+function investmentTransactions(prefix: string, d: DateFn, bank: string): Transaction[] {
+  return [
+    {
+      amount: Money.fromEuros(-850),
+      categoryId: "i01",
+      date: d(2),
+      id: `${prefix}-i-1`,
+      label: "Mortgage repayment",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-200),
+      categoryId: "i03",
+      date: d(10),
+      id: `${prefix}-i-2`,
+      label: "ETF monthly buy",
+      sourceBank: bank,
+    },
+  ];
+}
+
+function uncategorizedTransactions(prefix: string, d: DateFn, bank: string): Transaction[] {
+  return [
+    {
+      amount: Money.fromEuros(-35),
+      date: d(18),
+      id: `${prefix}-u-1`,
+      label: "Unknown transfer",
+      sourceBank: bank,
+    },
+    {
+      amount: Money.fromEuros(-60),
+      date: d(22),
+      id: `${prefix}-u-2`,
+      label: "ATM withdrawal",
+      sourceBank: bank,
+    },
+  ];
+}
+
 /**
  * Pre-categorized mock transactions for a given month.
  * Category IDs reference DEFAULT_CATEGORIES (stable, never change).
  * Includes 2 uncategorized transactions for edge-case testing.
  */
 export function mockTransactions(year: number, month: number): Transaction[] {
-  const d = (day: number): DateOnly =>
-    DateOnly.from(`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
+  function d(day: number): DateOnly {
+    return DateOnly.from(
+      `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+    );
+  }
   const bank = "mock";
+  const prefix = `mock-${year}${month}`;
 
   return [
-    // INCOME
-    {
-      id: `mock-${year}${month}-inc-1`,
-      date: d(1),
-      label: "Salary",
-      amount: Money.fromEuros(3200),
-      categoryId: "inc01",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-inc-2`,
-      date: d(15),
-      label: "Rental income",
-      amount: Money.fromEuros(750),
-      categoryId: "inc02",
-      sourceBank: bank,
-    },
-
-    // NEEDS
-    {
-      id: `mock-${year}${month}-n-1`,
-      date: d(1),
-      label: "Rent payment",
-      amount: Money.fromEuros(-950),
-      categoryId: "n01",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-n-2`,
-      date: d(3),
-      label: "Groceries Carrefour",
-      amount: Money.fromEuros(-87.5),
-      categoryId: "n02",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-n-3`,
-      date: d(10),
-      label: "Groceries Lidl",
-      amount: Money.fromEuros(-62.3),
-      categoryId: "n02",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-n-4`,
-      date: d(5),
-      label: "EDF electricity",
-      amount: Money.fromEuros(-85),
-      categoryId: "n12",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-n-5`,
-      date: d(5),
-      label: "Mobile phone",
-      amount: Money.fromEuros(-19.99),
-      categoryId: "n10",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-n-6`,
-      date: d(8),
-      label: "Health insurance",
-      amount: Money.fromEuros(-120),
-      categoryId: "n06",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-n-7`,
-      date: d(12),
-      label: "Gas station",
-      amount: Money.fromEuros(-65),
-      categoryId: "n07",
-      sourceBank: bank,
-    },
-
-    // WANTS
-    {
-      id: `mock-${year}${month}-w-1`,
-      date: d(7),
-      label: "Restaurant La Belle",
-      amount: Money.fromEuros(-45),
-      categoryId: "w02",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-w-2`,
-      date: d(14),
-      label: "Cinema tickets",
-      amount: Money.fromEuros(-22),
-      categoryId: "w03",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-w-3`,
-      date: d(20),
-      label: "Netflix subscription",
-      amount: Money.fromEuros(-13.49),
-      categoryId: "w06",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-w-4`,
-      date: d(25),
-      label: "Amazon shopping",
-      amount: Money.fromEuros(-67.8),
-      categoryId: "w01",
-      sourceBank: bank,
-    },
-
-    // INVESTMENTS
-    {
-      id: `mock-${year}${month}-i-1`,
-      date: d(2),
-      label: "Mortgage repayment",
-      amount: Money.fromEuros(-850),
-      categoryId: "i01",
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-i-2`,
-      date: d(10),
-      label: "ETF monthly buy",
-      amount: Money.fromEuros(-200),
-      categoryId: "i03",
-      sourceBank: bank,
-    },
-
-    // UNCATEGORIZED
-    {
-      id: `mock-${year}${month}-u-1`,
-      date: d(18),
-      label: "Unknown transfer",
-      amount: Money.fromEuros(-35),
-      sourceBank: bank,
-    },
-    {
-      id: `mock-${year}${month}-u-2`,
-      date: d(22),
-      label: "ATM withdrawal",
-      amount: Money.fromEuros(-60),
-      sourceBank: bank,
-    },
+    ...incomeTransactions(prefix, d, bank),
+    ...needsTransactions(prefix, d, bank),
+    ...wantsTransactions(prefix, d, bank),
+    ...investmentTransactions(prefix, d, bank),
+    ...uncategorizedTransactions(prefix, d, bank),
   ];
 }
 
@@ -164,6 +191,9 @@ export function mockTransactions(year: number, month: number): Transaction[] {
  * Only includes categories used in mockTransactions.
  */
 export const MOCK_BUDGET_AMOUNTS: Record<string, number> = {
+  // INVESTMENTS
+  i01: 850,
+  i03: 200,
   // INCOME
   inc01: 3200,
   inc02: 750,
@@ -179,7 +209,4 @@ export const MOCK_BUDGET_AMOUNTS: Record<string, number> = {
   w02: 60,
   w03: 30,
   w06: 15,
-  // INVESTMENTS
-  i01: 850,
-  i03: 200,
 };

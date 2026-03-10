@@ -99,12 +99,12 @@ export class SqliteBudgetRepository implements BudgetRepository {
     }[];
 
     const lines: BudgetLine[] = lineRows.map((r) => ({
+      amount: Money.fromCents(r.amount_cents),
       category: {
+        group: assertCategoryGroup(r.group),
         id: r.category_id,
         name: r.name,
-        group: assertCategoryGroup(r.group),
       },
-      amount: Money.fromCents(r.amount_cents),
     }));
 
     return new Budget(month, lines);
@@ -159,11 +159,11 @@ export class SqliteTransactionRepository implements TransactionRepository {
     }[];
 
     return rows.map((r) => ({
-      id: r.id,
-      date: DateOnly.from(r.date),
-      label: r.label,
       amount: Money.fromCents(r.amount_cents),
       categoryId: r.category_id ?? undefined,
+      date: DateOnly.from(r.date),
+      id: r.id,
+      label: r.label,
       sourceBank: r.source_bank,
     }));
   }
@@ -185,11 +185,11 @@ export class SqliteTransactionRepository implements TransactionRepository {
     }[];
 
     return rows.map((r) => ({
-      id: r.id,
-      date: DateOnly.from(r.date),
-      label: r.label,
       amount: Money.fromCents(r.amount_cents),
       categoryId: r.category_id ?? undefined,
+      date: DateOnly.from(r.date),
+      id: r.id,
+      label: r.label,
       sourceBank: r.source_bank,
     }));
   }
@@ -205,8 +205,8 @@ export function openDatabase(dbPath: string): {
   db.pragma("foreign_keys = ON");
   migrate(db);
   return {
-    db,
     budgetRepo: new SqliteBudgetRepository(db),
+    db,
     txnRepo: new SqliteTransactionRepository(db),
   };
 }

@@ -19,28 +19,28 @@ export class JsonRenderer implements Renderer {
 
   private serializeBudget(budget: Budget): Record<string, unknown> {
     return {
-      month: budget.month,
       lines: budget.lines.map((line) => ({
-        category: line.category,
         amount: line.amount,
+        category: line.category,
       })),
+      month: budget.month,
       total: budget.total(),
     };
   }
 
   private serializeReport(report: MonthlyReport): Record<string, unknown> {
     return {
-      month: report.month,
-      groups: report.groups,
       categories: report.categories,
-      uncategorized: report.uncategorized,
-      totalIncomeBudgeted: report.totalIncomeBudgeted,
-      totalIncomeActual: report.totalIncomeActual,
-      totalExpenseBudgeted: report.totalExpenseBudgeted,
-      totalExpenseActual: report.totalExpenseActual,
-      net: report.net,
-      transactionCount: report.transactionCount,
+      groups: report.groups,
       kpis: report.kpis,
+      month: report.month,
+      net: report.net,
+      totalExpenseActual: report.totalExpenseActual,
+      totalExpenseBudgeted: report.totalExpenseBudgeted,
+      totalIncomeActual: report.totalIncomeActual,
+      totalIncomeBudgeted: report.totalIncomeBudgeted,
+      transactionCount: report.transactionCount,
+      uncategorized: report.uncategorized,
     };
   }
 }

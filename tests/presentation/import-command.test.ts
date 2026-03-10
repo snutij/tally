@@ -13,10 +13,10 @@ import { createImportCommand } from "../../src/presentation/command/import-comma
 
 function txn(overrides: Partial<Transaction> = {}): Transaction {
   return {
-    id: "t1",
-    date: DateOnly.from("2026-03-15"),
-    label: "TEST",
     amount: Money.fromEuros(-42),
+    date: DateOnly.from("2026-03-15"),
+    id: "t1",
+    label: "TEST",
     sourceBank: "test",
     ...overrides,
   };
@@ -26,8 +26,8 @@ describe("createImportCommand", () => {
   const mockImportTransactions = {
     listBanks: vi.fn(),
     parse: vi.fn(),
-    splitByCategoryStatus: vi.fn(),
     save: vi.fn(),
+    splitByCategoryStatus: vi.fn(),
   };
   const mockSeedMockData = { execute: vi.fn() };
   const mockRenderer = { render: vi.fn((d: unknown) => JSON.stringify(d)) };
@@ -111,7 +111,7 @@ describe("createImportCommand", () => {
   });
 
   it("skips already-categorized transactions and logs count", async () => {
-    const t1 = txn({ id: "t1", categoryId: "n01" });
+    const t1 = txn({ categoryId: "n01", id: "t1" });
     const t2 = txn({ id: "t2" });
     mockImportTransactions.parse.mockReturnValue([t1, t2]);
     mockImportTransactions.splitByCategoryStatus.mockReturnValue({
@@ -137,8 +137,8 @@ describe("createImportCommand", () => {
 
   it("mock subcommand seeds data with explicit month", async () => {
     mockSeedMockData.execute.mockReturnValue({
-      transactionCount: 17,
       budgetCreated: true,
+      transactionCount: 17,
     });
     await run("mock", "2026-03");
     expect(mockSeedMockData.execute).toHaveBeenCalled();
@@ -147,8 +147,8 @@ describe("createImportCommand", () => {
 
   it("mock subcommand defaults to current month", async () => {
     mockSeedMockData.execute.mockReturnValue({
-      transactionCount: 17,
       budgetCreated: true,
+      transactionCount: 17,
     });
     await run("mock");
     expect(mockSeedMockData.execute).toHaveBeenCalled();

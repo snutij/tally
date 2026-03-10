@@ -15,19 +15,19 @@
     "no-ternary": "off",
     "no-inline-comments": "off",
     "no-undefined": "off",
-    "no-plusplus": "off",
+    "no-plusplus": "error",
     "no-empty-function": "off",
     "no-await-in-loop": "off",
     "capitalized-comments": "off",
-    "sort-keys": "off",
+    "sort-keys": "error",
     "init-declarations": "off",
     "max-lines": "off",
-    "max-lines-per-function": "off",
+    "max-lines-per-function": ["error", { "max": 100 }],
     "max-statements": "off",
-    "max-params": "off",
+    "max-params": ["error", { "max": 5 }],
     "max-classes-per-file": "off",
     "no-undef": "off",
-    "func-style": "off",
+    "func-style": ["error", "declaration"],
     "oxc/no-async-await": "off",
     "oxc/no-rest-spread-properties": "off",
     "oxc/no-optional-chaining": "off",
@@ -41,5 +41,13 @@
     "unicorn/prefer-string-replace-all": "error",
     "unicorn/numeric-separators-style": "error",
     "unicorn/prefer-type-error": "error"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["tests/**"],
+      "rules": {
+        "max-lines-per-function": "off"
+      }
+    }
+  ]
 }

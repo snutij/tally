@@ -6,8 +6,8 @@ import { Month } from "../../src/domain/value-object/month.js";
 
 describe("createBudgetCommand", () => {
   const mockPlanBudget = {
-    initFromDefaults: vi.fn(),
     get: vi.fn(),
+    initFromDefaults: vi.fn(),
   };
   const mockRenderer = { render: vi.fn((d: unknown) => JSON.stringify(d)) };
 

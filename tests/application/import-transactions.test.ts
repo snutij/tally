@@ -12,17 +12,17 @@ class StubImporter implements BankImportGateway {
   parse(_filePath: string): Transaction[] {
     return [
       {
-        id: "tx-1",
-        date: DateOnly.from("2026-03-01"),
-        label: "Test transaction",
         amount: Money.fromEuros(-42.5),
+        date: DateOnly.from("2026-03-01"),
+        id: "tx-1",
+        label: "Test transaction",
         sourceBank: "test-bank",
       },
       {
-        id: "tx-2",
-        date: DateOnly.from("2026-03-15"),
-        label: "Another transaction",
         amount: Money.fromEuros(-10),
+        date: DateOnly.from("2026-03-15"),
+        id: "tx-2",
+        label: "Another transaction",
         sourceBank: "test-bank",
       },
     ];

@@ -13,6 +13,6 @@ describe("createRenderer", () => {
   });
 
   it("throws on unknown format", () => {
-    expect(() => createRenderer("foo")).toThrow('Unknown format "foo". Valid formats: json, html');
+    expect(() => createRenderer("foo")).toThrow('Unknown format "foo". Valid formats: html, json');
   });
 });

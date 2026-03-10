@@ -39,8 +39,8 @@ describe("SqliteRepository", () => {
     it("saves and retrieves a budget", () => {
       const budget = new Budget(month, [
         {
-          category: { id: "rent", name: "Rent", group: CategoryGroup.NEEDS },
           amount: Money.fromEuros(800),
+          category: { group: CategoryGroup.NEEDS, id: "rent", name: "Rent" },
         },
       ]);
 
@@ -86,17 +86,17 @@ describe("SqliteRepository", () => {
     it("saves and retrieves transactions by month", () => {
       txnRepo.saveAll([
         {
-          id: "tx-1",
-          date: DateOnly.from("2026-03-01"),
-          label: "Rent",
           amount: Money.fromEuros(-800),
+          date: DateOnly.from("2026-03-01"),
+          id: "tx-1",
+          label: "Rent",
           sourceBank: "credit-mutuel",
         },
         {
-          id: "tx-2",
-          date: DateOnly.from("2026-04-01"),
-          label: "Rent April",
           amount: Money.fromEuros(-800),
+          date: DateOnly.from("2026-04-01"),
+          id: "tx-2",
+          label: "Rent April",
           sourceBank: "credit-mutuel",
         },
       ]);

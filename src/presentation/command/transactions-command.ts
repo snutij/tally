@@ -7,11 +7,11 @@ import { categorizePrompt } from "../prompt/categorize-prompt.js";
 
 function serializeTransaction(txn: Transaction): Record<string, unknown> {
   return {
-    id: txn.id,
-    date: txn.date,
-    label: txn.label,
     amount: txn.amount.toEuros(),
     categoryId: txn.categoryId ?? null,
+    date: txn.date,
+    id: txn.id,
+    label: txn.label,
     sourceBank: txn.sourceBank,
   };
 }

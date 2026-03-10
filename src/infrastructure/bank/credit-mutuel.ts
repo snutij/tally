@@ -38,10 +38,10 @@ export class CreditMutuelImporter implements BankImportGateway {
       seen.set(key, seq + 1);
 
       return {
-        id: deterministicTransactionId(this.bankName, isoDate, label, amount.cents, seq),
-        date,
-        label,
         amount,
+        date,
+        id: deterministicTransactionId(this.bankName, isoDate, label, amount.cents, seq),
+        label,
         sourceBank: this.bankName,
       };
     });

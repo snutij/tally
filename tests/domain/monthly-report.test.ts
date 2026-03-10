@@ -12,35 +12,35 @@ describe("MonthlyReport", () => {
 
   const budget = new Budget(month, [
     {
-      category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
       amount: Money.fromEuros(800),
+      category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
     },
     {
-      category: { id: "w02", name: "Eating out", group: CategoryGroup.WANTS },
       amount: Money.fromEuros(200),
+      category: { group: CategoryGroup.WANTS, id: "w02", name: "Eating out" },
     },
     {
-      category: { id: "i03", name: "Stock market", group: CategoryGroup.INVESTMENTS },
       amount: Money.fromEuros(500),
+      category: { group: CategoryGroup.INVESTMENTS, id: "i03", name: "Stock market" },
     },
   ]);
 
   it("computes totals per group with matching transactions", () => {
     const transactions: Transaction[] = [
       {
-        id: "1",
-        date: DateOnly.from("2026-03-01"),
-        label: "Rent March",
         amount: Money.fromEuros(-800),
         categoryId: "n01",
+        date: DateOnly.from("2026-03-01"),
+        id: "1",
+        label: "Rent March",
         sourceBank: "credit-mutuel",
       },
       {
-        id: "2",
-        date: DateOnly.from("2026-03-15"),
-        label: "Restaurant",
         amount: Money.fromEuros(-150),
         categoryId: "w02",
+        date: DateOnly.from("2026-03-15"),
+        id: "2",
+        label: "Restaurant",
         sourceBank: "credit-mutuel",
       },
     ];
@@ -75,18 +75,18 @@ describe("MonthlyReport", () => {
   it("tracks uncategorized transactions separately", () => {
     const transactions: Transaction[] = [
       {
-        id: "1",
-        date: DateOnly.from("2026-03-05"),
-        label: "Unknown store",
         amount: Money.fromEuros(-75),
+        date: DateOnly.from("2026-03-05"),
+        id: "1",
+        label: "Unknown store",
         sourceBank: "credit-mutuel",
       },
       {
-        id: "2",
-        date: DateOnly.from("2026-03-10"),
-        label: "Rent March",
         amount: Money.fromEuros(-800),
         categoryId: "n01",
+        date: DateOnly.from("2026-03-10"),
+        id: "2",
+        label: "Rent March",
         sourceBank: "credit-mutuel",
       },
     ];
@@ -133,30 +133,30 @@ describe("MonthlyReport", () => {
   it("separates income from expenses in totals", () => {
     const budgetWithIncome = new Budget(month, [
       {
-        category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
         amount: Money.fromEuros(800),
+        category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
       },
       {
-        category: { id: "inc01", name: "Salary", group: CategoryGroup.INCOME },
         amount: Money.fromEuros(2500),
+        category: { group: CategoryGroup.INCOME, id: "inc01", name: "Salary" },
       },
     ]);
 
     const transactions: Transaction[] = [
       {
-        id: "1",
-        date: DateOnly.from("2026-03-01"),
-        label: "Rent March",
         amount: Money.fromEuros(-800),
         categoryId: "n01",
+        date: DateOnly.from("2026-03-01"),
+        id: "1",
+        label: "Rent March",
         sourceBank: "credit-mutuel",
       },
       {
-        id: "2",
-        date: DateOnly.from("2026-03-05"),
-        label: "Salary",
         amount: Money.fromEuros(2500),
         categoryId: "inc01",
+        date: DateOnly.from("2026-03-05"),
+        id: "2",
+        label: "Salary",
         sourceBank: "credit-mutuel",
       },
     ];
@@ -188,18 +188,18 @@ describe("MonthlyReport", () => {
   it("uses budget categories for group mapping, not hardcoded defaults", () => {
     const customBudget = new Budget(month, [
       {
-        category: { id: "custom-1", name: "Custom", group: CategoryGroup.WANTS },
         amount: Money.fromEuros(100),
+        category: { group: CategoryGroup.WANTS, id: "custom-1", name: "Custom" },
       },
     ]);
 
     const transactions: Transaction[] = [
       {
-        id: "1",
-        date: DateOnly.from("2026-03-01"),
-        label: "Custom purchase",
         amount: Money.fromEuros(-50),
         categoryId: "custom-1",
+        date: DateOnly.from("2026-03-01"),
+        id: "1",
+        label: "Custom purchase",
         sourceBank: "test",
       },
     ];
@@ -219,19 +219,19 @@ describe("MonthlyReport", () => {
     it("computes per-category summary from budget and transactions", () => {
       const transactions: Transaction[] = [
         {
-          id: "1",
-          date: DateOnly.from("2026-03-01"),
-          label: "Rent",
           amount: Money.fromEuros(-750),
           categoryId: "n01",
+          date: DateOnly.from("2026-03-01"),
+          id: "1",
+          label: "Rent",
           sourceBank: "cm",
         },
         {
-          id: "2",
-          date: DateOnly.from("2026-03-10"),
-          label: "Dinner",
           amount: Money.fromEuros(-120),
           categoryId: "w02",
+          date: DateOnly.from("2026-03-10"),
+          id: "2",
+          label: "Dinner",
           sourceBank: "cm",
         },
       ];
@@ -278,77 +278,77 @@ describe("MonthlyReport", () => {
   describe("kpis", () => {
     const budgetWithIncome = new Budget(month, [
       {
-        category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
         amount: Money.fromEuros(800),
+        category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
       },
       {
-        category: { id: "n02", name: "Groceries", group: CategoryGroup.NEEDS },
         amount: Money.fromEuros(400),
+        category: { group: CategoryGroup.NEEDS, id: "n02", name: "Groceries" },
       },
       {
-        category: { id: "w01", name: "Eating out", group: CategoryGroup.WANTS },
         amount: Money.fromEuros(200),
+        category: { group: CategoryGroup.WANTS, id: "w01", name: "Eating out" },
       },
       {
+        amount: Money.fromEuros(500),
         category: {
+          group: CategoryGroup.INVESTMENTS,
           id: "i01",
           name: "Stock market",
-          group: CategoryGroup.INVESTMENTS,
         },
-        amount: Money.fromEuros(500),
       },
       {
-        category: { id: "inc01", name: "Salary", group: CategoryGroup.INCOME },
         amount: Money.fromEuros(3000),
+        category: { group: CategoryGroup.INCOME, id: "inc01", name: "Salary" },
       },
     ]);
 
     const fullTransactions: Transaction[] = [
       {
-        id: "1",
-        date: DateOnly.from("2026-03-01"),
-        label: "Salary",
         amount: Money.fromEuros(3000),
         categoryId: "inc01",
+        date: DateOnly.from("2026-03-01"),
+        id: "1",
+        label: "Salary",
         sourceBank: "cm",
       },
       {
-        id: "2",
-        date: DateOnly.from("2026-03-02"),
-        label: "Rent",
         amount: Money.fromEuros(-800),
         categoryId: "n01",
+        date: DateOnly.from("2026-03-02"),
+        id: "2",
+        label: "Rent",
         sourceBank: "cm",
       },
       {
-        id: "3",
-        date: DateOnly.from("2026-03-05"),
-        label: "Groceries",
         amount: Money.fromEuros(-350),
         categoryId: "n02",
+        date: DateOnly.from("2026-03-05"),
+        id: "3",
+        label: "Groceries",
         sourceBank: "cm",
       },
       {
-        id: "4",
-        date: DateOnly.from("2026-03-10"),
-        label: "Restaurant",
         amount: Money.fromEuros(-150),
         categoryId: "w01",
+        date: DateOnly.from("2026-03-10"),
+        id: "4",
+        label: "Restaurant",
         sourceBank: "cm",
       },
       {
-        id: "5",
-        date: DateOnly.from("2026-03-15"),
-        label: "ETF",
         amount: Money.fromEuros(-300),
         categoryId: "i01",
+        date: DateOnly.from("2026-03-15"),
+        id: "5",
+        label: "ETF",
         sourceBank: "cm",
       },
       {
-        id: "6",
-        date: DateOnly.from("2026-03-20"),
-        label: "Mystery",
         amount: Money.fromEuros(-50),
+        date: DateOnly.from("2026-03-20"),
+        id: "6",
+        label: "Mystery",
         sourceBank: "cm",
       },
     ];
@@ -388,11 +388,11 @@ describe("MonthlyReport", () => {
     it("computes adherence with overruns", () => {
       const txns: Transaction[] = [
         {
-          id: "1",
-          date: DateOnly.from("2026-03-01"),
-          label: "Rent",
           amount: Money.fromEuros(-900),
           categoryId: "n01",
+          date: DateOnly.from("2026-03-01"),
+          id: "1",
+          label: "Rent",
           sourceBank: "cm",
         },
       ];
@@ -420,12 +420,12 @@ describe("MonthlyReport", () => {
     it("returns empty top spending for no expense categories", () => {
       const incomeBudget = new Budget(month, [
         {
+          amount: Money.fromEuros(3000),
           category: {
+            group: CategoryGroup.INCOME,
             id: "inc01",
             name: "Salary",
-            group: CategoryGroup.INCOME,
           },
-          amount: Money.fromEuros(3000),
         },
       ]);
       const report = MonthlyReport.compute(incomeBudget, []);
@@ -457,11 +457,11 @@ describe("MonthlyReport", () => {
     it("returns empty largest expenses when all income", () => {
       const txns: Transaction[] = [
         {
-          id: "1",
-          date: DateOnly.from("2026-03-01"),
-          label: "Salary",
           amount: Money.fromEuros(3000),
           categoryId: "inc01",
+          date: DateOnly.from("2026-03-01"),
+          id: "1",
+          label: "Salary",
           sourceBank: "cm",
         },
       ];
@@ -483,19 +483,19 @@ describe("MonthlyReport", () => {
     it("computes category variance overruns and underruns", () => {
       const txns: Transaction[] = [
         {
-          id: "1",
-          date: DateOnly.from("2026-03-01"),
-          label: "Rent",
           amount: Money.fromEuros(-900),
           categoryId: "n01",
+          date: DateOnly.from("2026-03-01"),
+          id: "1",
+          label: "Rent",
           sourceBank: "cm",
         },
         {
-          id: "2",
-          date: DateOnly.from("2026-03-05"),
-          label: "Dinner",
           amount: Money.fromEuros(-50),
           categoryId: "w02",
+          date: DateOnly.from("2026-03-05"),
+          id: "2",
+          label: "Dinner",
           sourceBank: "cm",
         },
       ];
@@ -522,12 +522,12 @@ describe("MonthlyReport", () => {
     it("returns null adherence rate for income-only budget", () => {
       const incomeBudget = new Budget(month, [
         {
+          amount: Money.fromEuros(3000),
           category: {
+            group: CategoryGroup.INCOME,
             id: "inc01",
             name: "Salary",
-            group: CategoryGroup.INCOME,
           },
-          amount: Money.fromEuros(3000),
         },
       ]);
       const report = MonthlyReport.compute(incomeBudget, []);

@@ -12,10 +12,10 @@ vi.mock("@inquirer/core", () => ({
 
 function txn(overrides: Partial<Transaction> = {}): Transaction {
   return {
-    id: "t1",
-    date: DateOnly.from("2026-01-15"),
-    label: "TEST",
     amount: Money.fromEuros(-42),
+    date: DateOnly.from("2026-01-15"),
+    id: "t1",
+    label: "TEST",
     sourceBank: "test",
     ...overrides,
   };

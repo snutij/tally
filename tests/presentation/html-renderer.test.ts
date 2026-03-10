@@ -12,30 +12,30 @@ describe("HtmlRenderer", () => {
 
   const budget = new Budget(Month.from("2026-03"), [
     {
-      category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
       amount: Money.fromEuros(800),
+      category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
     },
     {
-      category: { id: "inc01", name: "Salary", group: CategoryGroup.INCOME },
       amount: Money.fromEuros(3000),
+      category: { group: CategoryGroup.INCOME, id: "inc01", name: "Salary" },
     },
   ]);
 
   const txns = [
     {
-      id: "1",
-      date: DateOnly.from("2026-03-01"),
-      label: "Salary",
       amount: Money.fromEuros(3000),
       categoryId: "inc01",
+      date: DateOnly.from("2026-03-01"),
+      id: "1",
+      label: "Salary",
       sourceBank: "cm",
     },
     {
-      id: "2",
-      date: DateOnly.from("2026-03-02"),
-      label: "Rent",
       amount: Money.fromEuros(-750),
       categoryId: "n01",
+      date: DateOnly.from("2026-03-02"),
+      id: "2",
+      label: "Rent",
       sourceBank: "cm",
     },
   ];
@@ -89,11 +89,11 @@ describe("HtmlRenderer", () => {
     it("shows uncategorized section when non-zero", () => {
       const uncatTxns = [
         {
-          id: "3",
-          date: DateOnly.from("2026-03-05"),
-          label: "Mystery",
           amount: Money.fromEuros(-100),
           categoryId: undefined,
+          date: DateOnly.from("2026-03-05"),
+          id: "3",
+          label: "Mystery",
           sourceBank: "cm",
         },
       ];

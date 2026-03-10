@@ -242,7 +242,27 @@ export class HtmlRenderer implements Renderer {
 <meta name="theme-color" content="#0d1017">
 <title>${esc(title)}</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@300;400;500;600&display=swap');
+${this.cssBase()}
+${this.cssHero()}
+${this.cssHeadings()}
+${this.cssKpiGrid()}
+${this.cssAllocationBar()}
+${this.cssTables()}
+${this.cssInsights()}
+${this.cssUncategorized()}
+${this.cssFooter()}
+${this.cssPre()}
+${this.cssPrint()}
+</style>
+</head>
+<body>
+${body}
+</body>
+</html>`;
+  }
+
+  private cssBase(): string {
+    return `@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@300;400;500;600&display=swap');
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -296,9 +316,11 @@ body > :nth-child(6) { animation-delay: 0.24s; }
 body > :nth-child(7) { animation-delay: 0.30s; }
 body > :nth-child(8) { animation-delay: 0.36s; }
 body > :nth-child(9) { animation-delay: 0.42s; }
-body > :nth-child(10) { animation-delay: 0.48s; }
+body > :nth-child(10) { animation-delay: 0.48s; }`;
+  }
 
-/* ── Hero ── */
+  private cssHero(): string {
+    return `/* ── Hero ── */
 .hero {
   margin-bottom: 2.5rem;
   padding-bottom: 2rem;
@@ -320,9 +342,11 @@ body > :nth-child(10) { animation-delay: 0.48s; }
   line-height: 1.1;
   margin-top: 0.2rem;
   color: var(--text);
-}
+}`;
+  }
 
-/* ── Section headings ── */
+  private cssHeadings(): string {
+    return `/* ── Section headings ── */
 h2 {
   font-family: var(--font-body);
   font-size: 0.68rem;
@@ -333,9 +357,11 @@ h2 {
   margin-bottom: 1.2rem;
 }
 
-section { margin-bottom: 2.5rem; }
+section { margin-bottom: 2.5rem; }`;
+  }
 
-/* ── KPI Grid ── */
+  private cssKpiGrid(): string {
+    return `/* ── KPI Grid ── */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -368,9 +394,11 @@ section { margin-bottom: 2.5rem; }
 .kpi-highlight .kpi-value {
   font-size: 2rem;
   color: var(--accent);
-}
+}`;
+  }
 
-/* ── Allocation Bar ── */
+  private cssAllocationBar(): string {
+    return `/* ── Allocation Bar ── */
 .allocation { margin-top: 1.4rem; }
 .alloc-title {
   font-size: 0.65rem;
@@ -409,9 +437,11 @@ section { margin-bottom: 2.5rem; }
 }
 .legend-needs::before { background: var(--blue); }
 .legend-wants::before { background: var(--purple); }
-.legend-inv::before { background: var(--accent); }
+.legend-inv::before { background: var(--accent); }`;
+  }
 
-/* ── Tables ── */
+  private cssTables(): string {
+    return `/* ── Tables ── */
 table { width: 100%; border-collapse: collapse; }
 thead th {
   font-family: var(--font-body);
@@ -463,9 +493,11 @@ tfoot th, tfoot td {
   border-bottom: none;
 }
 .under-budget { color: var(--green); }
-.over-budget { color: var(--red); }
+.over-budget { color: var(--red); }`;
+  }
 
-/* ── Insights ── */
+  private cssInsights(): string {
+    return `/* ── Insights ── */
 .insights-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -512,9 +544,11 @@ tfoot th, tfoot td {
   color: var(--text-secondary);
   flex-shrink: 0;
   margin-left: 0.75rem;
-}
+}`;
+  }
 
-/* ── Uncategorized ── */
+  private cssUncategorized(): string {
+    return `/* ── Uncategorized ── */
 .uncategorized {
   background: rgba(212, 84, 78, 0.07);
   border: 1px solid rgba(212, 84, 78, 0.18);
@@ -531,9 +565,11 @@ tfoot th, tfoot td {
   background: var(--red);
   flex-shrink: 0;
 }
-.uncategorized p { font-size: 0.85rem; }
+.uncategorized p { font-size: 0.85rem; }`;
+  }
 
-/* ── Footer ── */
+  private cssFooter(): string {
+    return `/* ── Footer ── */
 .footer-totals {
   border-top: 1px solid var(--border);
   padding-top: 2rem;
@@ -569,9 +605,11 @@ tfoot th, tfoot td {
   color: var(--text-dim);
   letter-spacing: 0.15em;
   text-transform: uppercase;
-}
+}`;
+  }
 
-pre {
+  private cssPre(): string {
+    return `pre {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   background: var(--bg-card);
@@ -581,9 +619,11 @@ pre {
   overflow-x: auto;
   line-height: 1.65;
   color: var(--text-secondary);
-}
+}`;
+  }
 
-/* ── Print ── */
+  private cssPrint(): string {
+    return `/* ── Print ── */
 @media print {
   body { background: #fff; color: #1a1a1a; padding: 1rem; }
   body::before { display: none; }
@@ -601,13 +641,7 @@ pre {
   td, thead th { border-color: #e5e7eb; }
   .num, .insight-value { color: #333; }
   .attribution { display: none; }
-}
-</style>
-</head>
-<body>
-${body}
-</body>
-</html>`;
+}`;
   }
 }
 

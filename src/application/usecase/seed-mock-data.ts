@@ -21,14 +21,14 @@ export class SeedMockData {
       const budget = new Budget(
         month,
         DEFAULT_CATEGORIES.map((category) => ({
-          category,
           amount: Money.fromEuros(MOCK_BUDGET_AMOUNTS[category.id] ?? 0),
+          category,
         })),
       );
       this.budgetRepo.save(budget);
       budgetCreated = true;
     }
 
-    return { transactionCount: txns.length, budgetCreated };
+    return { budgetCreated, transactionCount: txns.length };
   }
 }

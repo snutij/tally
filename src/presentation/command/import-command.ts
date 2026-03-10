@@ -29,10 +29,10 @@ export function createImportCommand(
       const result = seedMockData.execute(month);
       console.log(
         renderer.render({
+          budgetCreated: result.budgetCreated,
           mock: true,
           month: month.value,
           transactionCount: result.transactionCount,
-          budgetCreated: result.budgetCreated,
         }),
       );
     });

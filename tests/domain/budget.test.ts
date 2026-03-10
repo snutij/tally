@@ -9,20 +9,20 @@ describe("Budget", () => {
 
   const lines = [
     {
-      category: { id: "rent", name: "Rent", group: CategoryGroup.NEEDS },
       amount: Money.fromEuros(800),
+      category: { group: CategoryGroup.NEEDS, id: "rent", name: "Rent" },
     },
     {
-      category: { id: "groceries", name: "Groceries", group: CategoryGroup.NEEDS },
       amount: Money.fromEuros(400),
+      category: { group: CategoryGroup.NEEDS, id: "groceries", name: "Groceries" },
     },
     {
-      category: { id: "dining-out", name: "Dining out", group: CategoryGroup.WANTS },
       amount: Money.fromEuros(150),
+      category: { group: CategoryGroup.WANTS, id: "dining-out", name: "Dining out" },
     },
     {
-      category: { id: "pea", name: "PEA", group: CategoryGroup.INVESTMENTS },
       amount: Money.fromEuros(200),
+      category: { group: CategoryGroup.INVESTMENTS, id: "pea", name: "PEA" },
     },
   ];
 

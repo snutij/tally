@@ -13,8 +13,8 @@ describe("JsonRenderer", () => {
   it("serializes a Budget", () => {
     const budget = new Budget(Month.from("2026-03"), [
       {
-        category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
         amount: Money.fromEuros(800),
+        category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
       },
     ]);
     const parsed = JSON.parse(renderer.render(budget));
@@ -27,12 +27,12 @@ describe("JsonRenderer", () => {
   it("serializes a MonthlyReport", () => {
     const budget = new Budget(Month.from("2026-03"), [
       {
-        category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
         amount: Money.fromEuros(800),
+        category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
       },
       {
-        category: { id: "inc01", name: "Salary", group: CategoryGroup.INCOME },
         amount: Money.fromEuros(2500),
+        category: { group: CategoryGroup.INCOME, id: "inc01", name: "Salary" },
       },
     ]);
     const report = MonthlyReport.compute(budget, []);
@@ -46,17 +46,17 @@ describe("JsonRenderer", () => {
   it("serializes categories in report output", () => {
     const budget = new Budget(Month.from("2026-03"), [
       {
-        category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
         amount: Money.fromEuros(800),
+        category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
       },
     ]);
     const txns = [
       {
-        id: "1",
-        date: DateOnly.from("2026-03-01"),
-        label: "Rent",
         amount: Money.fromEuros(-750),
         categoryId: "n01",
+        date: DateOnly.from("2026-03-01"),
+        id: "1",
+        label: "Rent",
         sourceBank: "cm",
       },
     ];
@@ -65,41 +65,41 @@ describe("JsonRenderer", () => {
 
     expect(parsed.categories).toHaveLength(1);
     expect(parsed.categories[0]).toEqual({
+      actual: 750,
+      budgeted: 800,
       categoryId: "n01",
       categoryName: "Rent",
-      group: "NEEDS",
-      budgeted: 800,
-      actual: 750,
       delta: 50,
+      group: "NEEDS",
     });
   });
 
   it("serializes kpis in report output", () => {
     const budget = new Budget(Month.from("2026-03"), [
       {
-        category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
         amount: Money.fromEuros(800),
+        category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
       },
       {
-        category: { id: "inc01", name: "Salary", group: CategoryGroup.INCOME },
         amount: Money.fromEuros(3000),
+        category: { group: CategoryGroup.INCOME, id: "inc01", name: "Salary" },
       },
     ]);
     const txns = [
       {
-        id: "1",
-        date: DateOnly.from("2026-03-01"),
-        label: "Salary",
         amount: Money.fromEuros(3000),
         categoryId: "inc01",
+        date: DateOnly.from("2026-03-01"),
+        id: "1",
+        label: "Salary",
         sourceBank: "cm",
       },
       {
-        id: "2",
-        date: DateOnly.from("2026-03-02"),
-        label: "Rent",
         amount: Money.fromEuros(-800),
         categoryId: "n01",
+        date: DateOnly.from("2026-03-02"),
+        id: "2",
+        label: "Rent",
         sourceBank: "cm",
       },
     ];
@@ -125,17 +125,17 @@ describe("JsonRenderer", () => {
   it("serializes category variance overruns", () => {
     const budget = new Budget(Month.from("2026-03"), [
       {
-        category: { id: "n01", name: "Rent", group: CategoryGroup.NEEDS },
         amount: Money.fromEuros(800),
+        category: { group: CategoryGroup.NEEDS, id: "n01", name: "Rent" },
       },
     ]);
     const txns = [
       {
-        id: "1",
-        date: DateOnly.from("2026-03-01"),
-        label: "Rent",
         amount: Money.fromEuros(-900),
         categoryId: "n01",
+        date: DateOnly.from("2026-03-01"),
+        id: "1",
+        label: "Rent",
         sourceBank: "cm",
       },
     ];
@@ -144,10 +144,10 @@ describe("JsonRenderer", () => {
 
     expect(parsed.kpis.categoryVariance.overruns).toHaveLength(1);
     expect(parsed.kpis.categoryVariance.overruns[0]).toEqual({
+      actual: 900,
+      budgeted: 800,
       categoryId: "n01",
       categoryName: "Rent",
-      budgeted: 800,
-      actual: 900,
       variance: 100,
     });
   });

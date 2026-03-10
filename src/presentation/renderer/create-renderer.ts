@@ -3,8 +3,8 @@ import { JsonRenderer } from "./json-renderer.js";
 import type { Renderer } from "./renderer.js";
 
 const renderers: Record<string, () => Renderer> = {
-  json: () => new JsonRenderer(),
   html: () => new HtmlRenderer(),
+  json: () => new JsonRenderer(),
 };
 
 export const VALID_FORMATS = Object.keys(renderers);
