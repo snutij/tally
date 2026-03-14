@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import type Database from "better-sqlite3";
-import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
-import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
-import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
-import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { CreditMutuelImporter } from "../../src/infrastructure/bank/credit-mutuel.js";
+import type Database from "better-sqlite3";
+import { GenerateReport } from "../../src/application/usecase/generate-report.js";
+import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { Month } from "../../src/domain/value-object/month.js";
+import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
+import { join } from "node:path";
+import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
+import { tmpdir } from "node:os";
 
 describe("e2e: import → categorize → budget → report", () => {
   let tmpDir: string;
@@ -17,7 +17,7 @@ describe("e2e: import → categorize → budget → report", () => {
   let planBudget: PlanBudget;
   let generateReport: GenerateReport;
 
-  const CSV = join(__dirname, "../fixtures/credit-mutuel-sample.csv");
+  const CSV = join(import.meta.dirname, "../fixtures/credit-mutuel-sample.csv");
   const month = Month.from("2026-03");
 
   beforeEach(() => {
@@ -41,20 +41,20 @@ describe("e2e: import → categorize → budget → report", () => {
     const parsed = importTxns.parse("credit-mutuel", CSV);
     expect(parsed).toHaveLength(4);
 
-    const categorized = parsed.map((t) => {
-      if (t.label.includes("RENT")) {
-        return { ...t, categoryId: "n01" };
+    const categorized = parsed.map((txn) => {
+      if (txn.label.includes("RENT")) {
+        return { ...txn, categoryId: "n01" };
       }
-      if (t.label.includes("GROCERY")) {
-        return { ...t, categoryId: "n02" };
+      if (txn.label.includes("GROCERY")) {
+        return { ...txn, categoryId: "n02" };
       }
-      if (t.label.includes("SALARY")) {
-        return { ...t, categoryId: "inc01" };
+      if (txn.label.includes("SALARY")) {
+        return { ...txn, categoryId: "inc01" };
       }
-      if (t.label.includes("RESTAURANT")) {
-        return { ...t, categoryId: "w02" };
+      if (txn.label.includes("RESTAURANT")) {
+        return { ...txn, categoryId: "w02" };
       }
-      return t;
+      return txn;
     });
 
     // 2. Save
@@ -68,7 +68,11 @@ describe("e2e: import → categorize → budget → report", () => {
     const report = generateReport.execute(month);
 
     expect(report.transactionCount).toBe(4);
-    expect(report.net.cents).toBe(parsed.reduce((sum, t) => sum + t.amount.cents, 0));
+    let expectedNet = 0;
+    for (const txn of parsed) {
+      expectedNet += txn.amount.cents;
+    }
+    expect(report.net.cents).toBe(expectedNet);
     expect(report.totalIncomeActual.cents).toBe(250_000); // 2500€ salary
     expect(report.totalExpenseActual.cents).toBe(
       80_000 + 5230 + 3550, // rent + grocery + restaurant
@@ -91,14 +95,14 @@ describe("e2e: import → categorize → budget → report", () => {
   it("re-import preserves previously categorized transactions", () => {
     // First import: categorize only 2
     const parsed = importTxns.parse("credit-mutuel", CSV);
-    const partial = parsed.map((t) => {
-      if (t.label.includes("RENT")) {
-        return { ...t, categoryId: "n01" };
+    const partial = parsed.map((txn) => {
+      if (txn.label.includes("RENT")) {
+        return { ...txn, categoryId: "n01" };
       }
-      if (t.label.includes("SALARY")) {
-        return { ...t, categoryId: "inc01" };
+      if (txn.label.includes("SALARY")) {
+        return { ...txn, categoryId: "inc01" };
       }
-      return t;
+      return txn;
     });
     importTxns.save(partial);
 
@@ -108,6 +112,6 @@ describe("e2e: import → categorize → budget → report", () => {
 
     expect(alreadyCategorized).toHaveLength(2);
     expect(uncategorized).toHaveLength(2);
-    expect(alreadyCategorized.map((t) => t.categoryId).toSorted()).toEqual(["inc01", "n01"]);
+    expect(alreadyCategorized.map((txn) => txn.categoryId).toSorted()).toEqual(["inc01", "n01"]);
   });
 });

@@ -8,17 +8,17 @@ describe("deterministicTransactionId", () => {
   });
 
   it("is deterministic — same input gives same output", () => {
-    const a = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 0);
-    const b = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 0);
-    expect(a).toBe(b);
+    const id1 = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 0);
+    const id2 = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 0);
+    expect(id1).toBe(id2);
   });
 
   it("produces different IDs for different inputs", () => {
-    const a = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 0);
-    const b = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 1);
-    const c = deterministicTransactionId("bank", "2026-03-01", "Groceries", -80_000, 0);
-    const d = deterministicTransactionId("other", "2026-03-01", "Rent", -80_000, 0);
-    expect(new Set([a, b, c, d]).size).toBe(4);
+    const id1 = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 0);
+    const id2 = deterministicTransactionId("bank", "2026-03-01", "Rent", -80_000, 1);
+    const id3 = deterministicTransactionId("bank", "2026-03-01", "Groceries", -80_000, 0);
+    const id4 = deterministicTransactionId("other", "2026-03-01", "Rent", -80_000, 0);
+    expect(new Set([id1, id2, id3, id4]).size).toBe(4);
   });
 
   it("handles empty strings", () => {

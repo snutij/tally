@@ -1,14 +1,14 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { GenerateReport } from "../../src/application/usecase/generate-report.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
-import { Money } from "../../src/domain/value-object/money.js";
-import { Month } from "../../src/domain/value-object/month.js";
-import { Budget } from "../../src/domain/entity/budget.js";
-import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import {
   InMemoryBudgetRepository,
   InMemoryTransactionRepository,
 } from "../helpers/in-memory-repositories.js";
+import { beforeEach, describe, expect, it } from "vitest";
+import { Budget } from "../../src/domain/entity/budget.js";
+import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
+import { DateOnly } from "../../src/domain/value-object/date-only.js";
+import { GenerateReport } from "../../src/application/usecase/generate-report.js";
+import { Money } from "../../src/domain/value-object/money.js";
+import { Month } from "../../src/domain/value-object/month.js";
 
 describe("GenerateReport", () => {
   let budgetRepo: InMemoryBudgetRepository;

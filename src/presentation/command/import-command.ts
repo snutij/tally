@@ -1,8 +1,8 @@
 import { Command } from "commander";
 import type { ImportTransactions } from "../../application/usecase/import-transactions.js";
-import type { SeedMockData } from "../../application/usecase/seed-mock-data.js";
 import { Month } from "../../domain/value-object/month.js";
 import type { Renderer } from "../renderer/renderer.js";
+import type { SeedMockData } from "../../application/usecase/seed-mock-data.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
 
 export function createImportCommand(

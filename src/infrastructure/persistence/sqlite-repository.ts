@@ -1,13 +1,22 @@
-import Database from "better-sqlite3";
-import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { Budget, type BudgetLine } from "../../domain/entity/budget.js";
-import type { Transaction } from "../../domain/entity/transaction.js";
+import type { BudgetRepository } from "../../application/gateway/budget-repository.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
+import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
+import Database from "better-sqlite3";
 import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
 import type { Month } from "../../domain/value-object/month.js";
-import type { BudgetRepository } from "../../application/gateway/budget-repository.js";
+import type { Transaction } from "../../domain/entity/transaction.js";
 import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
+
+const VALID_GROUPS = new Set<string>(Object.values(CategoryGroup));
+
+function assertCategoryGroup(value: string): CategoryGroup {
+  if (!VALID_GROUPS.has(value)) {
+    throw new Error(`Invalid CategoryGroup in database: "${value}"`);
+  }
+  return value as CategoryGroup;
+}
 
 function migrate(db: Database.Database): void {
   db.exec(`
@@ -50,10 +59,14 @@ function migrate(db: Database.Database): void {
 }
 
 export class SqliteBudgetRepository implements BudgetRepository {
-  constructor(private db: Database.Database) {}
+  private db: Database.Database;
+
+  constructor(db: Database.Database) {
+    this.db = db;
+  }
 
   save(budget: Budget): void {
-    const tx = this.db.transaction(() => {
+    const runTx = this.db.transaction(() => {
       const upsertCat = this.db.prepare(
         `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
       );
@@ -72,7 +85,7 @@ export class SqliteBudgetRepository implements BudgetRepository {
         insertLine.run(budget.month.value, line.category.id, line.amount.cents);
       }
     });
-    tx();
+    runTx();
   }
 
   findByMonth(month: Month): Budget | null {
@@ -81,6 +94,7 @@ export class SqliteBudgetRepository implements BudgetRepository {
       | undefined;
 
     if (!row) {
+      // eslint-disable-next-line unicorn/no-null -- BudgetRepository interface contract returns null
       return null;
     }
 
@@ -98,12 +112,12 @@ export class SqliteBudgetRepository implements BudgetRepository {
       group: string;
     }[];
 
-    const lines: BudgetLine[] = lineRows.map((r) => ({
-      amount: Money.fromCents(r.amount_cents),
+    const lines: BudgetLine[] = lineRows.map((lineRow) => ({
+      amount: Money.fromCents(lineRow.amount_cents),
       category: {
-        group: assertCategoryGroup(r.group),
-        id: r.category_id,
-        name: r.name,
+        group: assertCategoryGroup(lineRow.group),
+        id: lineRow.category_id,
+        name: lineRow.name,
       },
     }));
 
@@ -117,26 +131,31 @@ export class SqliteBudgetRepository implements BudgetRepository {
 }
 
 export class SqliteTransactionRepository implements TransactionRepository {
-  constructor(private db: Database.Database) {}
+  private db: Database.Database;
+
+  constructor(db: Database.Database) {
+    this.db = db;
+  }
 
   saveAll(transactions: Transaction[]): void {
-    const tx = this.db.transaction(() => {
+    const runTx = this.db.transaction(() => {
       const stmt = this.db.prepare(
         `INSERT OR REPLACE INTO transactions (id, date, label, amount_cents, category_id, source_bank)
          VALUES (?, ?, ?, ?, ?, ?)`,
       );
-      for (const t of transactions) {
+      for (const txn of transactions) {
         stmt.run(
-          t.id,
-          t.date.toString(),
-          t.label,
-          t.amount.cents,
-          t.categoryId ?? null,
-          t.sourceBank,
+          txn.id,
+          txn.date.toString(),
+          txn.label,
+          txn.amount.cents,
+          // eslint-disable-next-line unicorn/no-null -- SQLite requires null for missing column values
+          txn.categoryId ?? null,
+          txn.sourceBank,
         );
       }
     });
-    tx();
+    runTx();
   }
 
   findByIds(ids: string[]): Transaction[] {
@@ -158,13 +177,13 @@ export class SqliteTransactionRepository implements TransactionRepository {
       source_bank: string;
     }[];
 
-    return rows.map((r) => ({
-      amount: Money.fromCents(r.amount_cents),
-      categoryId: r.category_id ?? undefined,
-      date: DateOnly.from(r.date),
-      id: r.id,
-      label: r.label,
-      sourceBank: r.source_bank,
+    return rows.map((dbRow) => ({
+      amount: Money.fromCents(dbRow.amount_cents),
+      categoryId: dbRow.category_id ?? undefined,
+      date: DateOnly.from(dbRow.date),
+      id: dbRow.id,
+      label: dbRow.label,
+      sourceBank: dbRow.source_bank,
     }));
   }
 
@@ -184,13 +203,13 @@ export class SqliteTransactionRepository implements TransactionRepository {
       source_bank: string;
     }[];
 
-    return rows.map((r) => ({
-      amount: Money.fromCents(r.amount_cents),
-      categoryId: r.category_id ?? undefined,
-      date: DateOnly.from(r.date),
-      id: r.id,
-      label: r.label,
-      sourceBank: r.source_bank,
+    return rows.map((dbRow) => ({
+      amount: Money.fromCents(dbRow.amount_cents),
+      categoryId: dbRow.category_id ?? undefined,
+      date: DateOnly.from(dbRow.date),
+      id: dbRow.id,
+      label: dbRow.label,
+      sourceBank: dbRow.source_bank,
     }));
   }
 }
@@ -209,13 +228,4 @@ export function openDatabase(dbPath: string): {
     db,
     txnRepo: new SqliteTransactionRepository(db),
   };
-}
-
-const VALID_GROUPS = new Set<string>(Object.values(CategoryGroup));
-
-function assertCategoryGroup(value: string): CategoryGroup {
-  if (!VALID_GROUPS.has(value)) {
-    throw new Error(`Invalid CategoryGroup in database: "${value}"`);
-  }
-  return value as CategoryGroup;
 }

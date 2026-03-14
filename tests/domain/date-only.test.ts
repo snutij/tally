@@ -3,23 +3,23 @@ import { DateOnly } from "../../src/domain/value-object/date-only.js";
 
 describe("DateOnly", () => {
   it("creates from ISO string", () => {
-    const d = DateOnly.from("2026-03-15");
-    expect(d.toString()).toBe("2026-03-15");
+    const dt = DateOnly.from("2026-03-15");
+    expect(dt.toString()).toBe("2026-03-15");
   });
 
   it("creates from Date object", () => {
-    const d = DateOnly.from(new Date("2026-03-15"));
-    expect(d.toString()).toBe("2026-03-15");
+    const dt = DateOnly.from(new Date("2026-03-15"));
+    expect(dt.toString()).toBe("2026-03-15");
   });
 
   it("converts to Date", () => {
-    const d = DateOnly.from("2026-03-15");
-    expect(d.toDate()).toEqual(new Date("2026-03-15"));
+    const dt = DateOnly.from("2026-03-15");
+    expect(dt.toDate()).toEqual(new Date("2026-03-15"));
   });
 
   it("serializes via toJSON", () => {
-    const d = DateOnly.from("2026-03-15");
-    expect(JSON.stringify(d)).toBe('"2026-03-15"');
+    const dt = DateOnly.from("2026-03-15");
+    expect(JSON.stringify(dt)).toBe('"2026-03-15"');
   });
 
   it("rejects invalid format", () => {
@@ -35,8 +35,8 @@ describe("DateOnly", () => {
   });
 
   it("accepts leap year Feb 29", () => {
-    const d = DateOnly.from("2024-02-29");
-    expect(d.toString()).toBe("2024-02-29");
+    const dt = DateOnly.from("2024-02-29");
+    expect(dt.toString()).toBe("2024-02-29");
   });
 
   it("rejects non-leap year Feb 29", () => {

@@ -1,8 +1,8 @@
-import type { BudgetRepository } from "../../src/application/gateway/budget-repository.js";
-import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 import type { Budget } from "../../src/domain/entity/budget.js";
-import type { Transaction } from "../../src/domain/entity/transaction.js";
+import type { BudgetRepository } from "../../src/application/gateway/budget-repository.js";
 import type { Month } from "../../src/domain/value-object/month.js";
+import type { Transaction } from "../../src/domain/entity/transaction.js";
+import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 
 export class InMemoryBudgetRepository implements BudgetRepository {
   private store = new Map<string, Budget>();
@@ -12,6 +12,7 @@ export class InMemoryBudgetRepository implements BudgetRepository {
   }
 
   findByMonth(month: Month): Budget | null {
+    // eslint-disable-next-line unicorn/no-null -- BudgetRepository interface contract returns null
     return this.store.get(month.value) ?? null;
   }
 
@@ -29,11 +30,11 @@ export class InMemoryTransactionRepository implements TransactionRepository {
 
   findByIds(ids: string[]): Transaction[] {
     const idSet = new Set(ids);
-    return this.saved.filter((t) => idSet.has(t.id));
+    return this.saved.filter((txn) => idSet.has(txn.id));
   }
 
   findByMonth(month: Month): Transaction[] {
     const prefix = month.value;
-    return this.saved.filter((t) => t.date.toString().startsWith(prefix));
+    return this.saved.filter((txn) => txn.date.toString().startsWith(prefix));
   }
 }

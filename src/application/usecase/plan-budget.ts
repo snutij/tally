@@ -1,12 +1,16 @@
 import { Budget } from "../../domain/entity/budget.js";
 import { BudgetAlreadyExists } from "../../domain/error/index.js";
+import type { BudgetRepository } from "../gateway/budget-repository.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { Money } from "../../domain/value-object/money.js";
 import type { Month } from "../../domain/value-object/month.js";
-import type { BudgetRepository } from "../gateway/budget-repository.js";
 
 export class PlanBudget {
-  constructor(private budgetRepo: BudgetRepository) {}
+  private budgetRepo: BudgetRepository;
+
+  constructor(budgetRepo: BudgetRepository) {
+    this.budgetRepo = budgetRepo;
+  }
 
   initFromDefaults(month: Month): Budget {
     if (this.budgetRepo.exists(month)) {

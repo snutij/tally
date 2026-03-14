@@ -3,21 +3,22 @@ import { MonthlyReport } from "../../domain/entity/monthly-report.js";
 import type { Renderer } from "./renderer.js";
 
 export class JsonRenderer implements Renderer {
+  // eslint-disable-next-line class-methods-use-this -- implements Renderer interface
   render(data: unknown): string {
-    return JSON.stringify(this.serialize(data), null, 2);
+    return JSON.stringify(JsonRenderer.serialize(data), undefined, 2);
   }
 
-  private serialize(data: unknown): unknown {
+  private static serialize(data: unknown): unknown {
     if (data instanceof Budget) {
-      return this.serializeBudget(data);
+      return JsonRenderer.serializeBudget(data);
     }
     if (data instanceof MonthlyReport) {
-      return this.serializeReport(data);
+      return JsonRenderer.serializeReport(data);
     }
     return data;
   }
 
-  private serializeBudget(budget: Budget): Record<string, unknown> {
+  private static serializeBudget(budget: Budget): Record<string, unknown> {
     return {
       lines: budget.lines.map((line) => ({
         amount: line.amount,
@@ -28,7 +29,7 @@ export class JsonRenderer implements Renderer {
     };
   }
 
-  private serializeReport(report: MonthlyReport): Record<string, unknown> {
+  private static serializeReport(report: MonthlyReport): Record<string, unknown> {
     return {
       categories: report.categories,
       groups: report.groups,

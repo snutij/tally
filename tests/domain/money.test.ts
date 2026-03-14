@@ -3,13 +3,13 @@ import { Money } from "../../src/domain/value-object/money.js";
 
 describe("Money", () => {
   it("creates from cents", () => {
-    const m = Money.fromCents(1050);
-    expect(m.cents).toBe(1050);
+    const amt = Money.fromCents(1050);
+    expect(amt.cents).toBe(1050);
   });
 
   it("creates from euros", () => {
-    const m = Money.fromEuros(10.5);
-    expect(m.cents).toBe(1050);
+    const amt = Money.fromEuros(10.5);
+    expect(amt.cents).toBe(1050);
   });
 
   it("rejects non-integer cents", () => {
@@ -17,15 +17,15 @@ describe("Money", () => {
   });
 
   it("adds two amounts", () => {
-    const a = Money.fromCents(100);
-    const b = Money.fromCents(250);
-    expect(a.add(b).cents).toBe(350);
+    const m1 = Money.fromCents(100);
+    const m2 = Money.fromCents(250);
+    expect(m1.add(m2).cents).toBe(350);
   });
 
   it("subtracts two amounts", () => {
-    const a = Money.fromCents(500);
-    const b = Money.fromCents(200);
-    expect(a.subtract(b).cents).toBe(300);
+    const m1 = Money.fromCents(500);
+    const m2 = Money.fromCents(200);
+    expect(m1.subtract(m2).cents).toBe(300);
   });
 
   it("formats as EUR string", () => {
@@ -55,7 +55,7 @@ describe("Money", () => {
 
   it("avoids floating point issues with fromEuros", () => {
     // 0.1 + 0.2 = 0.30000000000000004 in JS
-    const m = Money.fromEuros(0.1).add(Money.fromEuros(0.2));
-    expect(m.cents).toBe(30);
+    const sum = Money.fromEuros(0.1).add(Money.fromEuros(0.2));
+    expect(sum.cents).toBe(30);
   });
 });

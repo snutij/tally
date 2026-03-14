@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildCategoryChoices } from "../../src/presentation/prompt/categorize-prompt.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import type { Transaction } from "../../src/domain/entity/transaction.js";
+import { buildCategoryChoices } from "../../src/presentation/prompt/categorize-prompt.js";
 
 vi.mock("@inquirer/select", () => ({ default: vi.fn() }));
 vi.mock("@inquirer/core", () => ({
@@ -25,8 +25,8 @@ describe("buildCategoryChoices", () => {
   it("includes all default categories as selectable choices", () => {
     const choices = buildCategoryChoices();
     const selectableValues = choices
-      .filter((c): c is { value: string; name: string } => "value" in c)
-      .map((c) => c.value);
+      .filter((ch): ch is { value: string; name: string } => "value" in ch)
+      .map((ch) => ch.value);
 
     for (const cat of DEFAULT_CATEGORIES) {
       expect(selectableValues).toContain(cat.id);
@@ -36,8 +36,8 @@ describe("buildCategoryChoices", () => {
   it("includes skip option and income category", () => {
     const choices = buildCategoryChoices();
     const selectableValues = choices
-      .filter((c): c is { value: string; name: string } => "value" in c)
-      .map((c) => c.value);
+      .filter((ch): ch is { value: string; name: string } => "value" in ch)
+      .map((ch) => ch.value);
 
     expect(selectableValues).toContain("__skip__");
     expect(selectableValues).toContain("inc01");
@@ -46,8 +46,8 @@ describe("buildCategoryChoices", () => {
   it("has group separators", () => {
     const choices = buildCategoryChoices();
     const separators = choices
-      .filter((c): c is { type: "separator"; separator: string } => "type" in c)
-      .map((c) => c.separator);
+      .filter((ch): ch is { type: "separator"; separator: string } => "type" in ch)
+      .map((ch) => ch.separator);
 
     expect(separators).toContain("— Needs —");
     expect(separators).toContain("— Wants —");

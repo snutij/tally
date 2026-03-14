@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { dataDir, dbPath } from "../../src/infrastructure/persistence/data-dir.js";
+import { describe, expect, it } from "vitest";
 
 describe("data-dir", () => {
   it("dataDir ends with .local/share/tally", () => {

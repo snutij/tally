@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { Month } from "../../src/domain/value-object/month.js";
 import { InvalidMonth } from "../../src/domain/error/index.js";
+import { Month } from "../../src/domain/value-object/month.js";
 
 describe("Month", () => {
   it("creates from valid string", () => {
-    const m = Month.from("2026-03");
-    expect(m.value).toBe("2026-03");
-    expect(m.year).toBe(2026);
-    expect(m.month).toBe(3);
+    const mo = Month.from("2026-03");
+    expect(mo.value).toBe("2026-03");
+    expect(mo.year).toBe(2026);
+    expect(mo.month).toBe(3);
   });
 
   it("rejects invalid format", () => {

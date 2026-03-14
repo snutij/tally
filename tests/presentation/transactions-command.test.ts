@@ -28,7 +28,7 @@ describe("createTransactionsCommand", () => {
     findByMonth: vi.fn(),
     saveAll: vi.fn(),
   };
-  const mockRenderer = { render: vi.fn((d: unknown) => JSON.stringify(d)) };
+  const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
 
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -57,22 +57,22 @@ describe("createTransactionsCommand", () => {
   });
 
   it("categorize prompts and saves uncategorized transactions", async () => {
-    const t = txn();
-    mockTxnRepo.findByMonth.mockReturnValue([t]);
+    const tx = txn();
+    mockTxnRepo.findByMonth.mockReturnValue([tx]);
     vi.mocked(categorizePrompt).mockResolvedValue({
-      categorized: [{ ...t, categoryId: "n01" }],
+      categorized: [{ ...tx, categoryId: "n01" }],
       interrupted: false,
     });
 
     await run("categorize", "2026-03");
 
-    expect(categorizePrompt).toHaveBeenCalledWith([t]);
-    expect(mockTxnRepo.saveAll).toHaveBeenCalledWith([{ ...t, categoryId: "n01" }]);
+    expect(categorizePrompt).toHaveBeenCalledWith([tx]);
+    expect(mockTxnRepo.saveAll).toHaveBeenCalledWith([{ ...tx, categoryId: "n01" }]);
   });
 
   it("categorize handles interruption", async () => {
-    const t = txn();
-    mockTxnRepo.findByMonth.mockReturnValue([t]);
+    const tx = txn();
+    mockTxnRepo.findByMonth.mockReturnValue([tx]);
     vi.mocked(categorizePrompt).mockResolvedValue({
       categorized: [],
       interrupted: true,

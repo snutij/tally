@@ -30,7 +30,7 @@ describe("createImportCommand", () => {
     splitByCategoryStatus: vi.fn(),
   };
   const mockSeedMockData = { execute: vi.fn() };
-  const mockRenderer = { render: vi.fn((d: unknown) => JSON.stringify(d)) };
+  const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
 
   beforeEach(() => {
     vi.restoreAllMocks();

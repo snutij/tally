@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
 
 vi.mock("node:fs", async () => {
-  const actual: typeof import("node:fs") = await vi.importActual("node:fs");
+  const actual: Record<string, unknown> = await vi.importActual("node:fs");
   return { ...actual, existsSync: vi.fn(), unlinkSync: vi.fn() };
 });
 

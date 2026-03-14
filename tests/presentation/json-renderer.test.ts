@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { JsonRenderer } from "../../src/presentation/renderer/json-renderer.js";
 import { Budget } from "../../src/domain/entity/budget.js";
-import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
-import { Month } from "../../src/domain/value-object/month.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
-import { Money } from "../../src/domain/value-object/money.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
+import { DateOnly } from "../../src/domain/value-object/date-only.js";
+import { JsonRenderer } from "../../src/presentation/renderer/json-renderer.js";
+import { Money } from "../../src/domain/value-object/money.js";
+import { Month } from "../../src/domain/value-object/month.js";
+import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
 
 describe("JsonRenderer", () => {
   const renderer = new JsonRenderer();

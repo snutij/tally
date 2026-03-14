@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import type Database from "better-sqlite3";
-import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
-import { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
-import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
 import { Month } from "../../src/domain/value-object/month.js";
+import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
+import { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
+import { join } from "node:path";
+import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
+import { tmpdir } from "node:os";
 
 describe("SeedMockData", () => {
   let tmpDir: string;
@@ -40,7 +40,7 @@ describe("SeedMockData", () => {
     if (!budget) {
       return;
     }
-    expect(budget.lines.some((l) => l.amount.cents > 0)).toBe(true);
+    expect(budget.lines.some((ln) => ln.amount.cents > 0)).toBe(true);
   });
 
   it("skips budget creation when budget already exists", () => {

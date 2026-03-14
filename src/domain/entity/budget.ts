@@ -9,18 +9,29 @@ export interface BudgetLine {
 }
 
 export class Budget {
-  constructor(
-    readonly month: Month,
-    readonly lines: BudgetLine[],
-  ) {}
+  readonly month: Month;
+  readonly lines: BudgetLine[];
+
+  constructor(month: Month, lines: BudgetLine[]) {
+    this.month = month;
+    this.lines = lines;
+  }
 
   totalByGroup(group: CategoryGroup): Money {
-    return this.lines
-      .filter((line) => line.category.group === group)
-      .reduce((sum, line) => sum.add(line.amount), Money.zero());
+    let sum = Money.zero();
+    for (const line of this.lines) {
+      if (line.category.group === group) {
+        sum = sum.add(line.amount);
+      }
+    }
+    return sum;
   }
 
   total(): Money {
-    return this.lines.reduce((sum, line) => sum.add(line.amount), Money.zero());
+    let sum = Money.zero();
+    for (const line of this.lines) {
+      sum = sum.add(line.amount);
+    }
+    return sum;
   }
 }

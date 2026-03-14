@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
-import { Month } from "../../src/domain/value-object/month.js";
 import { BudgetAlreadyExists } from "../../src/domain/error/index.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { InMemoryBudgetRepository } from "../helpers/in-memory-repositories.js";
+import { Month } from "../../src/domain/value-object/month.js";
+import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
 
 describe("PlanBudget", () => {
   let repo: InMemoryBudgetRepository;

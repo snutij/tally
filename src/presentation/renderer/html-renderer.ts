@@ -1,10 +1,10 @@
-import { Budget } from "../../domain/entity/budget.js";
 import {
   type CategorySummary,
   type GroupSummary,
   MonthlyReport,
   type ReportKpis,
 } from "../../domain/entity/monthly-report.js";
+import { Budget } from "../../domain/entity/budget.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
 import type { Money } from "../../domain/value-object/money.js";
 import type { Renderer } from "./renderer.js";
@@ -24,43 +24,119 @@ const MONTH_NAMES = [
   "December",
 ];
 
+// ── Helpers ─────────────────────────────────────────────
+
+function esc(str: string): string {
+  return str
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function deltaColor(delta: Money): string {
+  if (delta.isPositive()) {
+    return "under-budget";
+  }
+  if (delta.isNegative()) {
+    return "over-budget";
+  }
+  return "";
+}
+
+// eslint-disable-next-line unicorn/no-null -- null comes from domain ReportKpis interface
+function fmtPct(val: number | null): string {
+  // eslint-disable-next-line unicorn/no-null -- null comparison required by domain model
+  return val === null ? "N/A" : `${val}%`;
+}
+
+interface TooltipContent {
+  purpose: string;
+  target: string;
+  tip: string;
+}
+
+const KPI_TOOLTIPS: Record<string, TooltipContent> = {
+  "Budget Adherence": {
+    purpose: "Percentage of categories where actual spending stayed within budget",
+    target: "Aim for 90%+",
+    tip: "Review overspent categories and adjust budgets or spending",
+  },
+  "Daily Avg Spending": {
+    purpose: "Total monthly expenses divided by days in the month",
+    target: "Keep below your daily income equivalent",
+    tip: "Track daily purchases and set a daily spending cap",
+  },
+  "Savings Rate": {
+    purpose: "Percentage of income kept after all expenses",
+    target: "Aim for 20%+",
+    tip: "Reduce discretionary spending or increase income",
+  },
+  Uncategorized: {
+    purpose: "Percentage of transactions not assigned to any category",
+    target: "Aim for 0%",
+    tip: "Run 'tally transactions categorize' to assign categories",
+  },
+};
+
+function card(label: string, value: string, highlight = false): string {
+  const tooltip = KPI_TOOLTIPS[label];
+  const tooltipHtml = `<span class="kpi-help-wrap"><button class="kpi-help" aria-label="About ${esc(label)}" type="button">?</button><div class="kpi-tooltip" role="tooltip"><strong>${esc(tooltip.purpose)}</strong><br>${esc(tooltip.target)}<br><em>${esc(tooltip.tip)}</em></div></span>`;
+  return `<div class="kpi${highlight ? " kpi-highlight" : ""}">${tooltipHtml}<div class="kpi-value">${value}</div><div class="kpi-label">${label}</div></div>`;
+}
+
+function item(label: string, value: string, cls = ""): string {
+  return `<div class="total-item"><span class="total-label">${label}</span><span class="total-value${cls ? ` ${cls}` : ""}">${value}</span></div>`;
+}
+
+function fmtDelta(delta: Money, signed: boolean): string {
+  if (!signed || delta.isZero()) {
+    return delta.format();
+  }
+  if (delta.isPositive()) {
+    return `+${delta.format()}`;
+  }
+  return delta.format();
+}
+
 export class HtmlRenderer implements Renderer {
+  // eslint-disable-next-line class-methods-use-this -- implements Renderer interface
   render(data: unknown): string {
     if (data instanceof MonthlyReport) {
-      return this.renderReport(data);
+      return HtmlRenderer.renderReport(data);
     }
     if (data instanceof Budget) {
-      return this.renderBudget(data);
+      return HtmlRenderer.renderBudget(data);
     }
-    return this.wrapHtml("Data", `<pre>${esc(JSON.stringify(data, null, 2))}</pre>`);
+    return HtmlRenderer.wrapHtml("Data", `<pre>${esc(JSON.stringify(data, undefined, 2))}</pre>`);
   }
 
   // ── Report ─────────────────────────────────────────────
 
-  private renderReport(r: MonthlyReport): string {
+  private static renderReport(report: MonthlyReport): string {
     const sections = [
-      this.heroHeader(r, "Financial Report"),
-      this.kpiSection(r.kpis),
-      this.groupTable(r.groups),
-      this.categoryTable(r.categories),
-      this.insightsSection(r.kpis),
-      this.uncategorizedSection(r.uncategorized),
-      this.reportFooter(r),
+      HtmlRenderer.heroHeader(report, "Financial Report"),
+      HtmlRenderer.kpiSection(report.kpis),
+      HtmlRenderer.groupTable(report.groups),
+      HtmlRenderer.categoryTable(report.categories),
+      HtmlRenderer.insightsSection(report.kpis),
+      HtmlRenderer.uncategorizedSection(report.uncategorized),
+      HtmlRenderer.reportFooter(report),
     ].filter(Boolean);
 
-    return this.wrapHtml(`Monthly Report — ${r.month}`, sections.join("\n"));
+    return HtmlRenderer.wrapHtml(`Monthly Report — ${report.month}`, sections.join("\n"));
   }
 
-  private heroHeader(r: { month: unknown }, eyebrow: string): string {
-    const [year, m] = `${r.month}`.split("-");
-    const monthName = MONTH_NAMES[Number.parseInt(m, 10) - 1];
+  private static heroHeader(ref: { month: unknown }, eyebrow: string): string {
+    const [year, monthNum] = `${ref.month}`.split("-");
+    const monthName = MONTH_NAMES[Number.parseInt(monthNum, 10) - 1];
     return `<header class="hero">
   <div class="hero-eyebrow">${esc(eyebrow)}</div>
   <h1 class="hero-month">${esc(monthName)} ${esc(year)}</h1>
 </header>`;
   }
 
-  private kpiSection(kpis: ReportKpis): string {
+  private static kpiSection(kpis: ReportKpis): string {
     const cards = [
       card("Savings Rate", fmtPct(kpis.savingsRate), true),
       card("Budget Adherence", fmtPct(kpis.adherenceRate)),
@@ -71,23 +147,23 @@ export class HtmlRenderer implements Renderer {
     return `<section>
   <h2>Key Indicators</h2>
   <div class="kpi-grid">${cards.join("")}</div>
-  ${this.allocationBar(kpis)}
+  ${HtmlRenderer.allocationBar(kpis)}
 </section>`;
   }
 
-  private allocationBar(kpis: ReportKpis): string {
-    const n = kpis.fiftyThirtyTwenty.needs ?? 0;
-    const w = kpis.fiftyThirtyTwenty.wants ?? 0;
+  private static allocationBar(kpis: ReportKpis): string {
+    const needsPct = kpis.fiftyThirtyTwenty.needs ?? 0;
+    const wantsPct = kpis.fiftyThirtyTwenty.wants ?? 0;
     const inv = kpis.fiftyThirtyTwenty.investments ?? 0;
-    if (n === 0 && w === 0 && inv === 0) {
+    if (needsPct === 0 && wantsPct === 0 && inv === 0) {
       return "";
     }
 
     return `<div class="allocation">
   <div class="alloc-title">50 / 30 / 20 Allocation</div>
   <div class="bar-track">
-    <div class="bar-fill bar-needs" style="width:${n}%"></div>
-    <div class="bar-fill bar-wants" style="width:${w}%"></div>
+    <div class="bar-fill bar-needs" style="width:${needsPct}%"></div>
+    <div class="bar-fill bar-wants" style="width:${wantsPct}%"></div>
     <div class="bar-fill bar-investments" style="width:${inv}%"></div>
   </div>
   <div class="bar-legend">
@@ -98,16 +174,16 @@ export class HtmlRenderer implements Renderer {
 </div>`;
   }
 
-  private groupTable(groups: GroupSummary[]): string {
+  private static groupTable(groups: GroupSummary[]): string {
     const rows = groups
-      .map((g) => {
-        const isExpense = g.group !== CategoryGroup.INCOME;
-        const cls = isExpense ? deltaColor(g.delta) : "";
+      .map((grp) => {
+        const isExpense = grp.group !== CategoryGroup.INCOME;
+        const cls = isExpense ? deltaColor(grp.delta) : "";
         return `<tr>
-  <td>${esc(g.group)}</td>
-  <td class="num">${g.budgeted.format()}</td>
-  <td class="num">${g.actual.format()}</td>
-  <td class="num ${cls}">${fmtDelta(g.delta, isExpense)}</td>
+  <td>${esc(grp.group)}</td>
+  <td class="num">${grp.budgeted.format()}</td>
+  <td class="num">${grp.actual.format()}</td>
+  <td class="num ${cls}">${fmtDelta(grp.delta, isExpense)}</td>
 </tr>`;
       })
       .join("\n");
@@ -121,17 +197,17 @@ export class HtmlRenderer implements Renderer {
 </section>`;
   }
 
-  private categoryTable(categories: CategorySummary[]): string {
+  private static categoryTable(categories: CategorySummary[]): string {
     const rows = categories
-      .map((c) => {
-        const isExpense = c.group !== CategoryGroup.INCOME;
-        const cls = isExpense ? deltaColor(c.delta) : "";
+      .map((cat) => {
+        const isExpense = cat.group !== CategoryGroup.INCOME;
+        const cls = isExpense ? deltaColor(cat.delta) : "";
         return `<tr>
-  <td>${esc(c.categoryName)}</td>
-  <td><span class="group-badge">${esc(c.group)}</span></td>
-  <td class="num">${c.budgeted.format()}</td>
-  <td class="num">${c.actual.format()}</td>
-  <td class="num ${cls}">${fmtDelta(c.delta, isExpense)}</td>
+  <td>${esc(cat.categoryName)}</td>
+  <td><span class="group-badge">${esc(cat.group)}</span></td>
+  <td class="num">${cat.budgeted.format()}</td>
+  <td class="num">${cat.actual.format()}</td>
+  <td class="num ${cls}">${fmtDelta(cat.delta, isExpense)}</td>
 </tr>`;
       })
       .join("\n");
@@ -145,7 +221,7 @@ export class HtmlRenderer implements Renderer {
 </section>`;
   }
 
-  private insightsSection(kpis: ReportKpis): string {
+  private static insightsSection(kpis: ReportKpis): string {
     const hasSpending = kpis.topSpendingCategories.length > 0;
     const hasExpenses = kpis.largestExpenses.length > 0;
     if (!hasSpending && !hasExpenses) {
@@ -155,8 +231,8 @@ export class HtmlRenderer implements Renderer {
     const spending = hasSpending
       ? `<div class="insight-card"><h3>Top Spending</h3>${kpis.topSpendingCategories
           .map(
-            (c, i) =>
-              `<div class="insight-item"><span class="insight-rank">${i + 1}</span><span class="insight-label">${esc(c.categoryName)}</span><span class="insight-value">${c.actual.format()}</span></div>`,
+            (cat, idx) =>
+              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(cat.categoryName)}</span><span class="insight-value">${cat.actual.format()}</span></div>`,
           )
           .join("")}</div>`
       : "";
@@ -164,8 +240,8 @@ export class HtmlRenderer implements Renderer {
     const expenses = hasExpenses
       ? `<div class="insight-card"><h3>Largest Expenses</h3>${kpis.largestExpenses
           .map(
-            (e, i) =>
-              `<div class="insight-item"><span class="insight-rank">${i + 1}</span><span class="insight-label">${esc(e.label)}<span class="insight-date">${e.date}</span></span><span class="insight-value">${e.amount.format()}</span></div>`,
+            (expense, idx) =>
+              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(expense.label)}<span class="insight-date">${expense.date}</span></span><span class="insight-value">${expense.amount.format()}</span></div>`,
           )
           .join("")}</div>`
       : "";
@@ -176,24 +252,29 @@ export class HtmlRenderer implements Renderer {
 </section>`;
   }
 
-  private uncategorizedSection(amount: Money): string {
+  private static uncategorizedSection(amount: Money): string {
     if (amount.isZero()) {
       return "";
     }
     return `<section class="uncategorized"><span class="uncat-dot"></span><p>Uncategorized transactions total: <strong>${amount.format()}</strong></p></section>`;
   }
 
-  private reportFooter(r: MonthlyReport): string {
-    const netCls = r.net.isPositive() ? "positive" : r.net.isNegative() ? "negative" : "";
+  private static reportFooter(report: MonthlyReport): string {
+    let netCls = "";
+    if (report.net.isPositive()) {
+      netCls = "positive";
+    } else if (report.net.isNegative()) {
+      netCls = "negative";
+    }
 
     return `<footer class="footer-totals">
   <div class="totals-grid">
-    ${item("Income (Budgeted)", r.totalIncomeBudgeted.format())}
-    ${item("Income (Actual)", r.totalIncomeActual.format())}
-    ${item("Expenses (Budgeted)", r.totalExpenseBudgeted.format())}
-    ${item("Expenses (Actual)", r.totalExpenseActual.format())}
-    ${item("Net", r.net.format(), netCls)}
-    ${item("Transactions", `${r.transactionCount}`)}
+    ${item("Income (Budgeted)", report.totalIncomeBudgeted.format())}
+    ${item("Income (Actual)", report.totalIncomeActual.format())}
+    ${item("Expenses (Budgeted)", report.totalExpenseBudgeted.format())}
+    ${item("Expenses (Actual)", report.totalExpenseActual.format())}
+    ${item("Net", report.net.format(), netCls)}
+    ${item("Transactions", `${report.transactionCount}`)}
   </div>
 </footer>
 <div class="attribution">Generated by Tally</div>`;
@@ -201,39 +282,39 @@ export class HtmlRenderer implements Renderer {
 
   // ── Budget ─────────────────────────────────────────────
 
-  private renderBudget(b: Budget): string {
-    const grouped = new Map<string, typeof b.lines>();
-    for (const line of b.lines) {
-      const g = line.category.group;
-      if (!grouped.has(g)) {
-        grouped.set(g, []);
+  private static renderBudget(budget: Budget): string {
+    const grouped = new Map<string, typeof budget.lines>();
+    for (const line of budget.lines) {
+      const { group } = line.category;
+      if (!grouped.has(group)) {
+        grouped.set(group, []);
       }
-      grouped.get(g)?.push(line);
+      grouped.get(group)?.push(line);
     }
 
     let rows = "";
     for (const [group, lines] of grouped) {
       rows += `<tr class="group-row"><td colspan="2">${esc(group)}</td></tr>\n`;
-      for (const l of lines) {
-        rows += `<tr><td>${esc(l.category.name)}</td><td class="num">${l.amount.format()}</td></tr>\n`;
+      for (const line of lines) {
+        rows += `<tr><td>${esc(line.category.name)}</td><td class="num">${line.amount.format()}</td></tr>\n`;
       }
     }
 
-    const body = `${this.heroHeader(b, "Budget Plan")}
+    const body = `${HtmlRenderer.heroHeader(budget, "Budget Plan")}
 <section>
 <table>
   <thead><tr><th>Category</th><th class="num">Amount</th></tr></thead>
   <tbody>${rows}</tbody>
-  <tfoot><tr><th>Total</th><td class="num">${b.total().format()}</td></tr></tfoot>
+  <tfoot><tr><th>Total</th><td class="num">${budget.total().format()}</td></tr></tfoot>
 </table>
 </section>`;
 
-    return this.wrapHtml(`Budget — ${b.month}`, body);
+    return HtmlRenderer.wrapHtml(`Budget — ${budget.month}`, body);
   }
 
   // ── Chrome ─────────────────────────────────────────────
 
-  private wrapHtml(title: string, body: string): string {
+  private static wrapHtml(title: string, body: string): string {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -242,17 +323,17 @@ export class HtmlRenderer implements Renderer {
 <meta name="theme-color" content="#0d1017">
 <title>${esc(title)}</title>
 <style>
-${this.cssBase()}
-${this.cssHero()}
-${this.cssHeadings()}
-${this.cssKpiGrid()}
-${this.cssAllocationBar()}
-${this.cssTables()}
-${this.cssInsights()}
-${this.cssUncategorized()}
-${this.cssFooter()}
-${this.cssPre()}
-${this.cssPrint()}
+${HtmlRenderer.cssBase()}
+${HtmlRenderer.cssHero()}
+${HtmlRenderer.cssHeadings()}
+${HtmlRenderer.cssKpiGrid()}
+${HtmlRenderer.cssAllocationBar()}
+${HtmlRenderer.cssTables()}
+${HtmlRenderer.cssInsights()}
+${HtmlRenderer.cssUncategorized()}
+${HtmlRenderer.cssFooter()}
+${HtmlRenderer.cssPre()}
+${HtmlRenderer.cssPrint()}
 </style>
 </head>
 <body>
@@ -261,7 +342,7 @@ ${body}
 </html>`;
   }
 
-  private cssBase(): string {
+  private static cssBase(): string {
     return `@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@300;400;500;600&display=swap');
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -319,7 +400,7 @@ body > :nth-child(9) { animation-delay: 0.42s; }
 body > :nth-child(10) { animation-delay: 0.48s; }`;
   }
 
-  private cssHero(): string {
+  private static cssHero(): string {
     return `/* ── Hero ── */
 .hero {
   margin-bottom: 2.5rem;
@@ -345,7 +426,7 @@ body > :nth-child(10) { animation-delay: 0.48s; }`;
 }`;
   }
 
-  private cssHeadings(): string {
+  private static cssHeadings(): string {
     return `/* ── Section headings ── */
 h2 {
   font-family: var(--font-body);
@@ -360,7 +441,7 @@ h2 {
 section { margin-bottom: 2.5rem; }`;
   }
 
-  private cssKpiGrid(): string {
+  private static cssKpiGrid(): string {
     return `/* ── KPI Grid ── */
 .kpi-grid {
   display: grid;
@@ -443,7 +524,7 @@ section { margin-bottom: 2.5rem; }`;
 .kpi-help:hover + .kpi-tooltip, .kpi-help:focus + .kpi-tooltip { display: block; }`;
   }
 
-  private cssAllocationBar(): string {
+  private static cssAllocationBar(): string {
     return `/* ── Allocation Bar ── */
 .allocation { margin-top: 1.4rem; }
 .alloc-title {
@@ -486,7 +567,7 @@ section { margin-bottom: 2.5rem; }`;
 .legend-inv::before { background: var(--accent); }`;
   }
 
-  private cssTables(): string {
+  private static cssTables(): string {
     return `/* ── Tables ── */
 table { width: 100%; border-collapse: collapse; }
 thead th {
@@ -542,7 +623,7 @@ tfoot th, tfoot td {
 .over-budget { color: var(--red); }`;
   }
 
-  private cssInsights(): string {
+  private static cssInsights(): string {
     return `/* ── Insights ── */
 .insights-grid {
   display: grid;
@@ -593,7 +674,7 @@ tfoot th, tfoot td {
 }`;
   }
 
-  private cssUncategorized(): string {
+  private static cssUncategorized(): string {
     return `/* ── Uncategorized ── */
 .uncategorized {
   background: rgba(212, 84, 78, 0.07);
@@ -614,7 +695,7 @@ tfoot th, tfoot td {
 .uncategorized p { font-size: 0.85rem; }`;
   }
 
-  private cssFooter(): string {
+  private static cssFooter(): string {
     return `/* ── Footer ── */
 .footer-totals {
   border-top: 1px solid var(--border);
@@ -654,7 +735,7 @@ tfoot th, tfoot td {
 }`;
   }
 
-  private cssPre(): string {
+  private static cssPre(): string {
     return `pre {
   font-family: var(--font-mono);
   font-size: 0.8rem;
@@ -668,7 +749,7 @@ tfoot th, tfoot td {
 }`;
   }
 
-  private cssPrint(): string {
+  private static cssPrint(): string {
     return `/* ── Print ── */
 @media print {
   body { background: #fff; color: #1a1a1a; padding: 1rem; }
@@ -690,77 +771,4 @@ tfoot th, tfoot td {
   .attribution { display: none; }
 }`;
   }
-}
-
-// ── Helpers ─────────────────────────────────────────────
-
-function esc(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
-
-function deltaColor(delta: Money): string {
-  if (delta.isPositive()) {
-    return "under-budget";
-  }
-  if (delta.isNegative()) {
-    return "over-budget";
-  }
-  return "";
-}
-
-function fmtPct(v: number | null): string {
-  return v === null ? "N/A" : `${v}%`;
-}
-
-interface TooltipContent {
-  purpose: string;
-  target: string;
-  tip: string;
-}
-
-const KPI_TOOLTIPS: Record<string, TooltipContent> = {
-  "Budget Adherence": {
-    purpose: "Percentage of categories where actual spending stayed within budget",
-    target: "Aim for 90%+",
-    tip: "Review overspent categories and adjust budgets or spending",
-  },
-  "Daily Avg Spending": {
-    purpose: "Total monthly expenses divided by days in the month",
-    target: "Keep below your daily income equivalent",
-    tip: "Track daily purchases and set a daily spending cap",
-  },
-  "Savings Rate": {
-    purpose: "Percentage of income kept after all expenses",
-    target: "Aim for 20%+",
-    tip: "Reduce discretionary spending or increase income",
-  },
-  Uncategorized: {
-    purpose: "Percentage of transactions not assigned to any category",
-    target: "Aim for 0%",
-    tip: "Run 'tally transactions categorize' to assign categories",
-  },
-};
-
-function card(label: string, value: string, highlight = false): string {
-  const tooltip = KPI_TOOLTIPS[label];
-  const tooltipHtml = `<span class="kpi-help-wrap"><button class="kpi-help" aria-label="About ${esc(label)}" type="button">?</button><div class="kpi-tooltip" role="tooltip"><strong>${esc(tooltip.purpose)}</strong><br>${esc(tooltip.target)}<br><em>${esc(tooltip.tip)}</em></div></span>`;
-  return `<div class="kpi${highlight ? " kpi-highlight" : ""}">${tooltipHtml}<div class="kpi-value">${value}</div><div class="kpi-label">${label}</div></div>`;
-}
-
-function item(label: string, value: string, cls = ""): string {
-  return `<div class="total-item"><span class="total-label">${label}</span><span class="total-value${cls ? ` ${cls}` : ""}">${value}</span></div>`;
-}
-
-function fmtDelta(delta: Money, signed: boolean): string {
-  if (!signed || delta.isZero()) {
-    return delta.format();
-  }
-  if (delta.isPositive()) {
-    return `+${delta.format()}`;
-  }
-  return delta.format();
 }

@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Command } from "commander";
-import { createReportCommand } from "../../src/presentation/command/report-command.js";
-import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
 import { Budget } from "../../src/domain/entity/budget.js";
+import { Command } from "commander";
 import { Month } from "../../src/domain/value-object/month.js";
+import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
+import { createReportCommand } from "../../src/presentation/command/report-command.js";
 
 describe("createReportCommand", () => {
   const mockGenerateReport = { execute: vi.fn() };
-  const mockRenderer = { render: vi.fn((d: unknown) => JSON.stringify(d)) };
+  const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
 
   beforeEach(() => {
     vi.restoreAllMocks();

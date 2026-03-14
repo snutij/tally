@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Command } from "commander";
-import { createBudgetCommand } from "../../src/presentation/command/budget-command.js";
 import { Budget } from "../../src/domain/entity/budget.js";
+import { Command } from "commander";
 import { Month } from "../../src/domain/value-object/month.js";
+import { createBudgetCommand } from "../../src/presentation/command/budget-command.js";
 
 describe("createBudgetCommand", () => {
   const mockPlanBudget = {
     get: vi.fn(),
     initFromDefaults: vi.fn(),
   };
-  const mockRenderer = { render: vi.fn((d: unknown) => JSON.stringify(d)) };
+  const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
 
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -44,6 +44,7 @@ describe("createBudgetCommand", () => {
   });
 
   it("show logs error and sets exitCode when no budget", async () => {
+    // eslint-disable-next-line unicorn/no-null -- simulates BudgetRepository returning null for missing budget
     mockPlanBudget.get.mockReturnValue(null);
 
     await run("show", "2026-03");

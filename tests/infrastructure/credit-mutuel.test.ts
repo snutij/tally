@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { join } from "node:path";
 import { CreditMutuelImporter } from "../../src/infrastructure/bank/credit-mutuel.js";
+import { join } from "node:path";
 
 describe("CreditMutuelImporter", () => {
   const importer = new CreditMutuelImporter();
@@ -17,14 +17,14 @@ describe("CreditMutuelImporter", () => {
 
   it("parses debit amounts as negative", () => {
     const transactions = importer.parse(fixturePath);
-    const rent = transactions[0];
+    const [rent] = transactions;
     expect(rent.amount.cents).toBe(-80_000);
     expect(rent.label).toBe("RENT MARCH 2026");
   });
 
   it("parses credit amounts as positive", () => {
     const transactions = importer.parse(fixturePath);
-    const salary = transactions[2];
+    const [salary] = transactions.slice(2);
     expect(salary.amount.cents).toBe(250_000);
     expect(salary.label).toBe("SALARY TRANSFER");
   });

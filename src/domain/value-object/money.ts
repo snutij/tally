@@ -1,5 +1,9 @@
 export class Money {
-  private constructor(readonly cents: number) {}
+  readonly cents: number;
+
+  private constructor(cents: number) {
+    this.cents = cents;
+  }
 
   static fromCents(cents: number): Money {
     if (!Number.isInteger(cents)) {

@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import {
   BudgetAlreadyExists,
   DomainError,
@@ -6,6 +5,7 @@ import {
   InvalidMonth,
   UnknownBankAdapter,
 } from "../../src/domain/error/index.js";
+import { describe, expect, it } from "vitest";
 
 describe("DomainError hierarchy", () => {
   const cases: [string, DomainError][] = [

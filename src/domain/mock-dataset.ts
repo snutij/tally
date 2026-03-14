@@ -1,15 +1,15 @@
-import type { Transaction } from "./entity/transaction.js";
 import { DateOnly } from "./value-object/date-only.js";
 import { Money } from "./value-object/money.js";
+import type { Transaction } from "./entity/transaction.js";
 
 type DateFn = (day: number) => DateOnly;
 
-function incomeTransactions(prefix: string, d: DateFn, bank: string): Transaction[] {
+function incomeTransactions(prefix: string, dateFn: DateFn, bank: string): Transaction[] {
   return [
     {
       amount: Money.fromEuros(3200),
       categoryId: "inc01",
-      date: d(1),
+      date: dateFn(1),
       id: `${prefix}-inc-1`,
       label: "Salary",
       sourceBank: bank,
@@ -17,7 +17,7 @@ function incomeTransactions(prefix: string, d: DateFn, bank: string): Transactio
     {
       amount: Money.fromEuros(750),
       categoryId: "inc02",
-      date: d(15),
+      date: dateFn(15),
       id: `${prefix}-inc-2`,
       label: "Rental income",
       sourceBank: bank,
@@ -25,12 +25,12 @@ function incomeTransactions(prefix: string, d: DateFn, bank: string): Transactio
   ];
 }
 
-function needsTransactions(prefix: string, d: DateFn, bank: string): Transaction[] {
+function needsTransactions(prefix: string, dateFn: DateFn, bank: string): Transaction[] {
   return [
     {
       amount: Money.fromEuros(-950),
       categoryId: "n01",
-      date: d(1),
+      date: dateFn(1),
       id: `${prefix}-n-1`,
       label: "Rent payment",
       sourceBank: bank,
@@ -38,7 +38,7 @@ function needsTransactions(prefix: string, d: DateFn, bank: string): Transaction
     {
       amount: Money.fromEuros(-87.5),
       categoryId: "n02",
-      date: d(3),
+      date: dateFn(3),
       id: `${prefix}-n-2`,
       label: "Groceries Carrefour",
       sourceBank: bank,
@@ -46,7 +46,7 @@ function needsTransactions(prefix: string, d: DateFn, bank: string): Transaction
     {
       amount: Money.fromEuros(-62.3),
       categoryId: "n02",
-      date: d(10),
+      date: dateFn(10),
       id: `${prefix}-n-3`,
       label: "Groceries Lidl",
       sourceBank: bank,
@@ -54,7 +54,7 @@ function needsTransactions(prefix: string, d: DateFn, bank: string): Transaction
     {
       amount: Money.fromEuros(-85),
       categoryId: "n12",
-      date: d(5),
+      date: dateFn(5),
       id: `${prefix}-n-4`,
       label: "EDF electricity",
       sourceBank: bank,
@@ -62,7 +62,7 @@ function needsTransactions(prefix: string, d: DateFn, bank: string): Transaction
     {
       amount: Money.fromEuros(-19.99),
       categoryId: "n10",
-      date: d(5),
+      date: dateFn(5),
       id: `${prefix}-n-5`,
       label: "Mobile phone",
       sourceBank: bank,
@@ -70,7 +70,7 @@ function needsTransactions(prefix: string, d: DateFn, bank: string): Transaction
     {
       amount: Money.fromEuros(-120),
       categoryId: "n06",
-      date: d(8),
+      date: dateFn(8),
       id: `${prefix}-n-6`,
       label: "Health insurance",
       sourceBank: bank,
@@ -78,7 +78,7 @@ function needsTransactions(prefix: string, d: DateFn, bank: string): Transaction
     {
       amount: Money.fromEuros(-65),
       categoryId: "n07",
-      date: d(12),
+      date: dateFn(12),
       id: `${prefix}-n-7`,
       label: "Gas station",
       sourceBank: bank,
@@ -86,12 +86,12 @@ function needsTransactions(prefix: string, d: DateFn, bank: string): Transaction
   ];
 }
 
-function wantsTransactions(prefix: string, d: DateFn, bank: string): Transaction[] {
+function wantsTransactions(prefix: string, dateFn: DateFn, bank: string): Transaction[] {
   return [
     {
       amount: Money.fromEuros(-45),
       categoryId: "w02",
-      date: d(7),
+      date: dateFn(7),
       id: `${prefix}-w-1`,
       label: "Restaurant La Belle",
       sourceBank: bank,
@@ -99,7 +99,7 @@ function wantsTransactions(prefix: string, d: DateFn, bank: string): Transaction
     {
       amount: Money.fromEuros(-22),
       categoryId: "w03",
-      date: d(14),
+      date: dateFn(14),
       id: `${prefix}-w-2`,
       label: "Cinema tickets",
       sourceBank: bank,
@@ -107,7 +107,7 @@ function wantsTransactions(prefix: string, d: DateFn, bank: string): Transaction
     {
       amount: Money.fromEuros(-13.49),
       categoryId: "w06",
-      date: d(20),
+      date: dateFn(20),
       id: `${prefix}-w-3`,
       label: "Netflix subscription",
       sourceBank: bank,
@@ -115,7 +115,7 @@ function wantsTransactions(prefix: string, d: DateFn, bank: string): Transaction
     {
       amount: Money.fromEuros(-67.8),
       categoryId: "w01",
-      date: d(25),
+      date: dateFn(25),
       id: `${prefix}-w-4`,
       label: "Amazon shopping",
       sourceBank: bank,
@@ -123,12 +123,12 @@ function wantsTransactions(prefix: string, d: DateFn, bank: string): Transaction
   ];
 }
 
-function investmentTransactions(prefix: string, d: DateFn, bank: string): Transaction[] {
+function investmentTransactions(prefix: string, dateFn: DateFn, bank: string): Transaction[] {
   return [
     {
       amount: Money.fromEuros(-850),
       categoryId: "i01",
-      date: d(2),
+      date: dateFn(2),
       id: `${prefix}-i-1`,
       label: "Mortgage repayment",
       sourceBank: bank,
@@ -136,7 +136,7 @@ function investmentTransactions(prefix: string, d: DateFn, bank: string): Transa
     {
       amount: Money.fromEuros(-200),
       categoryId: "i03",
-      date: d(10),
+      date: dateFn(10),
       id: `${prefix}-i-2`,
       label: "ETF monthly buy",
       sourceBank: bank,
@@ -144,18 +144,18 @@ function investmentTransactions(prefix: string, d: DateFn, bank: string): Transa
   ];
 }
 
-function uncategorizedTransactions(prefix: string, d: DateFn, bank: string): Transaction[] {
+function uncategorizedTransactions(prefix: string, dateFn: DateFn, bank: string): Transaction[] {
   return [
     {
       amount: Money.fromEuros(-35),
-      date: d(18),
+      date: dateFn(18),
       id: `${prefix}-u-1`,
       label: "Unknown transfer",
       sourceBank: bank,
     },
     {
       amount: Money.fromEuros(-60),
-      date: d(22),
+      date: dateFn(22),
       id: `${prefix}-u-2`,
       label: "ATM withdrawal",
       sourceBank: bank,
@@ -169,7 +169,7 @@ function uncategorizedTransactions(prefix: string, d: DateFn, bank: string): Tra
  * Includes 2 uncategorized transactions for edge-case testing.
  */
 export function mockTransactions(year: number, month: number): Transaction[] {
-  function d(day: number): DateOnly {
+  function dateFn(day: number): DateOnly {
     return DateOnly.from(
       `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
     );
@@ -178,11 +178,11 @@ export function mockTransactions(year: number, month: number): Transaction[] {
   const prefix = `mock-${year}${month}`;
 
   return [
-    ...incomeTransactions(prefix, d, bank),
-    ...needsTransactions(prefix, d, bank),
-    ...wantsTransactions(prefix, d, bank),
-    ...investmentTransactions(prefix, d, bank),
-    ...uncategorizedTransactions(prefix, d, bank),
+    ...incomeTransactions(prefix, dateFn, bank),
+    ...needsTransactions(prefix, dateFn, bank),
+    ...wantsTransactions(prefix, dateFn, bank),
+    ...investmentTransactions(prefix, dateFn, bank),
+    ...uncategorizedTransactions(prefix, dateFn, bank),
   ];
 }
 

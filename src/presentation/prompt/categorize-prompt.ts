@@ -1,8 +1,8 @@
-import select from "@inquirer/select";
+import { CategoryGroup } from "../../domain/value-object/category-group.js";
+import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { ExitPromptError } from "@inquirer/core";
 import type { Transaction } from "../../domain/entity/transaction.js";
-import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
-import { CategoryGroup } from "../../domain/value-object/category-group.js";
+import select from "@inquirer/select";
 
 const GROUP_LABELS: Record<CategoryGroup, string> = {
   INCOME: "— Income —",
@@ -18,7 +18,7 @@ export function buildCategoryChoices(): Choice[] {
 
   for (const group of Object.values(CategoryGroup)) {
     choices.push({ separator: GROUP_LABELS[group], type: "separator" as const });
-    for (const cat of DEFAULT_CATEGORIES.filter((c) => c.group === group)) {
+    for (const cat of DEFAULT_CATEGORIES.filter((dc) => dc.group === group)) {
       choices.push({ name: cat.name, value: cat.id });
     }
   }
@@ -39,10 +39,10 @@ export async function categorizePrompt(transactions: Transaction[]): Promise<Cat
   const result: Transaction[] = [];
 
   try {
-    for (let i = 0; i < transactions.length; i += 1) {
-      const txn = transactions[i];
+    for (let idx = 0; idx < transactions.length; idx += 1) {
+      const txn = transactions[idx];
       const sign = txn.amount.isNegative() ? "" : "+";
-      const header = `${i + 1}/${transactions.length}  ${sign}${txn.amount.format()}  ${txn.label}  (${txn.date})`;
+      const header = `${idx + 1}/${transactions.length}  ${sign}${txn.amount.format()}  ${txn.label}  (${txn.date})`;
 
       const answer = await select({
         choices,

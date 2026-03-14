@@ -1,21 +1,21 @@
-import { describe, expect, it } from "vitest";
 import { MOCK_BUDGET_AMOUNTS, mockTransactions } from "../../src/domain/mock-dataset.js";
-import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
+import { describe, expect, it } from "vitest";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 
 describe("mockTransactions", () => {
   const txns = mockTransactions(2026, 3);
-  const validIds = new Set(DEFAULT_CATEGORIES.map((c) => c.id));
+  const validIds = new Set(DEFAULT_CATEGORIES.map((cat) => cat.id));
 
   it("contains at least 15 transactions", () => {
     expect(txns.length).toBeGreaterThanOrEqual(15);
   });
 
   it("covers all category groups", () => {
-    const categorized = txns.filter((t) => t.categoryId);
+    const categorized = txns.filter((txn) => txn.categoryId);
     const groups = new Set(
-      categorized.map((t) => {
-        const cat = DEFAULT_CATEGORIES.find((c) => c.id === t.categoryId);
+      categorized.map((txn) => {
+        const cat = DEFAULT_CATEGORIES.find((dc) => dc.id === txn.categoryId);
         return cat?.group;
       }),
     );
@@ -26,26 +26,26 @@ describe("mockTransactions", () => {
   });
 
   it("includes at least 2 uncategorized transactions", () => {
-    const uncategorized = txns.filter((t) => !t.categoryId);
+    const uncategorized = txns.filter((txn) => !txn.categoryId);
     expect(uncategorized.length).toBeGreaterThanOrEqual(2);
   });
 
   it("uses only valid DEFAULT_CATEGORIES IDs", () => {
-    for (const t of txns) {
-      if (t.categoryId) {
-        expect(validIds).toContain(t.categoryId);
+    for (const txn of txns) {
+      if (txn.categoryId) {
+        expect(validIds).toContain(txn.categoryId);
       }
     }
   });
 
   it("generates unique IDs", () => {
-    const ids = txns.map((t) => t.id);
+    const ids = txns.map((txn) => txn.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 });
 
 describe("MOCK_BUDGET_AMOUNTS", () => {
-  const validIds = new Set(DEFAULT_CATEGORIES.map((c) => c.id));
+  const validIds = new Set(DEFAULT_CATEGORIES.map((cat) => cat.id));
 
   it("uses only valid DEFAULT_CATEGORIES IDs", () => {
     for (const id of Object.keys(MOCK_BUDGET_AMOUNTS)) {

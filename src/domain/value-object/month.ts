@@ -3,7 +3,11 @@ import { InvalidMonth } from "../error/index.js";
 const MONTH_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 export class Month {
-  private constructor(readonly value: string) {}
+  readonly value: string;
+
+  private constructor(value: string) {
+    this.value = value;
+  }
 
   static from(input: string): Month {
     if (!MONTH_REGEX.test(input)) {

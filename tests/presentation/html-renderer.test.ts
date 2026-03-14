@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { Budget } from "../../src/domain/entity/budget.js";
-import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
-import { Month } from "../../src/domain/value-object/month.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
-import { Money } from "../../src/domain/value-object/money.js";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
+import { DateOnly } from "../../src/domain/value-object/date-only.js";
+import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
+import { Money } from "../../src/domain/value-object/money.js";
+import { Month } from "../../src/domain/value-object/month.js";
+import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
 
 describe("HtmlRenderer", () => {
   const renderer = new HtmlRenderer();
@@ -110,7 +110,7 @@ describe("HtmlRenderer", () => {
       ]);
       const report = MonthlyReport.compute(incomeOnly, []);
       const html = renderer.render(report);
-      const body = html.split("<body>")[1];
+      const [, body] = html.split("<body>");
       expect(body).not.toContain("Top Spending");
       expect(body).not.toContain("Largest Expenses");
     });
@@ -135,7 +135,7 @@ describe("HtmlRenderer", () => {
       ];
       const report = MonthlyReport.compute(incomeOnly, uncatTxns);
       const html = renderer.render(report);
-      const body = html.split("<body>")[1];
+      const [, body] = html.split("<body>");
       expect(body).toContain("Largest Expenses");
       expect(body).not.toContain("Top Spending");
     });
@@ -160,7 +160,7 @@ describe("HtmlRenderer", () => {
       ];
       const report = MonthlyReport.compute(expenseBudget, refundTxns);
       const html = renderer.render(report);
-      const body = html.split("<body>")[1];
+      const [, body] = html.split("<body>");
       expect(body).toContain("Top Spending");
       expect(body).not.toContain("Largest Expenses");
     });
@@ -179,7 +179,7 @@ describe("HtmlRenderer", () => {
         },
       ]);
       const html = renderer.render(multiLineBudget);
-      const body = html.split("<body>")[1];
+      const [, body] = html.split("<body>");
       // Only one NEEDS group header, but both lines present
       const needsMatches = body.match(/NEEDS/g);
       expect(needsMatches).toHaveLength(1);
@@ -235,7 +235,7 @@ describe("HtmlRenderer", () => {
 
   it("does not render tooltip markup in Budget view body", () => {
     const html = renderer.render(budget);
-    const body = html.split("<body>")[1];
+    const [, body] = html.split("<body>");
     expect(body).not.toContain("kpi-help");
     expect(body).not.toContain("kpi-tooltip");
   });

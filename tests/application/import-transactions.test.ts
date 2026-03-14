@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import type { BankImportGateway } from "../../src/application/gateway/bank-import.js";
-import type { Transaction } from "../../src/domain/entity/transaction.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
-import { Money } from "../../src/domain/value-object/money.js";
-import { UnknownBankAdapter } from "../../src/domain/error/index.js";
+import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
+import { Money } from "../../src/domain/value-object/money.js";
+import type { Transaction } from "../../src/domain/entity/transaction.js";
+import { UnknownBankAdapter } from "../../src/domain/error/index.js";
 
 class StubImporter implements BankImportGateway {
   readonly bankName = "test-bank";
+  // eslint-disable-next-line class-methods-use-this -- implements BankImportGateway interface
   parse(_filePath: string): Transaction[] {
     return [
       {

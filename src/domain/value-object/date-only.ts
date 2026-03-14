@@ -1,7 +1,11 @@
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export class DateOnly {
-  private constructor(readonly value: string) {}
+  readonly value: string;
+
+  private constructor(value: string) {
+    this.value = value;
+  }
 
   static from(input: string | Date): DateOnly {
     if (input instanceof Date) {
