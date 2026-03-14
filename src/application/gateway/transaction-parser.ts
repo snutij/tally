@@ -1,6 +1,5 @@
 import type { Transaction } from "../../domain/entity/transaction.js";
 
-export interface BankImportGateway {
-  readonly bankName: string;
+export interface TransactionParser {
   parse(filePath: string): Transaction[];
 }

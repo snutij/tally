@@ -1,15 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { BankImportGateway } from "../../src/application/gateway/bank-import.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import type { Transaction } from "../../src/domain/entity/transaction.js";
-import { UnknownBankAdapter } from "../../src/domain/error/index.js";
+import type { TransactionParser } from "../../src/application/gateway/transaction-parser.js";
 
-class StubImporter implements BankImportGateway {
-  readonly bankName = "test-bank";
-  // eslint-disable-next-line class-methods-use-this -- implements BankImportGateway interface
+class StubParser implements TransactionParser {
+  // eslint-disable-next-line class-methods-use-this -- implements TransactionParser interface
   parse(_filePath: string): Transaction[] {
     return [
       {
@@ -17,14 +15,14 @@ class StubImporter implements BankImportGateway {
         date: DateOnly.from("2026-03-01"),
         id: "tx-1",
         label: "Test transaction",
-        sourceBank: "test-bank",
+        source: "csv",
       },
       {
         amount: Money.fromEuros(-10),
         date: DateOnly.from("2026-03-15"),
         id: "tx-2",
         label: "Another transaction",
-        sourceBank: "test-bank",
+        source: "csv",
       },
     ];
   }
@@ -33,30 +31,43 @@ class StubImporter implements BankImportGateway {
 describe("ImportTransactions", () => {
   let txnRepo: InMemoryTransactionRepository;
   let useCase: ImportTransactions;
+  let parser: StubParser;
 
   beforeEach(() => {
-    const importer = new StubImporter();
+    parser = new StubParser();
     txnRepo = new InMemoryTransactionRepository();
-    useCase = new ImportTransactions(new Map([[importer.bankName, importer]]), txnRepo);
+    useCase = new ImportTransactions(txnRepo);
   });
 
-  it("parses transactions from bank adapter", () => {
-    const transactions = useCase.parse("test-bank", "dummy.csv");
+  it("parses transactions via parser", () => {
+    const transactions = useCase.parse(parser, "dummy.csv");
     expect(transactions).toHaveLength(2);
   });
 
   it("saves transactions and returns count", () => {
-    const transactions = useCase.parse("test-bank", "dummy.csv");
+    const transactions = useCase.parse(parser, "dummy.csv");
     const result = useCase.save(transactions);
     expect(result.count).toBe(2);
     expect(txnRepo.saved).toHaveLength(2);
   });
 
-  it("throws UnknownBankAdapter for unknown bank", () => {
-    expect(() => useCase.parse("unknown-bank", "dummy.csv")).toThrow(UnknownBankAdapter);
-  });
+  it("splits by category status", () => {
+    const categorized: Transaction = {
+      amount: Money.fromEuros(-42.5),
+      categoryId: "n01",
+      date: DateOnly.from("2026-03-01"),
+      id: "tx-1",
+      label: "Test transaction",
+      source: "csv",
+    };
+    txnRepo.saveAll([categorized]);
 
-  it("lists available banks", () => {
-    expect(useCase.listBanks()).toEqual(["test-bank"]);
+    const parsed = useCase.parse(parser, "dummy.csv");
+    const { alreadyCategorized, uncategorized } = useCase.splitByCategoryStatus(parsed);
+
+    expect(alreadyCategorized).toHaveLength(1);
+    expect(alreadyCategorized[0].categoryId).toBe("n01");
+    expect(uncategorized).toHaveLength(1);
+    expect(uncategorized[0].id).toBe("tx-2");
   });
 });

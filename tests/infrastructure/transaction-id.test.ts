@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deterministicTransactionId } from "../../src/infrastructure/bank/transaction-id.js";
+import { deterministicTransactionId } from "../../src/infrastructure/csv/transaction-id.js";
 
 describe("deterministicTransactionId", () => {
   it("returns a 32-char hex string", () => {

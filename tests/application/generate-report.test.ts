@@ -37,7 +37,7 @@ describe("GenerateReport", () => {
         date: DateOnly.from("2026-03-01"),
         id: "1",
         label: "Rent",
-        sourceBank: "test",
+        source: "test",
       },
     ]);
 
@@ -70,7 +70,7 @@ describe("GenerateReport", () => {
         date: DateOnly.from("2026-03-01"),
         id: "1",
         label: "March Rent",
-        sourceBank: "test",
+        source: "test",
       },
       {
         amount: Money.fromEuros(-800),
@@ -78,7 +78,7 @@ describe("GenerateReport", () => {
         date: DateOnly.from("2026-04-01"),
         id: "2",
         label: "April Rent",
-        sourceBank: "test",
+        source: "test",
       },
     ]);
 
@@ -96,7 +96,7 @@ describe("GenerateReport", () => {
         date: DateOnly.from("2026-03-15"),
         id: "1",
         label: "Mystery",
-        sourceBank: "test",
+        source: "test",
       },
     ]);
 

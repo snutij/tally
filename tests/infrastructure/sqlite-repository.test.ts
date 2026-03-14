@@ -90,14 +90,14 @@ describe("SqliteRepository", () => {
           date: DateOnly.from("2026-03-01"),
           id: "tx-1",
           label: "Rent",
-          sourceBank: "credit-mutuel",
+          source: "credit-mutuel",
         },
         {
           amount: Money.fromEuros(-800),
           date: DateOnly.from("2026-04-01"),
           id: "tx-2",
           label: "Rent April",
-          sourceBank: "credit-mutuel",
+          source: "credit-mutuel",
         },
       ]);
 

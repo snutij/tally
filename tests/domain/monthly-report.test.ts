@@ -33,7 +33,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-01"),
         id: "1",
         label: "Rent March",
-        sourceBank: "credit-mutuel",
+        source: "credit-mutuel",
       },
       {
         amount: Money.fromEuros(-150),
@@ -41,7 +41,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-15"),
         id: "2",
         label: "Restaurant",
-        sourceBank: "credit-mutuel",
+        source: "credit-mutuel",
       },
     ];
 
@@ -79,7 +79,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-05"),
         id: "1",
         label: "Unknown store",
-        sourceBank: "credit-mutuel",
+        source: "credit-mutuel",
       },
       {
         amount: Money.fromEuros(-800),
@@ -87,7 +87,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-10"),
         id: "2",
         label: "Rent March",
-        sourceBank: "credit-mutuel",
+        source: "credit-mutuel",
       },
     ];
 
@@ -149,7 +149,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-01"),
         id: "1",
         label: "Rent March",
-        sourceBank: "credit-mutuel",
+        source: "credit-mutuel",
       },
       {
         amount: Money.fromEuros(2500),
@@ -157,7 +157,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-05"),
         id: "2",
         label: "Salary",
-        sourceBank: "credit-mutuel",
+        source: "credit-mutuel",
       },
     ];
 
@@ -200,7 +200,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-01"),
         id: "1",
         label: "Custom purchase",
-        sourceBank: "test",
+        source: "test",
       },
     ];
 
@@ -224,7 +224,7 @@ describe("MonthlyReport", () => {
           date: DateOnly.from("2026-03-01"),
           id: "1",
           label: "Rent",
-          sourceBank: "cm",
+          source: "cm",
         },
         {
           amount: Money.fromEuros(-120),
@@ -232,7 +232,7 @@ describe("MonthlyReport", () => {
           date: DateOnly.from("2026-03-10"),
           id: "2",
           label: "Dinner",
-          sourceBank: "cm",
+          source: "cm",
         },
       ];
 
@@ -310,7 +310,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-01"),
         id: "1",
         label: "Salary",
-        sourceBank: "cm",
+        source: "cm",
       },
       {
         amount: Money.fromEuros(-800),
@@ -318,7 +318,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-02"),
         id: "2",
         label: "Rent",
-        sourceBank: "cm",
+        source: "cm",
       },
       {
         amount: Money.fromEuros(-350),
@@ -326,7 +326,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-05"),
         id: "3",
         label: "Groceries",
-        sourceBank: "cm",
+        source: "cm",
       },
       {
         amount: Money.fromEuros(-150),
@@ -334,7 +334,7 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-10"),
         id: "4",
         label: "Restaurant",
-        sourceBank: "cm",
+        source: "cm",
       },
       {
         amount: Money.fromEuros(-300),
@@ -342,14 +342,14 @@ describe("MonthlyReport", () => {
         date: DateOnly.from("2026-03-15"),
         id: "5",
         label: "ETF",
-        sourceBank: "cm",
+        source: "cm",
       },
       {
         amount: Money.fromEuros(-50),
         date: DateOnly.from("2026-03-20"),
         id: "6",
         label: "Mystery",
-        sourceBank: "cm",
+        source: "cm",
       },
     ];
 
@@ -393,7 +393,7 @@ describe("MonthlyReport", () => {
           date: DateOnly.from("2026-03-01"),
           id: "1",
           label: "Rent",
-          sourceBank: "cm",
+          source: "cm",
         },
       ];
       const report = MonthlyReport.compute(budget, txns);
@@ -462,7 +462,7 @@ describe("MonthlyReport", () => {
           date: DateOnly.from("2026-03-01"),
           id: "1",
           label: "Salary",
-          sourceBank: "cm",
+          source: "cm",
         },
       ];
       const report = MonthlyReport.compute(budgetWithIncome, txns);
@@ -488,7 +488,7 @@ describe("MonthlyReport", () => {
           date: DateOnly.from("2026-03-01"),
           id: "1",
           label: "Rent",
-          sourceBank: "cm",
+          source: "cm",
         },
         {
           amount: Money.fromEuros(-50),
@@ -496,7 +496,7 @@ describe("MonthlyReport", () => {
           date: DateOnly.from("2026-03-05"),
           id: "2",
           label: "Dinner",
-          sourceBank: "cm",
+          source: "cm",
         },
       ];
       const report = MonthlyReport.compute(budget, txns);

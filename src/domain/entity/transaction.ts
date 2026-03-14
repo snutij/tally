@@ -7,5 +7,5 @@ export interface Transaction {
   readonly label: string;
   readonly amount: Money;
   readonly categoryId?: string;
-  readonly sourceBank: string;
+  readonly source: string;
 }

@@ -12,7 +12,7 @@ function incomeTransactions(prefix: string, dateFn: DateFn, bank: string): Trans
       date: dateFn(1),
       id: `${prefix}-inc-1`,
       label: "Salary",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(750),
@@ -20,7 +20,7 @@ function incomeTransactions(prefix: string, dateFn: DateFn, bank: string): Trans
       date: dateFn(15),
       id: `${prefix}-inc-2`,
       label: "Rental income",
-      sourceBank: bank,
+      source: bank,
     },
   ];
 }
@@ -33,7 +33,7 @@ function needsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(1),
       id: `${prefix}-n-1`,
       label: "Rent payment",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-87.5),
@@ -41,7 +41,7 @@ function needsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(3),
       id: `${prefix}-n-2`,
       label: "Groceries Carrefour",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-62.3),
@@ -49,7 +49,7 @@ function needsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(10),
       id: `${prefix}-n-3`,
       label: "Groceries Lidl",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-85),
@@ -57,7 +57,7 @@ function needsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(5),
       id: `${prefix}-n-4`,
       label: "EDF electricity",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-19.99),
@@ -65,7 +65,7 @@ function needsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(5),
       id: `${prefix}-n-5`,
       label: "Mobile phone",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-120),
@@ -73,7 +73,7 @@ function needsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(8),
       id: `${prefix}-n-6`,
       label: "Health insurance",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-65),
@@ -81,7 +81,7 @@ function needsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(12),
       id: `${prefix}-n-7`,
       label: "Gas station",
-      sourceBank: bank,
+      source: bank,
     },
   ];
 }
@@ -94,7 +94,7 @@ function wantsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(7),
       id: `${prefix}-w-1`,
       label: "Restaurant La Belle",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-22),
@@ -102,7 +102,7 @@ function wantsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(14),
       id: `${prefix}-w-2`,
       label: "Cinema tickets",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-13.49),
@@ -110,7 +110,7 @@ function wantsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(20),
       id: `${prefix}-w-3`,
       label: "Netflix subscription",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-67.8),
@@ -118,7 +118,7 @@ function wantsTransactions(prefix: string, dateFn: DateFn, bank: string): Transa
       date: dateFn(25),
       id: `${prefix}-w-4`,
       label: "Amazon shopping",
-      sourceBank: bank,
+      source: bank,
     },
   ];
 }
@@ -131,7 +131,7 @@ function investmentTransactions(prefix: string, dateFn: DateFn, bank: string): T
       date: dateFn(2),
       id: `${prefix}-i-1`,
       label: "Mortgage repayment",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-200),
@@ -139,7 +139,7 @@ function investmentTransactions(prefix: string, dateFn: DateFn, bank: string): T
       date: dateFn(10),
       id: `${prefix}-i-2`,
       label: "ETF monthly buy",
-      sourceBank: bank,
+      source: bank,
     },
   ];
 }
@@ -151,14 +151,14 @@ function uncategorizedTransactions(prefix: string, dateFn: DateFn, bank: string)
       date: dateFn(18),
       id: `${prefix}-u-1`,
       label: "Unknown transfer",
-      sourceBank: bank,
+      source: bank,
     },
     {
       amount: Money.fromEuros(-60),
       date: dateFn(22),
       id: `${prefix}-u-2`,
       label: "ATM withdrawal",
-      sourceBank: bank,
+      source: bank,
     },
   ];
 }

@@ -1,28 +1,19 @@
-import type { BankImportGateway } from "../gateway/bank-import.js";
 import type { Transaction } from "../../domain/entity/transaction.js";
+import type { TransactionParser } from "../gateway/transaction-parser.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
-import { UnknownBankAdapter } from "../../domain/error/index.js";
 
 export class ImportTransactions {
-  private importers: Map<string, BankImportGateway>;
-  private txnRepo: TransactionRepository;
+  private readonly txnRepo: TransactionRepository;
 
-  constructor(importers: Map<string, BankImportGateway>, txnRepo: TransactionRepository) {
-    this.importers = importers;
+  constructor(txnRepo: TransactionRepository) {
     this.txnRepo = txnRepo;
   }
 
-  parse(bankName: string, filePath: string): Transaction[] {
-    const importer = this.importers.get(bankName);
-    if (!importer) {
-      throw new UnknownBankAdapter(bankName);
-    }
-    return importer.parse(filePath);
+  // eslint-disable-next-line class-methods-use-this -- use case API: delegates to injected parser
+  parse(parser: TransactionParser, filePath: string): Transaction[] {
+    return parser.parse(filePath);
   }
 
-  /**
-   * Splits parsed transactions into already-categorized (in DB) and uncategorized.
-   */
   splitByCategoryStatus(transactions: Transaction[]): {
     alreadyCategorized: Transaction[];
     uncategorized: Transaction[];
@@ -47,9 +38,5 @@ export class ImportTransactions {
   save(transactions: Transaction[]): { count: number } {
     this.txnRepo.saveAll(transactions);
     return { count: transactions.length };
-  }
-
-  listBanks(): string[] {
-    return [...this.importers.keys()];
   }
 }

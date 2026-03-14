@@ -17,7 +17,7 @@ function txn(overrides: Partial<Transaction> = {}): Transaction {
     date: DateOnly.from("2026-03-15"),
     id: "t1",
     label: "TEST",
-    sourceBank: "test",
+    source: "test",
     ...overrides,
   };
 }

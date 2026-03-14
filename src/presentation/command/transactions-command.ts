@@ -12,7 +12,7 @@ function serializeTransaction(txn: Transaction): Record<string, unknown> {
     date: txn.date,
     id: txn.id,
     label: txn.label,
-    sourceBank: txn.sourceBank,
+    source: txn.source,
   };
 }
 

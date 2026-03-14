@@ -1,9 +1,7 @@
 import { VALID_FORMATS, createRenderer } from "./renderer/create-renderer.js";
 import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { existsSync, mkdirSync } from "node:fs";
-import type { BankImportGateway } from "../application/gateway/bank-import.js";
 import { Command } from "commander";
-import { CreditMutuelImporter } from "../infrastructure/bank/credit-mutuel.js";
 import { DomainError } from "../domain/error/index.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
@@ -24,11 +22,8 @@ if (!existsSync(dataDir)) {
 // --- Composition root ---
 const { budgetRepo, txnRepo } = openDatabase(dbPath);
 
-const creditMutuel = new CreditMutuelImporter();
-const importers = new Map<string, BankImportGateway>([[creditMutuel.bankName, creditMutuel]]);
-
 const planBudget = new PlanBudget(budgetRepo);
-const importTransactions = new ImportTransactions(importers, txnRepo);
+const importTransactions = new ImportTransactions(txnRepo);
 const generateReport = new GenerateReport(budgetRepo, txnRepo);
 const seedMockData = new SeedMockData(txnRepo, budgetRepo);
 

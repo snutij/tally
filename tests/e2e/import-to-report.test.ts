@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
-import { CreditMutuelImporter } from "../../src/infrastructure/bank/credit-mutuel.js";
+import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
+import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
 import type Database from "better-sqlite3";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
@@ -9,6 +10,14 @@ import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
+
+// credit-mutuel-sample.csv: Date;Date de valeur;Montant;Libellé;Solde
+const CSV_MAPPING = new CsvColumnMapping({
+  dateFormat: "DD/MM/YYYY",
+  decimalSeparator: ",",
+  delimiter: ";",
+  fields: ["date", "ignore", "amount", "label", "ignore"],
+});
 
 describe("e2e: import → categorize → budget → report", () => {
   let tmpDir: string;
@@ -19,14 +28,14 @@ describe("e2e: import → categorize → budget → report", () => {
 
   const CSV = join(import.meta.dirname, "../fixtures/credit-mutuel-sample.csv");
   const month = Month.from("2026-03");
+  const parser = new CsvTransactionParser(CSV_MAPPING);
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-e2e-"));
     const { db: database, budgetRepo, txnRepo } = openDatabase(join(tmpDir, "test.db"));
     db = database;
 
-    const importers = new Map([["credit-mutuel", new CreditMutuelImporter()]]);
-    importTxns = new ImportTransactions(importers, txnRepo);
+    importTxns = new ImportTransactions(txnRepo);
     planBudget = new PlanBudget(budgetRepo);
     generateReport = new GenerateReport(budgetRepo, txnRepo);
   });
@@ -38,7 +47,7 @@ describe("e2e: import → categorize → budget → report", () => {
 
   it("imported transactions appear in the monthly report", () => {
     // 1. Parse & categorize
-    const parsed = importTxns.parse("credit-mutuel", CSV);
+    const parsed = importTxns.parse(parser, CSV);
     expect(parsed).toHaveLength(4);
 
     const categorized = parsed.map((txn) => {
@@ -81,8 +90,7 @@ describe("e2e: import → categorize → budget → report", () => {
   });
 
   it("uncategorized transactions show up in uncategorized total", () => {
-    const parsed = importTxns.parse("credit-mutuel", CSV);
-    // save without categorizing
+    const parsed = importTxns.parse(parser, CSV);
     importTxns.save(parsed);
     planBudget.initFromDefaults(month);
 
@@ -94,7 +102,7 @@ describe("e2e: import → categorize → budget → report", () => {
 
   it("re-import preserves previously categorized transactions", () => {
     // First import: categorize only 2
-    const parsed = importTxns.parse("credit-mutuel", CSV);
+    const parsed = importTxns.parse(parser, CSV);
     const partial = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
         return { ...txn, categoryId: "n01" };
@@ -107,7 +115,7 @@ describe("e2e: import → categorize → budget → report", () => {
     importTxns.save(partial);
 
     // Re-import: split should detect already-categorized
-    const reparsed = importTxns.parse("credit-mutuel", CSV);
+    const reparsed = importTxns.parse(parser, CSV);
     const { alreadyCategorized, uncategorized } = importTxns.splitByCategoryStatus(reparsed);
 
     expect(alreadyCategorized).toHaveLength(2);

@@ -17,12 +17,6 @@ export class BudgetAlreadyExists extends DomainError {
   }
 }
 
-export class UnknownBankAdapter extends DomainError {
-  constructor(bankName: string) {
-    super(`Unknown bank adapter: "${bankName}".`);
-  }
-}
-
 export class InvalidCsvData extends DomainError {
   constructor(detail: string) {
     super(`Invalid CSV data: ${detail}`);

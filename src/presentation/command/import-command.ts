@@ -1,9 +1,11 @@
 import { Command } from "commander";
+import { CsvTransactionParser } from "../../infrastructure/csv/csv-transaction-parser.js";
 import type { ImportTransactions } from "../../application/usecase/import-transactions.js";
 import { Month } from "../../domain/value-object/month.js";
 import type { Renderer } from "../renderer/renderer.js";
 import type { SeedMockData } from "../../application/usecase/seed-mock-data.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
+import { collectColumnMapping } from "../prompt/column-mapping-prompt.js";
 
 export function createImportCommand(
   importTransactions: ImportTransactions,
@@ -11,14 +13,6 @@ export function createImportCommand(
   renderer: Renderer,
 ): Command {
   const cmd = new Command("import").description("Import bank transactions");
-
-  cmd
-    .command("list")
-    .description("List available bank adapters")
-    .action(() => {
-      const banks = importTransactions.listBanks();
-      console.log(renderer.render({ banks }));
-    });
 
   cmd
     .command("mock")
@@ -38,17 +32,22 @@ export function createImportCommand(
     });
 
   cmd
-    .argument("[bank]", "Bank adapter name")
-    .argument("[file]", "Path to CSV file")
+    .command("csv")
+    .description("Import transactions from any CSV file")
+    .argument("<file>", "Path to CSV file")
     .option("--no-categorize", "Skip interactive categorization")
-    .action(async (bank?: string, file?: string, opts?: { categorize: boolean }) => {
-      if (!bank || !file) {
+    .action(async (file: string, opts: { categorize: boolean }) => {
+      if (!process.stdout.isTTY) {
+        console.error("Interactive mapping requires a TTY.");
+        process.exitCode = 1;
         return;
       }
 
-      const parsed = importTransactions.parse(bank, file);
+      const mapping = await collectColumnMapping(file);
+      const parser = new CsvTransactionParser(mapping);
+      const parsed = importTransactions.parse(parser, file);
 
-      if (opts?.categorize === false || !process.stdout.isTTY) {
+      if (!opts.categorize) {
         const result = importTransactions.save(parsed);
         console.log(renderer.render(result));
         return;

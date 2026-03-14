@@ -3,7 +3,6 @@ import {
   DomainError,
   InvalidCsvData,
   InvalidMonth,
-  UnknownBankAdapter,
 } from "../../src/domain/error/index.js";
 import { describe, expect, it } from "vitest";
 
@@ -11,7 +10,6 @@ describe("DomainError hierarchy", () => {
   const cases: [string, DomainError][] = [
     ["InvalidMonth", new InvalidMonth("bad")],
     ["BudgetAlreadyExists", new BudgetAlreadyExists("2026-03")],
-    ["UnknownBankAdapter", new UnknownBankAdapter("nope")],
     ["InvalidCsvData", new InvalidCsvData("broken")],
   ];
 

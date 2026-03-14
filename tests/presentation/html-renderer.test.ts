@@ -28,7 +28,7 @@ describe("HtmlRenderer", () => {
       date: DateOnly.from("2026-03-01"),
       id: "1",
       label: "Salary",
-      sourceBank: "cm",
+      source: "cm",
     },
     {
       amount: Money.fromEuros(-750),
@@ -36,7 +36,7 @@ describe("HtmlRenderer", () => {
       date: DateOnly.from("2026-03-02"),
       id: "2",
       label: "Rent",
-      sourceBank: "cm",
+      source: "cm",
     },
   ];
 
@@ -130,7 +130,7 @@ describe("HtmlRenderer", () => {
           date: DateOnly.from("2026-03-05"),
           id: "1",
           label: "Mystery purchase",
-          sourceBank: "cm",
+          source: "cm",
         },
       ];
       const report = MonthlyReport.compute(incomeOnly, uncatTxns);
@@ -155,7 +155,7 @@ describe("HtmlRenderer", () => {
           date: DateOnly.from("2026-03-05"),
           id: "1",
           label: "Rent refund",
-          sourceBank: "cm",
+          source: "cm",
         },
       ];
       const report = MonthlyReport.compute(expenseBudget, refundTxns);
@@ -197,7 +197,7 @@ describe("HtmlRenderer", () => {
           date: DateOnly.from("2026-03-05"),
           id: "3",
           label: "Mystery",
-          sourceBank: "cm",
+          source: "cm",
         },
       ];
       const report = MonthlyReport.compute(budget, uncatTxns);

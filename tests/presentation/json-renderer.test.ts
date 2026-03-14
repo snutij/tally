@@ -57,7 +57,7 @@ describe("JsonRenderer", () => {
         date: DateOnly.from("2026-03-01"),
         id: "1",
         label: "Rent",
-        sourceBank: "cm",
+        source: "cm",
       },
     ];
     const report = MonthlyReport.compute(budget, txns);
@@ -92,7 +92,7 @@ describe("JsonRenderer", () => {
         date: DateOnly.from("2026-03-01"),
         id: "1",
         label: "Salary",
-        sourceBank: "cm",
+        source: "cm",
       },
       {
         amount: Money.fromEuros(-800),
@@ -100,7 +100,7 @@ describe("JsonRenderer", () => {
         date: DateOnly.from("2026-03-02"),
         id: "2",
         label: "Rent",
-        sourceBank: "cm",
+        source: "cm",
       },
     ];
     const report = MonthlyReport.compute(budget, txns);
@@ -136,7 +136,7 @@ describe("JsonRenderer", () => {
         date: DateOnly.from("2026-03-01"),
         id: "1",
         label: "Rent",
-        sourceBank: "cm",
+        source: "cm",
       },
     ];
     const report = MonthlyReport.compute(budget, txns);

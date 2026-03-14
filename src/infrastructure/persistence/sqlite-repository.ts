@@ -45,7 +45,7 @@ function migrate(db: Database.Database): void {
       label TEXT NOT NULL,
       amount_cents INTEGER NOT NULL,
       category_id TEXT,
-      source_bank TEXT NOT NULL,
+      source TEXT NOT NULL,
       FOREIGN KEY (category_id) REFERENCES categories(id)
     );
   `);
@@ -140,7 +140,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
   saveAll(transactions: Transaction[]): void {
     const runTx = this.db.transaction(() => {
       const stmt = this.db.prepare(
-        `INSERT OR REPLACE INTO transactions (id, date, label, amount_cents, category_id, source_bank)
+        `INSERT OR REPLACE INTO transactions (id, date, label, amount_cents, category_id, source)
          VALUES (?, ?, ?, ?, ?, ?)`,
       );
       for (const txn of transactions) {
@@ -151,7 +151,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
           txn.amount.cents,
           // eslint-disable-next-line unicorn/no-null -- SQLite requires null for missing column values
           txn.categoryId ?? null,
-          txn.sourceBank,
+          txn.source,
         );
       }
     });
@@ -165,7 +165,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
     const placeholders = ids.map(() => "?").join(", ");
     const rows = this.db
       .prepare(
-        `SELECT id, date, label, amount_cents, category_id, source_bank
+        `SELECT id, date, label, amount_cents, category_id, source
          FROM transactions WHERE id IN (${placeholders})`,
       )
       .all(...ids) as {
@@ -174,7 +174,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
       label: string;
       amount_cents: number;
       category_id: string | null;
-      source_bank: string;
+      source: string;
     }[];
 
     return rows.map((dbRow) => ({
@@ -183,7 +183,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
       date: DateOnly.from(dbRow.date),
       id: dbRow.id,
       label: dbRow.label,
-      sourceBank: dbRow.source_bank,
+      source: dbRow.source,
     }));
   }
 
@@ -191,7 +191,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
     const pattern = `${month.value}-%`;
     const rows = this.db
       .prepare(
-        `SELECT id, date, label, amount_cents, category_id, source_bank
+        `SELECT id, date, label, amount_cents, category_id, source
          FROM transactions WHERE date LIKE ?`,
       )
       .all(pattern) as {
@@ -200,7 +200,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
       label: string;
       amount_cents: number;
       category_id: string | null;
-      source_bank: string;
+      source: string;
     }[];
 
     return rows.map((dbRow) => ({
@@ -209,7 +209,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
       date: DateOnly.from(dbRow.date),
       id: dbRow.id,
       label: dbRow.label,
-      sourceBank: dbRow.source_bank,
+      source: dbRow.source,
     }));
   }
 }
