@@ -50,6 +50,12 @@ function migrate(db: Database.Database): void {
     );
   `);
 
+  try {
+    db.exec("ALTER TABLE transactions RENAME COLUMN source_bank TO source");
+  } catch {
+    // Column already named `source` on fresh databases
+  }
+
   const upsert = db.prepare(
     `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
   );
