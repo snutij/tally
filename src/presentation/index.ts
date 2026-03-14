@@ -1,4 +1,3 @@
-#!/usr/bin/env npx tsx
 import { existsSync, mkdirSync } from "node:fs";
 import { Command } from "commander";
 
