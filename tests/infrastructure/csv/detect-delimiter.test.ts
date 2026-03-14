@@ -41,4 +41,12 @@ describe("detectDelimiter", () => {
     expect(result.value).toBe(";");
     expect(result.confident).toBe(true);
   });
+
+  it("picks delimiter with most columns when multiple are consistent", () => {
+    // Both semicolon and comma are consistent, but comma produces more columns
+    const lines = ["a;b,c,d;e,f,g", "h;i,j,k;l,m,n"];
+    const result = detectDelimiter(lines);
+    expect(result.value).toBe(",");
+    expect(result.confident).toBe(false);
+  });
 });

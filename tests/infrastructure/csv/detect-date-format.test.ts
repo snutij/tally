@@ -43,4 +43,10 @@ describe("detectDateFormat", () => {
     const result = detectDateFormat([]);
     expect(result.confident).toBe(false);
   });
+
+  it("returns default when date format is unrecognized", () => {
+    const result = detectDateFormat(["March 15, 2026"]);
+    expect(result.value).toBe("DD/MM/YYYY");
+    expect(result.confident).toBe(false);
+  });
 });

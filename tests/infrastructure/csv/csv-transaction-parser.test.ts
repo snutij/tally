@@ -103,6 +103,98 @@ describe("CsvTransactionParser", () => {
       expect(ids.size).toBe(txns.length);
     });
   });
+
+  describe("with MM/DD/YYYY date format", () => {
+    const mapping = new CsvColumnMapping({
+      dateFormat: "MM/DD/YYYY",
+      decimalSeparator: ".",
+      delimiter: ",",
+      fields: ["date", "label", "amount"],
+    });
+    const parser = new CsvTransactionParser(mapping);
+
+    it("parses US-style dates correctly", () => {
+      const txns = parser.parse(join(FIXTURES, "sample-us-dates.csv"));
+      expect(txns).toHaveLength(2);
+      expect(txns[0].date.toString()).toBe("2026-03-15");
+    });
+  });
+
+  describe("edge cases", () => {
+    it("throws on unparseable amount", () => {
+      const mapping = new CsvColumnMapping({
+        dateFormat: "DD/MM/YYYY",
+        decimalSeparator: ",",
+        delimiter: ";",
+        fields: ["date", "label", "amount"],
+      });
+      const parser = new CsvTransactionParser(mapping);
+      expect(() => parser.parse(join(FIXTURES, "sample-bad-amount.csv"))).toThrow("numeric amount");
+    });
+
+    it("skips rows with unparseable date", () => {
+      const mapping = new CsvColumnMapping({
+        dateFormat: "DD/MM/YYYY",
+        decimalSeparator: ",",
+        delimiter: ";",
+        fields: ["date", "label", "amount"],
+      });
+      const parser = new CsvTransactionParser(mapping);
+      const txns = parser.parse(join(FIXTURES, "sample-bad-date.csv"));
+      expect(txns).toHaveLength(0);
+    });
+
+    it("skips rows when MM/DD/YYYY date has wrong format", () => {
+      const mapping = new CsvColumnMapping({
+        dateFormat: "MM/DD/YYYY",
+        decimalSeparator: ".",
+        delimiter: ",",
+        fields: ["date", "label", "amount"],
+      });
+      const parser = new CsvTransactionParser(mapping);
+      const txns = parser.parse(join(FIXTURES, "sample-us-bad-date.csv"));
+      expect(txns).toHaveLength(0);
+    });
+
+    it("skips rows when YYYY-MM-DD date has wrong format", () => {
+      const mapping = new CsvColumnMapping({
+        dateFormat: "YYYY-MM-DD",
+        decimalSeparator: ".",
+        delimiter: ",",
+        fields: ["date", "label", "amount"],
+      });
+      const parser = new CsvTransactionParser(mapping);
+      const txns = parser.parse(join(FIXTURES, "sample-iso-bad-date.csv"));
+      expect(txns).toHaveLength(0);
+    });
+
+    it("skips rows when date format is unsupported", () => {
+      const mapping = new CsvColumnMapping({
+        dateFormat: "DD.MM.YYYY",
+        decimalSeparator: ".",
+        delimiter: ",",
+        fields: ["date", "label", "amount"],
+      });
+      const parser = new CsvTransactionParser(mapping);
+      const txns = parser.parse(join(FIXTURES, "sample-bad-format.csv"));
+      expect(txns).toHaveLength(0);
+    });
+  });
+
+  describe("with expense/income columns where both are empty", () => {
+    it("resolves to zero amount", () => {
+      const mapping = new CsvColumnMapping({
+        dateFormat: "YYYY-MM-DD",
+        decimalSeparator: ".",
+        delimiter: ",",
+        fields: ["date", "label", "expense", "income"],
+      });
+      const parser = new CsvTransactionParser(mapping);
+      const txns = parser.parse(join(FIXTURES, "sample-empty-amounts.csv"));
+      const empty = txns.find((txn) => txn.label === "No movement");
+      expect(empty?.amount.cents).toBe(0);
+    });
+  });
 });
 
 describe("CsvColumnMapping", () => {
