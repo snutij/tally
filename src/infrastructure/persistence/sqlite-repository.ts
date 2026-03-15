@@ -1,6 +1,12 @@
 import { Budget, type BudgetLine } from "../../domain/entity/budget.js";
+import { type CategoryRule, createCategoryRule } from "../../domain/entity/category-rule.js";
+import {
+  DEFAULT_LOCALE,
+  getDefaultRulesForLocale,
+} from "../../domain/default-category-rules/index.js";
 import type { BudgetRepository } from "../../application/gateway/budget-repository.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
+import type { CategoryRuleRepository } from "../../application/gateway/category-rule-repository.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import Database from "better-sqlite3";
 import { DateOnly } from "../../domain/value-object/date-only.js";
@@ -48,6 +54,14 @@ function migrate(db: Database.Database): void {
       source TEXT NOT NULL,
       FOREIGN KEY (category_id) REFERENCES categories(id)
     );
+
+    CREATE TABLE IF NOT EXISTS category_rules (
+      id TEXT PRIMARY KEY,
+      pattern TEXT NOT NULL UNIQUE,
+      category_id TEXT NOT NULL,
+      source TEXT NOT NULL CHECK(source IN ('default', 'learned')),
+      FOREIGN KEY (category_id) REFERENCES categories(id)
+    );
   `);
 
   try {
@@ -56,11 +70,19 @@ function migrate(db: Database.Database): void {
     // Column already named `source` on fresh databases
   }
 
-  const upsert = db.prepare(
+  const upsertCat = db.prepare(
     `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
   );
   for (const cat of DEFAULT_CATEGORIES) {
-    upsert.run(cat.id, cat.name, cat.group);
+    upsertCat.run(cat.id, cat.name, cat.group);
+  }
+
+  const insertRule = db.prepare(
+    `INSERT OR IGNORE INTO category_rules (id, pattern, category_id, source) VALUES (?, ?, ?, ?)`,
+  );
+  for (const entry of getDefaultRulesForLocale(DEFAULT_LOCALE)) {
+    const rule = createCategoryRule(entry.pattern, entry.categoryId, "default");
+    insertRule.run(rule.id, rule.pattern, rule.categoryId, rule.source);
   }
 }
 
@@ -220,10 +242,60 @@ export class SqliteTransactionRepository implements TransactionRepository {
   }
 }
 
+export class SqliteCategoryRuleRepository implements CategoryRuleRepository {
+  private db: Database.Database;
+
+  constructor(db: Database.Database) {
+    this.db = db;
+  }
+
+  save(rule: CategoryRule): void {
+    this.db
+      .prepare(
+        `INSERT OR REPLACE INTO category_rules (id, pattern, category_id, source) VALUES (?, ?, ?, ?)`,
+      )
+      .run(rule.id, rule.pattern, rule.categoryId, rule.source);
+  }
+
+  findAll(): CategoryRule[] {
+    const rows = this.db
+      .prepare(`SELECT id, pattern, category_id, source FROM category_rules`)
+      .all() as { id: string; pattern: string; category_id: string; source: string }[];
+    return rows.map((row) => ({
+      categoryId: row.category_id,
+      id: row.id,
+      pattern: row.pattern,
+      source: row.source as CategoryRule["source"],
+    }));
+  }
+
+  findByPattern(pattern: string): CategoryRule | undefined {
+    const row = this.db
+      .prepare(`SELECT id, pattern, category_id, source FROM category_rules WHERE pattern = ?`)
+      .get(pattern) as
+      | { id: string; pattern: string; category_id: string; source: string }
+      | undefined;
+    if (!row) {
+      return undefined;
+    }
+    return {
+      categoryId: row.category_id,
+      id: row.id,
+      pattern: row.pattern,
+      source: row.source as CategoryRule["source"],
+    };
+  }
+
+  removeByPattern(pattern: string): void {
+    this.db.prepare(`DELETE FROM category_rules WHERE pattern = ?`).run(pattern);
+  }
+}
+
 export function openDatabase(dbPath: string): {
   db: Database.Database;
   budgetRepo: SqliteBudgetRepository;
   txnRepo: SqliteTransactionRepository;
+  ruleRepo: SqliteCategoryRuleRepository;
 } {
   const db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
@@ -232,6 +304,7 @@ export function openDatabase(dbPath: string): {
   return {
     budgetRepo: new SqliteBudgetRepository(db),
     db,
+    ruleRepo: new SqliteCategoryRuleRepository(db),
     txnRepo: new SqliteTransactionRepository(db),
   };
 }

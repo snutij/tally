@@ -1,5 +1,6 @@
 import {
   type SqliteBudgetRepository,
+  type SqliteCategoryRuleRepository,
   type SqliteTransactionRepository,
   openDatabase,
 } from "../../src/infrastructure/persistence/sqlite-repository.js";
@@ -11,6 +12,7 @@ import type Database from "better-sqlite3";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
+import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -19,6 +21,7 @@ describe("SqliteRepository", () => {
   let db: Database.Database;
   let budgetRepo: SqliteBudgetRepository;
   let txnRepo: SqliteTransactionRepository;
+  let ruleRepo: SqliteCategoryRuleRepository;
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-test-"));
@@ -26,6 +29,7 @@ describe("SqliteRepository", () => {
     ({ db } = result);
     ({ budgetRepo } = result);
     ({ txnRepo } = result);
+    ({ ruleRepo } = result);
   });
 
   afterEach(() => {
@@ -79,6 +83,62 @@ describe("SqliteRepository", () => {
       ).run();
 
       expect(() => budgetRepo.findByMonth(month)).toThrow("Invalid CategoryGroup");
+    });
+  });
+
+  describe("CategoryRuleRepository", () => {
+    it("seeds default rules on open", () => {
+      const rules = ruleRepo.findAll();
+      expect(rules.length).toBeGreaterThan(0);
+      expect(rules.every((rule) => rule.source === "default")).toBe(true);
+    });
+
+    it("saves and retrieves a learned rule", () => {
+      // Use a pattern not in the default ruleset to avoid conflicts
+      const rule = createCategoryRule(String.raw`\bcustommerchant\b`, "w06", "learned");
+      ruleRepo.save(rule);
+      const found = ruleRepo.findByPattern(String.raw`\bcustommerchant\b`);
+      expect(found).toBeDefined();
+      expect(found?.categoryId).toBe("w06");
+      expect(found?.source).toBe("learned");
+    });
+
+    it("upserts an existing rule (learned overrides default)", () => {
+      // spotify is a default rule → w06; override it with a learned rule → w01
+      const learnedRule = createCategoryRule(String.raw`\bspotify\b`, "w01", "learned");
+      ruleRepo.save(learnedRule);
+      const found = ruleRepo.findByPattern(String.raw`\bspotify\b`);
+      expect(found?.source).toBe("learned");
+      expect(found?.categoryId).toBe("w01");
+    });
+
+    it("findByPattern returns undefined for unknown pattern", () => {
+      expect(ruleRepo.findByPattern(String.raw`\bnonexistent\b`)).toBeUndefined();
+    });
+
+    it("removeByPattern deletes the rule", () => {
+      const rule = createCategoryRule(String.raw`\btoremove\b`, "w01", "learned");
+      ruleRepo.save(rule);
+      ruleRepo.removeByPattern(String.raw`\btoremove\b`);
+      expect(ruleRepo.findByPattern(String.raw`\btoremove\b`)).toBeUndefined();
+    });
+
+    it("re-opening DB does not overwrite learned rule with default", () => {
+      // Override the default rule for carrefour with a learned rule
+      const dbPath = join(tmpDir, "test.db");
+      const learnedRule = createCategoryRule(String.raw`\bcarrefour\b`, "w02", "learned");
+      // The default rule already exists — save would fail (UNIQUE constraint).
+      // Remove default first, then save learned.
+      ruleRepo.removeByPattern(String.raw`\bcarrefour\b`);
+      ruleRepo.save(learnedRule);
+      db.close();
+
+      // Reopen: migration should NOT overwrite with INSERT OR IGNORE
+      const result2 = openDatabase(dbPath);
+      const found = result2.ruleRepo.findByPattern(String.raw`\bcarrefour\b`);
+      expect(found?.source).toBe("learned");
+      expect(found?.categoryId).toBe("w02");
+      result2.db.close();
     });
   });
 

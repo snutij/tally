@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
 import { Command } from "commander";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import type { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
+import type { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import type { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import type { Transaction } from "../../src/domain/entity/transaction.js";
@@ -38,6 +40,10 @@ describe("createImportCommand", () => {
     splitByCategoryStatus: vi.fn(),
   };
   const mockSeedMockData = { execute: vi.fn() };
+  const mockApplyCategoryRules = {
+    apply: vi.fn(() => ({ matched: [], unmatched: [] })),
+  };
+  const mockLearnCategoryRules = { learn: vi.fn() };
   const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
 
   beforeEach(() => {
@@ -45,12 +51,17 @@ describe("createImportCommand", () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.mocked(collectColumnMapping).mockResolvedValue({} as never);
+    // Default: no auto-categorization matches
+    mockApplyCategoryRules.apply.mockReturnValue({ matched: [], unmatched: [] });
+    mockLearnCategoryRules.learn.mockReset();
   });
 
   function run(...args: string[]): Promise<unknown> {
     const cmd = createImportCommand(
       mockImportTransactions as unknown as ImportTransactions,
       mockSeedMockData as unknown as SeedMockData,
+      mockApplyCategoryRules as unknown as ApplyCategoryRules,
+      mockLearnCategoryRules as unknown as LearnCategoryRules,
       mockRenderer,
     );
     const program = new Command().addCommand(cmd);
@@ -97,6 +108,8 @@ describe("createImportCommand", () => {
         alreadyCategorized: [],
         uncategorized: parsed,
       });
+      // apply returns all as unmatched → prompt receives them
+      mockApplyCategoryRules.apply.mockReturnValue({ matched: [], unmatched: parsed });
       vi.mocked(categorizePrompt).mockResolvedValue({
         categorized: [{ ...base, categoryId: "n01" }],
         interrupted: false,
@@ -123,6 +136,7 @@ describe("createImportCommand", () => {
         alreadyCategorized: [],
         uncategorized: parsed,
       });
+      mockApplyCategoryRules.apply.mockReturnValue({ matched: [], unmatched: parsed });
       vi.mocked(categorizePrompt).mockResolvedValue({
         categorized: [{ ...base, categoryId: "n01" }],
         interrupted: true,
@@ -140,6 +154,29 @@ describe("createImportCommand", () => {
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Interrupted"));
     });
 
+    it("displays auto-categorization summary when rules match", async () => {
+      const base = txn();
+      const matched = { ...base, categoryId: "n02" };
+      mockImportTransactions.parse.mockReturnValue([base]);
+      mockImportTransactions.splitByCategoryStatus.mockReturnValue({
+        alreadyCategorized: [],
+        uncategorized: [base],
+      });
+      mockApplyCategoryRules.apply.mockReturnValue({ matched: [matched], unmatched: [] });
+      vi.mocked(categorizePrompt).mockResolvedValue({ categorized: [], interrupted: false });
+      mockImportTransactions.save.mockReturnValue({ count: 1 });
+
+      const originalIsTTY = process.stdout.isTTY;
+      process.stdout.isTTY = true;
+      try {
+        await run("csv", "file.csv");
+      } finally {
+        process.stdout.isTTY = originalIsTTY;
+      }
+
+      expect(console.log).toHaveBeenCalledWith("Auto-categorized 1 of 1 transactions.");
+    });
+
     it("skips already-categorized transactions and logs count", async () => {
       const t1 = txn({ categoryId: "n01", id: "t1" });
       const t2 = txn({ id: "t2" });
@@ -148,6 +185,7 @@ describe("createImportCommand", () => {
         alreadyCategorized: [t1],
         uncategorized: [t2],
       });
+      mockApplyCategoryRules.apply.mockReturnValue({ matched: [], unmatched: [t2] });
       vi.mocked(categorizePrompt).mockResolvedValue({
         categorized: [{ ...t2, categoryId: "n02" }],
         interrupted: false,

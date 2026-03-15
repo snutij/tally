@@ -1,6 +1,8 @@
+import type { ApplyCategoryRules } from "../../application/usecase/apply-category-rules.js";
 import { Command } from "commander";
 import { CsvTransactionParser } from "../../infrastructure/csv/csv-transaction-parser.js";
 import type { ImportTransactions } from "../../application/usecase/import-transactions.js";
+import type { LearnCategoryRules } from "../../application/usecase/learn-category-rules.js";
 import { Month } from "../../domain/value-object/month.js";
 import type { Renderer } from "../renderer/renderer.js";
 import type { SeedMockData } from "../../application/usecase/seed-mock-data.js";
@@ -10,6 +12,8 @@ import { collectColumnMapping } from "../prompt/column-mapping-prompt.js";
 export function createImportCommand(
   importTransactions: ImportTransactions,
   seedMockData: SeedMockData,
+  applyCategoryRules: ApplyCategoryRules,
+  learnCategoryRules: LearnCategoryRules,
   renderer: Renderer,
 ): Command {
   const cmd = new Command("import").description("Import bank transactions");
@@ -60,9 +64,18 @@ export function createImportCommand(
         console.log(`Skipping ${alreadyCategorized.length} already-categorized transactions.`);
       }
 
-      const { categorized, interrupted } = await categorizePrompt(uncategorized);
+      // Auto-categorize with learned + default rules
+      const { matched, unmatched } = applyCategoryRules.apply(uncategorized);
+      if (matched.length > 0) {
+        console.log(`Auto-categorized ${matched.length} of ${uncategorized.length} transactions.`);
+      }
 
-      const toSave = [...alreadyCategorized, ...categorized];
+      const { categorized, interrupted } = await categorizePrompt(unmatched);
+
+      // Learn rules from what the user just categorized manually
+      learnCategoryRules.learn(categorized);
+
+      const toSave = [...alreadyCategorized, ...matched, ...categorized];
       const result = importTransactions.save(toSave);
 
       if (interrupted) {
