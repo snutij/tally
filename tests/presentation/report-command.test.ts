@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Budget } from "../../src/domain/entity/budget.js";
 import { Command } from "commander";
+import type { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
 import { createReportCommand } from "../../src/presentation/command/report-command.js";
@@ -18,7 +19,7 @@ describe("createReportCommand", () => {
     const report = MonthlyReport.compute(new Budget(Month.from("2026-03"), []), []);
     mockGenerateReport.execute.mockReturnValue(report);
 
-    const cmd = createReportCommand(mockGenerateReport, mockRenderer);
+    const cmd = createReportCommand(mockGenerateReport as unknown as GenerateReport, mockRenderer);
     const program = new Command().addCommand(cmd);
     await program.parseAsync(["node", "tally", "report", "2026-03"]);
 
@@ -27,7 +28,7 @@ describe("createReportCommand", () => {
   });
 
   it("throws on invalid month format", async () => {
-    const cmd = createReportCommand(mockGenerateReport, mockRenderer);
+    const cmd = createReportCommand(mockGenerateReport as unknown as GenerateReport, mockRenderer);
     const program = new Command().addCommand(cmd);
     program.exitOverride();
 
@@ -38,7 +39,7 @@ describe("createReportCommand", () => {
     const emptyReport = MonthlyReport.compute(new Budget(Month.from("2026-01"), []), []);
     mockGenerateReport.execute.mockReturnValue(emptyReport);
 
-    const cmd = createReportCommand(mockGenerateReport, mockRenderer);
+    const cmd = createReportCommand(mockGenerateReport as unknown as GenerateReport, mockRenderer);
     const program = new Command().addCommand(cmd);
     await program.parseAsync(["node", "tally", "report", "2026-01"]);
 

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Budget } from "../../src/domain/entity/budget.js";
 import { Command } from "commander";
 import { Month } from "../../src/domain/value-object/month.js";
+import type { PlanBudget } from "../../src/application/usecase/plan-budget.js";
 import { createBudgetCommand } from "../../src/presentation/command/budget-command.js";
 
 describe("createBudgetCommand", () => {
@@ -18,7 +19,7 @@ describe("createBudgetCommand", () => {
   });
 
   function run(...args: string[]): Promise<unknown> {
-    const cmd = createBudgetCommand(mockPlanBudget, mockRenderer);
+    const cmd = createBudgetCommand(mockPlanBudget as unknown as PlanBudget, mockRenderer);
     const program = new Command().addCommand(cmd);
     return program.parseAsync(["node", "tally", "budget", ...args]);
   }

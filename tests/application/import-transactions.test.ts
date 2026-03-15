@@ -66,8 +66,8 @@ describe("ImportTransactions", () => {
     const { alreadyCategorized, uncategorized } = useCase.splitByCategoryStatus(parsed);
 
     expect(alreadyCategorized).toHaveLength(1);
-    expect(alreadyCategorized[0].categoryId).toBe("n01");
+    expect(alreadyCategorized[0]?.categoryId).toBe("n01");
     expect(uncategorized).toHaveLength(1);
-    expect(uncategorized[0].id).toBe("tx-2");
+    expect(uncategorized[0]?.id).toBe("tx-2");
   });
 });

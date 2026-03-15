@@ -74,7 +74,7 @@ describe("categorizePrompt", () => {
 
     expect(result.interrupted).toBe(false);
     expect(result.categorized).toHaveLength(1);
-    expect(result.categorized[0].categoryId).toBe("n02");
+    expect(result.categorized[0]?.categoryId).toBe("n02");
   });
 
   it("does not assign categoryId when skip is selected", async () => {
@@ -83,7 +83,7 @@ describe("categorizePrompt", () => {
 
     const result = await categorizePrompt([txn()]);
 
-    expect(result.categorized[0].categoryId).toBeUndefined();
+    expect(result.categorized[0]?.categoryId).toBeUndefined();
   });
 
   it("assigns inc01 categoryId when income is selected", async () => {
@@ -92,7 +92,7 @@ describe("categorizePrompt", () => {
 
     const result = await categorizePrompt([txn()]);
 
-    expect(result.categorized[0].categoryId).toBe("inc01");
+    expect(result.categorized[0]?.categoryId).toBe("inc01");
   });
 
   it("formats positive amount with + sign in prompt header", async () => {
@@ -125,6 +125,6 @@ describe("categorizePrompt", () => {
 
     expect(result.interrupted).toBe(true);
     expect(result.categorized).toHaveLength(1);
-    expect(result.categorized[0].categoryId).toBe("n01");
+    expect(result.categorized[0]?.categoryId).toBe("n01");
   });
 });

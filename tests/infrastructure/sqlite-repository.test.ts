@@ -53,8 +53,8 @@ describe("SqliteRepository", () => {
       }
       expect(found.month.value).toBe("2026-03");
       expect(found.lines).toHaveLength(1);
-      expect(found.lines[0].category.id).toBe("rent");
-      expect(found.lines[0].amount.cents).toBe(80_000);
+      expect(found.lines[0]?.category.id).toBe("rent");
+      expect(found.lines[0]?.amount.cents).toBe(80_000);
     });
 
     it("returns null for non-existent month", () => {
@@ -103,11 +103,11 @@ describe("SqliteRepository", () => {
 
       const marchTxns = txnRepo.findByMonth(Month.from("2026-03"));
       expect(marchTxns).toHaveLength(1);
-      expect(marchTxns[0].id).toBe("tx-1");
+      expect(marchTxns[0]?.id).toBe("tx-1");
 
       const aprilTxns = txnRepo.findByMonth(Month.from("2026-04"));
       expect(aprilTxns).toHaveLength(1);
-      expect(aprilTxns[0].id).toBe("tx-2");
+      expect(aprilTxns[0]?.id).toBe("tx-2");
     });
 
     it("returns empty array when findByIds called with empty array", () => {

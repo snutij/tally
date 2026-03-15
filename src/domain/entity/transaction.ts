@@ -6,6 +6,6 @@ export interface Transaction {
   readonly date: DateOnly;
   readonly label: string;
   readonly amount: Money;
-  readonly categoryId?: string;
+  readonly categoryId?: string | undefined;
   readonly source: string;
 }

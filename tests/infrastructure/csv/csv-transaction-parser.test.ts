@@ -22,30 +22,30 @@ describe("CsvTransactionParser", () => {
 
     it("parses negative amount correctly", () => {
       const txns = parser.parse(join(FIXTURES, "sample-semicolon.csv"));
-      expect(txns[0].amount.cents).toBe(-80_000);
-      expect(txns[0].label).toBe("Rent");
+      expect(txns[0]?.amount.cents).toBe(-80_000);
+      expect(txns[0]?.label).toBe("Rent");
     });
 
     it("parses positive amount correctly", () => {
       const txns = parser.parse(join(FIXTURES, "sample-semicolon.csv"));
-      expect(txns[1].amount.cents).toBe(250_000);
-      expect(txns[1].label).toBe("Salary");
+      expect(txns[1]?.amount.cents).toBe(250_000);
+      expect(txns[1]?.label).toBe("Salary");
     });
 
     it("parses date correctly", () => {
       const txns = parser.parse(join(FIXTURES, "sample-semicolon.csv"));
-      expect(txns[0].date.toString()).toBe("2026-03-15");
+      expect(txns[0]?.date.toString()).toBe("2026-03-15");
     });
 
     it("sets source to 'csv'", () => {
       const txns = parser.parse(join(FIXTURES, "sample-semicolon.csv"));
-      expect(txns[0].source).toBe("csv");
+      expect(txns[0]?.source).toBe("csv");
     });
 
     it("generates deterministic IDs", () => {
       const txns1 = parser.parse(join(FIXTURES, "sample-semicolon.csv"));
       const txns2 = parser.parse(join(FIXTURES, "sample-semicolon.csv"));
-      expect(txns1[0].id).toBe(txns2[0].id);
+      expect(txns1[0]?.id).toBe(txns2[0]?.id);
     });
   });
 
@@ -83,7 +83,7 @@ describe("CsvTransactionParser", () => {
       const latin1Path = join(FIXTURES, "credit-mutuel-latin1.csv");
       const txns = parser.parse(latin1Path);
       expect(txns).toHaveLength(1);
-      expect(txns[0].label).toBe("LOYER MARS 2026");
+      expect(txns[0]?.label).toBe("LOYER MARS 2026");
     });
   });
 
@@ -116,7 +116,7 @@ describe("CsvTransactionParser", () => {
     it("parses US-style dates correctly", () => {
       const txns = parser.parse(join(FIXTURES, "sample-us-dates.csv"));
       expect(txns).toHaveLength(2);
-      expect(txns[0].date.toString()).toBe("2026-03-15");
+      expect(txns[0]?.date.toString()).toBe("2026-03-15");
     });
   });
 

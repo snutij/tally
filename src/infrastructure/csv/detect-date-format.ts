@@ -22,8 +22,9 @@ export function detectDateFormat(samples: string[]): DetectionResult<string> {
     for (const sample of slashSamples) {
       const match = SLASH_PATTERN.exec(sample);
       if (match) {
-        const first = Number.parseInt(match[1], 10);
-        const second = Number.parseInt(match[2], 10);
+        const [, firstStr, secondStr] = match;
+        const first = Number.parseInt(firstStr ?? "", 10);
+        const second = Number.parseInt(secondStr ?? "", 10);
         if (first > 12) {
           return { confident: true, value: "DD/MM/YYYY" };
         }
@@ -40,7 +41,11 @@ export function detectDateFormat(samples: string[]): DetectionResult<string> {
   if (dashSamples.length > 0) {
     const hasUnambiguous = dashSamples.some((sample) => {
       const match = DASH_PATTERN.exec(sample);
-      return match ? Number.parseInt(match[1], 10) > 12 : false;
+      if (!match) {
+        return false;
+      }
+      const [, dayStr] = match;
+      return Number.parseInt(dayStr ?? "", 10) > 12;
     });
     return { confident: hasUnambiguous, value: "DD-MM-YYYY" };
   }

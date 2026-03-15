@@ -411,10 +411,10 @@ describe("MonthlyReport", () => {
       const report = MonthlyReport.compute(budgetWithIncome, fullTransactions);
       const top = report.kpis.topSpendingCategories;
       expect(top).toHaveLength(4); // 4 expense categories
-      expect(top[0].categoryId).toBe("n01"); // 800
-      expect(top[1].categoryId).toBe("n02"); // 350
-      expect(top[2].categoryId).toBe("i01"); // 300
-      expect(top[3].categoryId).toBe("w01"); // 150
+      expect(top[0]?.categoryId).toBe("n01"); // 800
+      expect(top[1]?.categoryId).toBe("n02"); // 350
+      expect(top[2]?.categoryId).toBe("i01"); // 300
+      expect(top[3]?.categoryId).toBe("w01"); // 150
     });
 
     it("returns empty top spending for no expense categories", () => {
@@ -447,11 +447,11 @@ describe("MonthlyReport", () => {
       const report = MonthlyReport.compute(budgetWithIncome, fullTransactions);
       const top = report.kpis.largestExpenses;
       expect(top).toHaveLength(5); // 5 negative transactions
-      expect(top[0].label).toBe("Rent"); // -800
-      expect(top[1].label).toBe("Groceries"); // -350
-      expect(top[2].label).toBe("ETF"); // -300
-      expect(top[3].label).toBe("Restaurant"); // -150
-      expect(top[4].label).toBe("Mystery"); // -50
+      expect(top[0]?.label).toBe("Rent"); // -800
+      expect(top[1]?.label).toBe("Groceries"); // -350
+      expect(top[2]?.label).toBe("ETF"); // -300
+      expect(top[3]?.label).toBe("Restaurant"); // -150
+      expect(top[4]?.label).toBe("Mystery"); // -50
     });
 
     it("returns empty largest expenses when all income", () => {
@@ -503,13 +503,13 @@ describe("MonthlyReport", () => {
 
       // n01: 900 > 800 → overrun of 100
       expect(report.kpis.categoryVariance.overruns).toHaveLength(1);
-      expect(report.kpis.categoryVariance.overruns[0].categoryId).toBe("n01");
-      expect(report.kpis.categoryVariance.overruns[0].variance.cents).toBe(10_000);
+      expect(report.kpis.categoryVariance.overruns[0]?.categoryId).toBe("n01");
+      expect(report.kpis.categoryVariance.overruns[0]?.variance.cents).toBe(10_000);
 
       // w02: 50 < 200 → underrun of -150; i03: 0 < 500 → underrun of -500
       expect(report.kpis.categoryVariance.underruns).toHaveLength(2);
-      expect(report.kpis.categoryVariance.underruns[0].categoryId).toBe("i03"); // biggest underrun
-      expect(report.kpis.categoryVariance.underruns[0].variance.cents).toBe(-50_000);
+      expect(report.kpis.categoryVariance.underruns[0]?.categoryId).toBe("i03"); // biggest underrun
+      expect(report.kpis.categoryVariance.underruns[0]?.variance.cents).toBe(-50_000);
     });
 
     it("returns empty variance for empty budget", () => {

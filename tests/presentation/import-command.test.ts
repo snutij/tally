@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
+import type { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { Money } from "../../src/domain/value-object/money.js";
+import type { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import type { Transaction } from "../../src/domain/entity/transaction.js";
 
 vi.mock("../../src/presentation/prompt/categorize-prompt.js", () => ({
@@ -46,7 +48,11 @@ describe("createImportCommand", () => {
   });
 
   function run(...args: string[]): Promise<unknown> {
-    const cmd = createImportCommand(mockImportTransactions, mockSeedMockData, mockRenderer);
+    const cmd = createImportCommand(
+      mockImportTransactions as unknown as ImportTransactions,
+      mockSeedMockData as unknown as SeedMockData,
+      mockRenderer,
+    );
     const program = new Command().addCommand(cmd);
     return program.parseAsync(["node", "tally", "import", ...args]);
   }
@@ -84,14 +90,15 @@ describe("createImportCommand", () => {
     });
 
     it("with TTY prompts for categorization", async () => {
-      const parsed = [txn()];
+      const base = txn();
+      const parsed = [base];
       mockImportTransactions.parse.mockReturnValue(parsed);
       mockImportTransactions.splitByCategoryStatus.mockReturnValue({
         alreadyCategorized: [],
         uncategorized: parsed,
       });
       vi.mocked(categorizePrompt).mockResolvedValue({
-        categorized: [{ ...parsed[0], categoryId: "n01" }],
+        categorized: [{ ...base, categoryId: "n01" }],
         interrupted: false,
       });
       mockImportTransactions.save.mockReturnValue({ count: 1 });
@@ -109,14 +116,15 @@ describe("createImportCommand", () => {
     });
 
     it("handles interruption", async () => {
-      const parsed = [txn(), txn({ id: "t2" })];
+      const base = txn();
+      const parsed = [base, txn({ id: "t2" })];
       mockImportTransactions.parse.mockReturnValue(parsed);
       mockImportTransactions.splitByCategoryStatus.mockReturnValue({
         alreadyCategorized: [],
         uncategorized: parsed,
       });
       vi.mocked(categorizePrompt).mockResolvedValue({
-        categorized: [{ ...parsed[0], categoryId: "n01" }],
+        categorized: [{ ...base, categoryId: "n01" }],
         interrupted: true,
       });
       mockImportTransactions.save.mockReturnValue({ count: 1 });

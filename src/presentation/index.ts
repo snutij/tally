@@ -39,7 +39,7 @@ program
 let _renderer: ReturnType<typeof createRenderer> | undefined;
 const renderer = {
   render(data: unknown): string {
-    _renderer ??= createRenderer(program.opts().format);
+    _renderer ??= createRenderer(program.opts()["format"]);
     return _renderer.render(data);
   },
 };

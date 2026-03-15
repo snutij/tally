@@ -181,7 +181,7 @@ describe("HtmlRenderer", () => {
       const html = renderer.render(multiLineBudget);
       const [, body] = html.split("<body>");
       // Only one NEEDS group header, but both lines present
-      const needsMatches = body.match(/NEEDS/g);
+      const needsMatches = body?.match(/NEEDS/g);
       expect(needsMatches).toHaveLength(1);
       expect(body).toContain("Rent");
       expect(body).toContain("Groceries");

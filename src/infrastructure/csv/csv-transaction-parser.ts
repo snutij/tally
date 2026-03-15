@@ -20,19 +20,19 @@ function parseDateWithFormat(dateStr: string, format: string): DateOnly {
     if (parts.length !== 3) {
       throw new InvalidCsvData(`expected ${format} date, got "${dateStr}"`);
     }
-    [day, month, year] = parts;
+    [day, month, year] = parts as [string, string, string];
   } else if (format === "MM/DD/YYYY") {
     const parts = dateStr.split("/");
     if (parts.length !== 3) {
       throw new InvalidCsvData(`expected MM/DD/YYYY date, got "${dateStr}"`);
     }
-    [month, day, year] = parts;
+    [month, day, year] = parts as [string, string, string];
   } else if (format === "YYYY-MM-DD") {
     const parts = dateStr.split("-");
     if (parts.length !== 3) {
       throw new InvalidCsvData(`expected YYYY-MM-DD date, got "${dateStr}"`);
     }
-    [year, month, day] = parts;
+    [year, month, day] = parts as [string, string, string];
   } else {
     throw new InvalidCsvData(`unsupported date format: "${format}"`);
   }

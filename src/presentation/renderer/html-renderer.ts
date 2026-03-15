@@ -80,7 +80,8 @@ const KPI_TOOLTIPS: Record<string, TooltipContent> = {
 };
 
 function card(label: string, value: string, highlight = false): string {
-  const tooltip = KPI_TOOLTIPS[label];
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- label always matches a KPI_TOOLTIPS key
+  const tooltip = KPI_TOOLTIPS[label]!;
   const tooltipHtml = `<span class="kpi-help-wrap"><button class="kpi-help" aria-label="About ${esc(label)}" type="button">?</button><div class="kpi-tooltip" role="tooltip"><strong>${esc(tooltip.purpose)}</strong><br>${esc(tooltip.target)}<br><em>${esc(tooltip.tip)}</em></div></span>`;
   return `<div class="kpi${highlight ? " kpi-highlight" : ""}">${tooltipHtml}<div class="kpi-value">${value}</div><div class="kpi-label">${label}</div></div>`;
 }
@@ -128,8 +129,9 @@ export class HtmlRenderer implements Renderer {
   }
 
   private static heroHeader(ref: { month: unknown }, eyebrow: string): string {
-    const [year, monthNum] = `${ref.month}`.split("-");
-    const monthName = MONTH_NAMES[Number.parseInt(monthNum, 10) - 1];
+    const [year, monthNum] = `${ref.month}`.split("-") as [string, string];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- monthNum is 01-12, always valid index
+    const monthName = MONTH_NAMES[Number.parseInt(monthNum, 10) - 1]!;
     return `<header class="hero">
   <div class="hero-eyebrow">${esc(eyebrow)}</div>
   <h1 class="hero-month">${esc(monthName)} ${esc(year)}</h1>
