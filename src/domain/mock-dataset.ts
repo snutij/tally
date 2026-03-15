@@ -185,28 +185,3 @@ export function mockTransactions(year: number, month: number): Transaction[] {
     ...uncategorizedTransactions(prefix, dateFn, bank),
   ];
 }
-
-/**
- * Realistic budget amounts per category ID (euros).
- * Only includes categories used in mockTransactions.
- */
-export const MOCK_BUDGET_AMOUNTS: Record<string, number> = {
-  // INVESTMENTS
-  i01: 850,
-  i03: 200,
-  // INCOME
-  inc01: 3200,
-  inc02: 750,
-  // NEEDS
-  n01: 950,
-  n02: 200,
-  n06: 120,
-  n07: 80,
-  n10: 20,
-  n12: 90,
-  // WANTS
-  w01: 100,
-  w02: 60,
-  w03: 30,
-  w06: 15,
-};

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Budget } from "../../src/domain/entity/budget.js";
 import { Command } from "commander";
+import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
 import type { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
@@ -13,37 +13,61 @@ describe("createReportCommand", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    process.exitCode = 0;
   });
 
-  it("calls execute and logs rendered report", async () => {
-    const report = MonthlyReport.compute(new Budget(Month.from("2026-03"), []), []);
+  function run(...args: string[]): Promise<unknown> {
+    const cmd = createReportCommand(mockGenerateReport as unknown as GenerateReport, mockRenderer);
+    return new Command().addCommand(cmd).parseAsync(["node", "tally", "report", ...args]);
+  }
+
+  it("calls execute with default targets when no flags", async () => {
+    const report = MonthlyReport.compute(Month.from("2026-03"), DEFAULT_SPENDING_TARGETS, []);
     mockGenerateReport.execute.mockReturnValue(report);
 
-    const cmd = createReportCommand(mockGenerateReport as unknown as GenerateReport, mockRenderer);
-    const program = new Command().addCommand(cmd);
-    await program.parseAsync(["node", "tally", "report", "2026-03"]);
+    await run("2026-03");
 
-    expect(mockGenerateReport.execute).toHaveBeenCalledWith(Month.from("2026-03"));
+    expect(mockGenerateReport.execute).toHaveBeenCalledWith(
+      Month.from("2026-03"),
+      DEFAULT_SPENDING_TARGETS,
+    );
     expect(console.log).toHaveBeenCalled();
+  });
+
+  it("passes custom targets when all three flags provided", async () => {
+    const report = MonthlyReport.compute(Month.from("2026-03"), DEFAULT_SPENDING_TARGETS, []);
+    mockGenerateReport.execute.mockReturnValue(report);
+
+    await run("2026-03", "--needs", "60", "--wants", "20", "--invest", "20");
+
+    expect(mockGenerateReport.execute).toHaveBeenCalledWith(Month.from("2026-03"), {
+      invest: 20,
+      needs: 60,
+      wants: 20,
+    });
+  });
+
+  it("errors when percentages do not sum to 100", async () => {
+    await run("2026-03", "--needs", "50", "--wants", "30", "--invest", "30");
+
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("sum to 100"));
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("errors when only some flags are provided", async () => {
+    await run("2026-03", "--needs", "60");
+
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining("must be provided together"),
+    );
+    expect(process.exitCode).toBe(1);
   });
 
   it("throws on invalid month format", async () => {
     const cmd = createReportCommand(mockGenerateReport as unknown as GenerateReport, mockRenderer);
     const program = new Command().addCommand(cmd);
     program.exitOverride();
-
     await expect(program.parseAsync(["node", "tally", "report", "not-a-month"])).rejects.toThrow();
-  });
-
-  it("works with empty report (no data)", async () => {
-    const emptyReport = MonthlyReport.compute(new Budget(Month.from("2026-01"), []), []);
-    mockGenerateReport.execute.mockReturnValue(emptyReport);
-
-    const cmd = createReportCommand(mockGenerateReport as unknown as GenerateReport, mockRenderer);
-    const program = new Command().addCommand(cmd);
-    await program.parseAsync(["node", "tally", "report", "2026-01"]);
-
-    expect(mockGenerateReport.execute).toHaveBeenCalledWith(Month.from("2026-01"));
-    expect(mockRenderer.render).toHaveBeenCalledWith(emptyReport);
   });
 });

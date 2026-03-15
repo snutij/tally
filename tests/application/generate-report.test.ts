@@ -1,72 +1,59 @@
-import {
-  InMemoryBudgetRepository,
-  InMemoryTransactionRepository,
-} from "../helpers/in-memory-repositories.js";
 import { beforeEach, describe, expect, it } from "vitest";
-import { Budget } from "../../src/domain/entity/budget.js";
-import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
+import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 
 describe("GenerateReport", () => {
-  let budgetRepo: InMemoryBudgetRepository;
   let txnRepo: InMemoryTransactionRepository;
   let useCase: GenerateReport;
 
   beforeEach(() => {
-    budgetRepo = new InMemoryBudgetRepository();
     txnRepo = new InMemoryTransactionRepository();
-    useCase = new GenerateReport(budgetRepo, txnRepo);
+    useCase = new GenerateReport(txnRepo);
   });
 
-  it("generates report with budget and transactions", () => {
+  it("generates report with transactions (no budget needed)", () => {
     const month = Month.from("2026-03");
-    const budget = new Budget(month, [
-      {
-        amount: Money.fromEuros(800),
-        category: { group: CategoryGroup.NEEDS, id: "rent", name: "Rent" },
-      },
-    ]);
-    budgetRepo.save(budget);
     txnRepo.saveAll([
       {
-        amount: Money.fromEuros(-800),
-        categoryId: "rent",
+        amount: Money.fromEuros(3000),
+        categoryId: "inc01",
         date: DateOnly.from("2026-03-01"),
         id: "1",
+        label: "Salary",
+        source: "test",
+      },
+      {
+        amount: Money.fromEuros(-800),
+        categoryId: "n01",
+        date: DateOnly.from("2026-03-05"),
+        id: "2",
         label: "Rent",
         source: "test",
       },
     ]);
 
     const report = useCase.execute(month);
-    expect(report.totalExpenseBudgeted.cents).toBe(80_000);
+    expect(report.totalIncomeActual.cents).toBe(300_000);
     expect(report.totalExpenseActual.cents).toBe(80_000);
+    expect(report.transactionCount).toBe(2);
   });
 
-  it("returns empty report when no budget exists", () => {
+  it("returns empty report when no transactions exist", () => {
     const month = Month.from("2026-03");
     const report = useCase.execute(month);
-    expect(report.totalExpenseBudgeted.cents).toBe(0);
     expect(report.totalExpenseActual.cents).toBe(0);
+    expect(report.transactionCount).toBe(0);
   });
 
   it("only includes transactions from the requested month", () => {
     const march = Month.from("2026-03");
-    budgetRepo.save(
-      new Budget(march, [
-        {
-          amount: Money.fromEuros(800),
-          category: { group: CategoryGroup.NEEDS, id: "rent", name: "Rent" },
-        },
-      ]),
-    );
     txnRepo.saveAll([
       {
         amount: Money.fromEuros(-800),
-        categoryId: "rent",
+        categoryId: "n01",
         date: DateOnly.from("2026-03-01"),
         id: "1",
         label: "March Rent",
@@ -74,7 +61,7 @@ describe("GenerateReport", () => {
       },
       {
         amount: Money.fromEuros(-800),
-        categoryId: "rent",
+        categoryId: "n01",
         date: DateOnly.from("2026-04-01"),
         id: "2",
         label: "April Rent",
@@ -89,7 +76,6 @@ describe("GenerateReport", () => {
 
   it("handles uncategorized transactions gracefully", () => {
     const month = Month.from("2026-03");
-    budgetRepo.save(new Budget(month, []));
     txnRepo.saveAll([
       {
         amount: Money.fromEuros(-50),
@@ -104,5 +90,23 @@ describe("GenerateReport", () => {
     expect(report.transactionCount).toBe(1);
     expect(report.uncategorized.cents).toBe(5000);
     expect(report.totalExpenseActual.cents).toBe(0);
+  });
+
+  it("accepts custom spending targets", () => {
+    const month = Month.from("2026-03");
+    txnRepo.saveAll([
+      {
+        amount: Money.fromEuros(2000),
+        categoryId: "inc01",
+        date: DateOnly.from("2026-03-01"),
+        id: "1",
+        label: "Salary",
+        source: "test",
+      },
+    ]);
+
+    const report = useCase.execute(month, { invest: 10, needs: 60, wants: 30 });
+    const needs = report.groups.find((grp) => grp.group === "NEEDS");
+    expect(needs?.budgeted.cents).toBe(120_000); // 2000 × 60%
   });
 });

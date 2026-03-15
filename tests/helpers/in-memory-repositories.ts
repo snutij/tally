@@ -1,5 +1,3 @@
-import type { Budget } from "../../src/domain/entity/budget.js";
-import type { BudgetRepository } from "../../src/application/gateway/budget-repository.js";
 import type { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import type { CategoryRuleRepository } from "../../src/application/gateway/category-rule-repository.js";
 import type { Month } from "../../src/domain/value-object/month.js";
@@ -23,23 +21,6 @@ export class InMemoryCategoryRuleRepository implements CategoryRuleRepository {
 
   removeByPattern(pattern: string): void {
     this.store.delete(pattern);
-  }
-}
-
-export class InMemoryBudgetRepository implements BudgetRepository {
-  private store = new Map<string, Budget>();
-
-  save(budget: Budget): void {
-    this.store.set(budget.month.value, budget);
-  }
-
-  findByMonth(month: Month): Budget | null {
-    // eslint-disable-next-line unicorn/no-null -- BudgetRepository interface contract returns null
-    return this.store.get(month.value) ?? null;
-  }
-
-  exists(month: Month): boolean {
-    return this.store.has(month.value);
   }
 }
 

@@ -1,15 +1,9 @@
-import {
-  BudgetAlreadyExists,
-  DomainError,
-  InvalidCsvData,
-  InvalidMonth,
-} from "../../src/domain/error/index.js";
+import { DomainError, InvalidCsvData, InvalidMonth } from "../../src/domain/error/index.js";
 import { describe, expect, it } from "vitest";
 
 describe("DomainError hierarchy", () => {
   const cases: [string, DomainError][] = [
     ["InvalidMonth", new InvalidMonth("bad")],
-    ["BudgetAlreadyExists", new BudgetAlreadyExists("2026-03")],
     ["InvalidCsvData", new InvalidCsvData("broken")],
   ];
 

@@ -11,12 +11,6 @@ export class InvalidMonth extends DomainError {
   }
 }
 
-export class BudgetAlreadyExists extends DomainError {
-  constructor(month: string) {
-    super(`Budget already exists for ${month}.`);
-  }
-}
-
 export class InvalidCsvData extends DomainError {
   constructor(detail: string) {
     super(`Invalid CSV data: ${detail}`);

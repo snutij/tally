@@ -8,9 +8,7 @@ import { ExitPromptError } from "@inquirer/core";
 import { GenerateReport } from "../application/usecase/generate-report.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { LearnCategoryRules } from "../application/usecase/learn-category-rules.js";
-import { PlanBudget } from "../application/usecase/plan-budget.js";
 import { SeedMockData } from "../application/usecase/seed-mock-data.js";
-import { createBudgetCommand } from "./command/budget-command.js";
 import { createDbCommand } from "./command/db-command.js";
 import { createImportCommand } from "./command/import-command.js";
 import { createReportCommand } from "./command/report-command.js";
@@ -24,12 +22,11 @@ if (!existsSync(dataDir)) {
 }
 
 // --- Composition root ---
-const { budgetRepo, txnRepo, ruleRepo } = openDatabase(dbPath);
+const { txnRepo, ruleRepo } = openDatabase(dbPath);
 
-const planBudget = new PlanBudget(budgetRepo);
 const importTransactions = new ImportTransactions(txnRepo);
-const generateReport = new GenerateReport(budgetRepo, txnRepo);
-const seedMockData = new SeedMockData(txnRepo, budgetRepo);
+const generateReport = new GenerateReport(txnRepo);
+const seedMockData = new SeedMockData(txnRepo);
 const applyCategoryRules = new ApplyCategoryRules(ruleRepo);
 const learnCategoryRules = new LearnCategoryRules(ruleRepo);
 
@@ -50,7 +47,6 @@ const renderer = {
   },
 };
 
-program.addCommand(createBudgetCommand(planBudget, renderer));
 program.addCommand(
   createImportCommand(
     importTransactions,

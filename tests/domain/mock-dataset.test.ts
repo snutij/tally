@@ -1,7 +1,7 @@
-import { MOCK_BUDGET_AMOUNTS, mockTransactions } from "../../src/domain/mock-dataset.js";
 import { describe, expect, it } from "vitest";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
+import { mockTransactions } from "../../src/domain/mock-dataset.js";
 
 describe("mockTransactions", () => {
   const txns = mockTransactions(2026, 3);
@@ -41,21 +41,5 @@ describe("mockTransactions", () => {
   it("generates unique IDs", () => {
     const ids = txns.map((txn) => txn.id);
     expect(new Set(ids).size).toBe(ids.length);
-  });
-});
-
-describe("MOCK_BUDGET_AMOUNTS", () => {
-  const validIds = new Set(DEFAULT_CATEGORIES.map((cat) => cat.id));
-
-  it("uses only valid DEFAULT_CATEGORIES IDs", () => {
-    for (const id of Object.keys(MOCK_BUDGET_AMOUNTS)) {
-      expect(validIds).toContain(id);
-    }
-  });
-
-  it("has non-zero amounts", () => {
-    for (const amount of Object.values(MOCK_BUDGET_AMOUNTS)) {
-      expect(amount).toBeGreaterThan(0);
-    }
   });
 });

@@ -1,13 +1,10 @@
 import {
-  type SqliteBudgetRepository,
   type SqliteCategoryRuleRepository,
   type SqliteTransactionRepository,
   openDatabase,
 } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
-import { Budget } from "../../src/domain/entity/budget.js";
-import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import type Database from "better-sqlite3";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
@@ -19,7 +16,6 @@ import { tmpdir } from "node:os";
 describe("SqliteRepository", () => {
   let tmpDir: string;
   let db: Database.Database;
-  let budgetRepo: SqliteBudgetRepository;
   let txnRepo: SqliteTransactionRepository;
   let ruleRepo: SqliteCategoryRuleRepository;
 
@@ -27,7 +23,6 @@ describe("SqliteRepository", () => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-test-"));
     const result = openDatabase(join(tmpDir, "test.db"));
     ({ db } = result);
-    ({ budgetRepo } = result);
     ({ txnRepo } = result);
     ({ ruleRepo } = result);
   });
@@ -35,55 +30,6 @@ describe("SqliteRepository", () => {
   afterEach(() => {
     db.close();
     rmSync(tmpDir, { recursive: true });
-  });
-
-  describe("BudgetRepository", () => {
-    const month = Month.from("2026-03");
-
-    it("saves and retrieves a budget", () => {
-      const budget = new Budget(month, [
-        {
-          amount: Money.fromEuros(800),
-          category: { group: CategoryGroup.NEEDS, id: "rent", name: "Rent" },
-        },
-      ]);
-
-      budgetRepo.save(budget);
-      const found = budgetRepo.findByMonth(month);
-
-      expect(found).not.toBeNull();
-      if (!found) {
-        return;
-      }
-      expect(found.month.value).toBe("2026-03");
-      expect(found.lines).toHaveLength(1);
-      expect(found.lines[0]?.category.id).toBe("rent");
-      expect(found.lines[0]?.amount.cents).toBe(80_000);
-    });
-
-    it("returns null for non-existent month", () => {
-      expect(budgetRepo.findByMonth(month)).toBeNull();
-    });
-
-    it("checks existence", () => {
-      expect(budgetRepo.exists(month)).toBe(false);
-      budgetRepo.save(new Budget(month, []));
-      expect(budgetRepo.exists(month)).toBe(true);
-    });
-
-    it("throws on corrupted CategoryGroup in DB", () => {
-      budgetRepo.save(new Budget(month, []));
-
-      // Directly corrupt the DB
-      db.prepare(
-        `INSERT INTO categories (id, name, "group") VALUES ('bad', 'Bad', 'INVALID_GROUP')`,
-      ).run();
-      db.prepare(
-        `INSERT INTO budget_lines (month, category_id, amount_cents) VALUES ('2026-03', 'bad', 100)`,
-      ).run();
-
-      expect(() => budgetRepo.findByMonth(month)).toThrow("Invalid CategoryGroup");
-    });
   });
 
   describe("CategoryRuleRepository", () => {
@@ -124,16 +70,12 @@ describe("SqliteRepository", () => {
     });
 
     it("re-opening DB does not overwrite learned rule with default", () => {
-      // Override the default rule for carrefour with a learned rule
       const dbPath = join(tmpDir, "test.db");
       const learnedRule = createCategoryRule(String.raw`\bcarrefour\b`, "w02", "learned");
-      // The default rule already exists — save would fail (UNIQUE constraint).
-      // Remove default first, then save learned.
       ruleRepo.removeByPattern(String.raw`\bcarrefour\b`);
       ruleRepo.save(learnedRule);
       db.close();
 
-      // Reopen: migration should NOT overwrite with INSERT OR IGNORE
       const result2 = openDatabase(dbPath);
       const found = result2.ruleRepo.findByPattern(String.raw`\bcarrefour\b`);
       expect(found?.source).toBe("learned");

@@ -1,8 +1,9 @@
-import type { Budget } from "./budget.js";
 import { CategoryGroup } from "../value-object/category-group.js";
+import { DEFAULT_CATEGORIES } from "../default-categories.js";
 import type { DateOnly } from "../value-object/date-only.js";
 import { Money } from "../value-object/money.js";
 import type { Month } from "../value-object/month.js";
+import type { SpendingTargets } from "../config/spending-targets.js";
 import type { Transaction } from "./transaction.js";
 
 const EXPENSE_GROUPS: CategoryGroup[] = [
@@ -21,25 +22,9 @@ export interface GroupSummary {
   readonly budgeted: Money;
   readonly actual: Money;
   readonly delta: Money;
+  /** For expense groups: the target percentage (50/30/20). For income: 0. */
   readonly budgetedPercent: number;
   readonly actualPercent: number;
-}
-
-export interface CategorySummary {
-  readonly categoryId: string;
-  readonly categoryName: string;
-  readonly group: CategoryGroup;
-  readonly budgeted: Money;
-  readonly actual: Money;
-  readonly delta: Money;
-}
-
-export interface CategoryVarianceEntry {
-  readonly categoryId: string;
-  readonly categoryName: string;
-  readonly budgeted: Money;
-  readonly actual: Money;
-  readonly variance: Money;
 }
 
 export interface TopSpendingEntry {
@@ -63,46 +48,34 @@ export interface ReportKpis {
     readonly wants: number | null;
     readonly investments: number | null;
   };
-  readonly adherenceRate: number | null;
   readonly topSpendingCategories: TopSpendingEntry[];
   readonly dailyAverageSpending: Money;
   readonly largestExpenses: LargestExpenseEntry[];
   readonly uncategorizedRatio: number | null;
-  readonly categoryVariance: {
-    readonly overruns: CategoryVarianceEntry[];
-    readonly underruns: CategoryVarianceEntry[];
-  };
 }
 
 interface MonthlyReportData {
-  readonly categories: CategorySummary[];
   readonly groups: GroupSummary[];
   readonly kpis: ReportKpis;
   readonly month: Month;
   readonly net: Money;
   readonly totalExpenseActual: Money;
-  readonly totalExpenseBudgeted: Money;
+  readonly totalExpenseTarget: Money;
   readonly totalIncomeActual: Money;
-  readonly totalIncomeBudgeted: Money;
   readonly transactionCount: number;
   readonly uncategorized: Money;
 }
 
-// ── Helper functions (declared before use) ─────────────────
+// ── Helper functions ──────────────────────────────────────
 
 function pct(numerator: number, denominator: number): number {
   return Math.round((numerator / denominator) * 10_000) / 100;
 }
 
-function varianceOf(cat: CategorySummary): CategoryVarianceEntry {
-  return {
-    actual: cat.actual,
-    budgeted: cat.budgeted,
-    categoryId: cat.categoryId,
-    categoryName: cat.categoryName,
-    variance: cat.actual.subtract(cat.budgeted),
-  };
-}
+// Build category→group map from DEFAULT_CATEGORIES (domain knowledge, not budget-derived)
+const CATEGORY_GROUP_MAP: ReadonlyMap<string, CategoryGroup> = new Map(
+  DEFAULT_CATEGORIES.map((cat) => [cat.id, cat.group]),
+);
 
 interface Actuals {
   actualByCategory: Map<string, Money>;
@@ -111,15 +84,10 @@ interface Actuals {
   uncategorizedCount: number;
 }
 
-function accumulateActuals(budget: Budget, transactions: Transaction[]): Actuals {
+function accumulateActuals(transactions: Transaction[]): Actuals {
   const actualByGroup = new Map<CategoryGroup, Money>();
   for (const group of Object.values(CategoryGroup)) {
     actualByGroup.set(group, Money.zero());
-  }
-
-  const categoryGroupMap = new Map<string, CategoryGroup>();
-  for (const line of budget.lines) {
-    categoryGroupMap.set(line.category.id, line.category.group);
   }
 
   let uncategorized = Money.zero();
@@ -127,11 +95,10 @@ function accumulateActuals(budget: Budget, transactions: Transaction[]): Actuals
   let uncategorizedCount = 0;
 
   for (const txn of transactions) {
-    const group = txn.categoryId ? categoryGroupMap.get(txn.categoryId) : undefined;
+    const group = txn.categoryId ? CATEGORY_GROUP_MAP.get(txn.categoryId) : undefined;
     const absAmount = Money.fromCents(Math.abs(txn.amount.cents));
-    if (group && txn.categoryId) {
-      const current = mapGet(actualByGroup, group);
-      actualByGroup.set(group, current.add(absAmount));
+    if (group !== undefined && txn.categoryId) {
+      actualByGroup.set(group, mapGet(actualByGroup, group).add(absAmount));
       const prev = actualByCategory.get(txn.categoryId) ?? Money.zero();
       actualByCategory.set(txn.categoryId, prev.add(absAmount));
     } else {
@@ -143,56 +110,29 @@ function accumulateActuals(budget: Budget, transactions: Transaction[]): Actuals
   return { actualByCategory, actualByGroup, uncategorized, uncategorizedCount };
 }
 
-function computeCategoryVariance(categories: CategorySummary[]): {
-  overruns: CategoryVarianceEntry[];
-  underruns: CategoryVarianceEntry[];
-} {
-  const expenseCategories = categories.filter((cat) => cat.group !== CategoryGroup.INCOME);
-
-  const overruns = expenseCategories
-    .filter((cat) => cat.actual.cents > cat.budgeted.cents)
-    .toSorted(
-      (ca, cb) => cb.actual.cents - cb.budgeted.cents - (ca.actual.cents - ca.budgeted.cents),
-    )
-    .slice(0, 3)
-    .map((cat) => varianceOf(cat));
-
-  const underruns = expenseCategories
-    .filter((cat) => cat.actual.cents < cat.budgeted.cents)
-    .toSorted(
-      (ca, cb) => ca.actual.cents - ca.budgeted.cents - (cb.actual.cents - cb.budgeted.cents),
-    )
-    .slice(0, 3)
-    .map((cat) => varianceOf(cat));
-
-  return { overruns, underruns };
-}
-
 function computeKpis(ctx: {
-  budget: Budget;
-  transactions: Transaction[];
-  categories: CategorySummary[];
-  actualByGroup: Map<CategoryGroup, Money>;
   actualByCategory: Map<string, Money>;
+  actualByGroup: Map<CategoryGroup, Money>;
+  month: Month;
   totalIncomeActual: Money;
   totalExpenseActual: Money;
+  transactions: Transaction[];
   uncategorizedCount: number;
 }): ReportKpis {
   const {
-    budget,
-    transactions,
-    categories,
-    actualByGroup,
     actualByCategory,
+    actualByGroup,
+    month,
     totalIncomeActual,
     totalExpenseActual,
+    transactions,
     uncategorizedCount,
   } = ctx;
 
   const incomeZero = totalIncomeActual.isZero();
 
   const savingsRate = incomeZero
-    ? null // eslint-disable-line unicorn/no-null -- ReportKpis interface contract uses null for absent ratios
+    ? null // eslint-disable-line unicorn/no-null -- ReportKpis interface contract uses null
     : pct(totalIncomeActual.cents - totalExpenseActual.cents, totalIncomeActual.cents);
 
   const fiftyThirtyTwenty = incomeZero
@@ -206,31 +146,19 @@ function computeKpis(ctx: {
         wants: pct(mapGet(actualByGroup, CategoryGroup.WANTS).cents, totalIncomeActual.cents),
       };
 
-  const expenseLines = budget.lines.filter((ln) => ln.category.group !== CategoryGroup.INCOME);
-  const adherenceRate =
-    expenseLines.length === 0
-      ? null // eslint-disable-line unicorn/no-null -- ReportKpis interface contract uses null for absent ratios
-      : pct(
-          expenseLines.filter((ln) => {
-            const actual = actualByCategory.get(ln.category.id) ?? Money.zero();
-            return actual.cents <= ln.amount.cents;
-          }).length,
-          expenseLines.length,
-        );
-
-  const topSpendingCategories = categories
-    .filter((cat) => cat.group !== CategoryGroup.INCOME)
+  const topSpendingCategories = [...actualByCategory.entries()]
+    .flatMap(([categoryId, actual]) => {
+      const category = DEFAULT_CATEGORIES.find((cat) => cat.id === categoryId);
+      if (!category || category.group === CategoryGroup.INCOME) {
+        return [];
+      }
+      return [{ actual, categoryId, categoryName: category.name, group: category.group }];
+    })
     .toSorted((ca, cb) => cb.actual.cents - ca.actual.cents)
-    .slice(0, 5)
-    .map((cat) => ({
-      actual: cat.actual,
-      categoryId: cat.categoryId,
-      categoryName: cat.categoryName,
-      group: cat.group,
-    }));
+    .slice(0, 5);
 
   const dailyAverageSpending = Money.fromCents(
-    Math.round(totalExpenseActual.cents / budget.month.daysInMonth()),
+    Math.round(totalExpenseActual.cents / month.daysInMonth()),
   );
 
   const largestExpenses = transactions
@@ -245,14 +173,10 @@ function computeKpis(ctx: {
     }));
 
   const uncategorizedRatio =
-    // eslint-disable-next-line unicorn/no-null -- ReportKpis interface contract uses null for absent ratios
+    // eslint-disable-next-line unicorn/no-null -- ReportKpis interface contract uses null
     transactions.length === 0 ? null : pct(uncategorizedCount, transactions.length);
 
-  const categoryVariance = computeCategoryVariance(categories);
-
   return {
-    adherenceRate,
-    categoryVariance,
     dailyAverageSpending,
     fiftyThirtyTwenty,
     largestExpenses,
@@ -262,55 +186,78 @@ function computeKpis(ctx: {
   };
 }
 
-// ── Main class ─────────────────────────────────────────────
+// ── Main class ────────────────────────────────────────────
 
 export class MonthlyReport {
-  readonly categories: CategorySummary[];
   readonly groups: GroupSummary[];
   readonly kpis: ReportKpis;
   readonly month: Month;
   readonly net: Money;
   readonly totalExpenseActual: Money;
-  readonly totalExpenseBudgeted: Money;
+  readonly totalExpenseTarget: Money;
   readonly totalIncomeActual: Money;
-  readonly totalIncomeBudgeted: Money;
   readonly transactionCount: number;
   readonly uncategorized: Money;
 
   private constructor(data: MonthlyReportData) {
-    this.categories = data.categories;
     this.groups = data.groups;
     this.kpis = data.kpis;
     this.month = data.month;
     this.net = data.net;
     this.totalExpenseActual = data.totalExpenseActual;
-    this.totalExpenseBudgeted = data.totalExpenseBudgeted;
+    this.totalExpenseTarget = data.totalExpenseTarget;
     this.totalIncomeActual = data.totalIncomeActual;
-    this.totalIncomeBudgeted = data.totalIncomeBudgeted;
     this.transactionCount = data.transactionCount;
     this.uncategorized = data.uncategorized;
   }
 
-  static compute(budget: Budget, transactions: Transaction[]): MonthlyReport {
+  static compute(
+    month: Month,
+    targets: SpendingTargets,
+    transactions: Transaction[],
+  ): MonthlyReport {
     const { actualByCategory, actualByGroup, uncategorized, uncategorizedCount } =
-      accumulateActuals(budget, transactions);
+      accumulateActuals(transactions);
 
-    let totalExpenseBudgeted = Money.zero();
-    for (const grp of EXPENSE_GROUPS) {
-      totalExpenseBudgeted = totalExpenseBudgeted.add(budget.totalByGroup(grp));
-    }
+    const totalIncomeActual = mapGet(actualByGroup, CategoryGroup.INCOME);
+
     let totalExpenseActual = Money.zero();
     for (const grp of EXPENSE_GROUPS) {
       totalExpenseActual = totalExpenseActual.add(mapGet(actualByGroup, grp));
     }
-    const totalIncomeBudgeted = budget.totalByGroup(CategoryGroup.INCOME);
-    const totalIncomeActual = mapGet(actualByGroup, CategoryGroup.INCOME);
+
+    // Group-level targets: income × percentage
+    const targetByGroup = new Map<CategoryGroup, Money>([
+      [
+        CategoryGroup.NEEDS,
+        Money.fromCents(Math.round((totalIncomeActual.cents * targets.needs) / 100)),
+      ],
+      [
+        CategoryGroup.WANTS,
+        Money.fromCents(Math.round((totalIncomeActual.cents * targets.wants) / 100)),
+      ],
+      [
+        CategoryGroup.INVESTMENTS,
+        Money.fromCents(Math.round((totalIncomeActual.cents * targets.invest) / 100)),
+      ],
+      [CategoryGroup.INCOME, Money.zero()],
+    ]);
+
+    const totalExpenseTarget = mapGet(targetByGroup, CategoryGroup.NEEDS)
+      .add(mapGet(targetByGroup, CategoryGroup.WANTS))
+      .add(mapGet(targetByGroup, CategoryGroup.INVESTMENTS));
+
+    const targetPctByGroup: ReadonlyMap<CategoryGroup, number> = new Map([
+      [CategoryGroup.NEEDS, targets.needs],
+      [CategoryGroup.WANTS, targets.wants],
+      [CategoryGroup.INVESTMENTS, targets.invest],
+      [CategoryGroup.INCOME, 0],
+    ]);
 
     const groups: GroupSummary[] = Object.values(CategoryGroup).map((group) => {
-      const budgeted = budget.totalByGroup(group);
+      const budgeted = mapGet(targetByGroup, group);
       const actual = mapGet(actualByGroup, group);
       const isIncome = group === CategoryGroup.INCOME;
-      const typeBudgetTotal = isIncome ? totalIncomeBudgeted : totalExpenseBudgeted;
       const typeActualTotal = isIncome ? totalIncomeActual : totalExpenseActual;
 
       return {
@@ -319,23 +266,9 @@ export class MonthlyReport {
           ? 0
           : Math.round((actual.cents / typeActualTotal.cents) * 10_000) / 100,
         budgeted,
-        budgetedPercent: typeBudgetTotal.isZero()
-          ? 0
-          : Math.round((budgeted.cents / typeBudgetTotal.cents) * 10_000) / 100,
+        budgetedPercent: mapGet(targetPctByGroup, group),
         delta: budgeted.subtract(actual),
         group,
-      };
-    });
-
-    const categories: CategorySummary[] = budget.lines.map((line) => {
-      const actual = actualByCategory.get(line.category.id) ?? Money.zero();
-      return {
-        actual,
-        budgeted: line.amount,
-        categoryId: line.category.id,
-        categoryName: line.category.name,
-        delta: line.amount.subtract(actual),
-        group: line.category.group,
       };
     });
 
@@ -347,8 +280,7 @@ export class MonthlyReport {
     const kpis = computeKpis({
       actualByCategory,
       actualByGroup,
-      budget,
-      categories,
+      month,
       totalExpenseActual,
       totalIncomeActual,
       transactions,
@@ -356,15 +288,13 @@ export class MonthlyReport {
     });
 
     return new MonthlyReport({
-      categories,
       groups,
       kpis,
-      month: budget.month,
+      month,
       net,
       totalExpenseActual,
-      totalExpenseBudgeted,
+      totalExpenseTarget,
       totalIncomeActual,
-      totalIncomeBudgeted,
       transactionCount: transactions.length,
       uncategorized,
     });

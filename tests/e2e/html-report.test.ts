@@ -7,7 +7,6 @@ import { GenerateReport } from "../../src/application/usecase/generate-report.js
 import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { Month } from "../../src/domain/value-object/month.js";
-import { PlanBudget } from "../../src/application/usecase/plan-budget.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
@@ -24,7 +23,6 @@ describe("e2e: HTML report output", () => {
   let tmpDir: string;
   let db: Database.Database;
   let importTxns: ImportTransactions;
-  let planBudget: PlanBudget;
   let generateReport: GenerateReport;
   const renderer = new HtmlRenderer();
 
@@ -34,12 +32,11 @@ describe("e2e: HTML report output", () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-e2e-html-"));
-    const { db: database, budgetRepo, txnRepo } = openDatabase(join(tmpDir, "test.db"));
+    const { db: database, txnRepo } = openDatabase(join(tmpDir, "test.db"));
     db = database;
 
     importTxns = new ImportTransactions(txnRepo);
-    planBudget = new PlanBudget(budgetRepo);
-    generateReport = new GenerateReport(budgetRepo, txnRepo);
+    generateReport = new GenerateReport(txnRepo);
   });
 
   afterEach(() => {
@@ -47,7 +44,7 @@ describe("e2e: HTML report output", () => {
     rmSync(tmpDir, { recursive: true });
   });
 
-  it("renders a full report as valid HTML", () => {
+  it("renders a full report as valid HTML (no budget init step)", () => {
     const parsed = importTxns.parse(parser, CSV);
     const categorized = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
@@ -65,7 +62,6 @@ describe("e2e: HTML report output", () => {
       return txn;
     });
     importTxns.save(categorized);
-    planBudget.initFromDefaults(month);
 
     const report = generateReport.execute(month);
     const html = renderer.render(report);
@@ -74,7 +70,7 @@ describe("e2e: HTML report output", () => {
     expect(html).toContain("Monthly Report");
     expect(html).toContain("Key Indicators");
     expect(html).toContain("Group Summary");
-    expect(html).toContain("Category Breakdown");
+    expect(html).not.toContain("Category Breakdown");
     expect(html).toContain("€");
   });
 });

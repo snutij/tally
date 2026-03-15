@@ -1,25 +1,20 @@
-import { Budget } from "../../domain/entity/budget.js";
-import type { BudgetRepository } from "../gateway/budget-repository.js";
+import {
+  DEFAULT_SPENDING_TARGETS,
+  type SpendingTargets,
+} from "../../domain/config/spending-targets.js";
 import type { Month } from "../../domain/value-object/month.js";
 import { MonthlyReport } from "../../domain/entity/monthly-report.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
 export class GenerateReport {
-  private budgetRepo: BudgetRepository;
-  private txnRepo: TransactionRepository;
+  private readonly txnRepo: TransactionRepository;
 
-  constructor(budgetRepo: BudgetRepository, txnRepo: TransactionRepository) {
-    this.budgetRepo = budgetRepo;
+  constructor(txnRepo: TransactionRepository) {
     this.txnRepo = txnRepo;
   }
 
-  execute(month: Month): MonthlyReport {
-    const budget = this.budgetRepo.findByMonth(month);
-    if (!budget) {
-      return MonthlyReport.compute(new Budget(month, []), []);
-    }
-
+  execute(month: Month, targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): MonthlyReport {
     const transactions = this.txnRepo.findByMonth(month);
-    return MonthlyReport.compute(budget, transactions);
+    return MonthlyReport.compute(month, targets, transactions);
   }
 }

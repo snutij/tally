@@ -1,11 +1,8 @@
-import { Budget, type BudgetLine } from "../../domain/entity/budget.js";
 import { type CategoryRule, createCategoryRule } from "../../domain/entity/category-rule.js";
 import {
   DEFAULT_LOCALE,
   getDefaultRulesForLocale,
 } from "../../domain/default-category-rules/index.js";
-import type { BudgetRepository } from "../../application/gateway/budget-repository.js";
-import { CategoryGroup } from "../../domain/value-object/category-group.js";
 import type { CategoryRuleRepository } from "../../application/gateway/category-rule-repository.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import Database from "better-sqlite3";
@@ -15,34 +12,18 @@ import type { Month } from "../../domain/value-object/month.js";
 import type { Transaction } from "../../domain/entity/transaction.js";
 import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
 
-const VALID_GROUPS = new Set<string>(Object.values(CategoryGroup));
-
-function assertCategoryGroup(value: string): CategoryGroup {
-  if (!VALID_GROUPS.has(value)) {
-    throw new Error(`Invalid CategoryGroup in database: "${value}"`);
-  }
-  return value as CategoryGroup;
-}
-
 function migrate(db: Database.Database): void {
+  // Drop obsolete budget tables from previous schema
+  db.exec(`
+    DROP TABLE IF EXISTS budget_lines;
+    DROP TABLE IF EXISTS budgets;
+  `);
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       "group" TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS budgets (
-      month TEXT PRIMARY KEY
-    );
-
-    CREATE TABLE IF NOT EXISTS budget_lines (
-      month TEXT NOT NULL,
-      category_id TEXT NOT NULL,
-      amount_cents INTEGER NOT NULL,
-      PRIMARY KEY (month, category_id),
-      FOREIGN KEY (month) REFERENCES budgets(month),
-      FOREIGN KEY (category_id) REFERENCES categories(id)
     );
 
     CREATE TABLE IF NOT EXISTS transactions (
@@ -83,78 +64,6 @@ function migrate(db: Database.Database): void {
   for (const entry of getDefaultRulesForLocale(DEFAULT_LOCALE)) {
     const rule = createCategoryRule(entry.pattern, entry.categoryId, "default");
     insertRule.run(rule.id, rule.pattern, rule.categoryId, rule.source);
-  }
-}
-
-export class SqliteBudgetRepository implements BudgetRepository {
-  private db: Database.Database;
-
-  constructor(db: Database.Database) {
-    this.db = db;
-  }
-
-  save(budget: Budget): void {
-    const runTx = this.db.transaction(() => {
-      const upsertCat = this.db.prepare(
-        `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
-      );
-      for (const line of budget.lines) {
-        upsertCat.run(line.category.id, line.category.name, line.category.group);
-      }
-
-      this.db.prepare(`INSERT OR REPLACE INTO budgets (month) VALUES (?)`).run(budget.month.value);
-
-      this.db.prepare(`DELETE FROM budget_lines WHERE month = ?`).run(budget.month.value);
-
-      const insertLine = this.db.prepare(
-        `INSERT INTO budget_lines (month, category_id, amount_cents) VALUES (?, ?, ?)`,
-      );
-      for (const line of budget.lines) {
-        insertLine.run(budget.month.value, line.category.id, line.amount.cents);
-      }
-    });
-    runTx();
-  }
-
-  findByMonth(month: Month): Budget | null {
-    const row = this.db.prepare(`SELECT month FROM budgets WHERE month = ?`).get(month.value) as
-      | { month: string }
-      | undefined;
-
-    if (!row) {
-      // eslint-disable-next-line unicorn/no-null -- BudgetRepository interface contract returns null
-      return null;
-    }
-
-    const lineRows = this.db
-      .prepare(
-        `SELECT bl.category_id, bl.amount_cents, c.name, c."group"
-         FROM budget_lines bl
-         JOIN categories c ON c.id = bl.category_id
-         WHERE bl.month = ?`,
-      )
-      .all(month.value) as {
-      category_id: string;
-      amount_cents: number;
-      name: string;
-      group: string;
-    }[];
-
-    const lines: BudgetLine[] = lineRows.map((lineRow) => ({
-      amount: Money.fromCents(lineRow.amount_cents),
-      category: {
-        group: assertCategoryGroup(lineRow.group),
-        id: lineRow.category_id,
-        name: lineRow.name,
-      },
-    }));
-
-    return new Budget(month, lines);
-  }
-
-  exists(month: Month): boolean {
-    const row = this.db.prepare(`SELECT 1 FROM budgets WHERE month = ?`).get(month.value);
-    return row !== undefined;
   }
 }
 
@@ -293,7 +202,6 @@ export class SqliteCategoryRuleRepository implements CategoryRuleRepository {
 
 export function openDatabase(dbPath: string): {
   db: Database.Database;
-  budgetRepo: SqliteBudgetRepository;
   txnRepo: SqliteTransactionRepository;
   ruleRepo: SqliteCategoryRuleRepository;
 } {
@@ -302,7 +210,6 @@ export function openDatabase(dbPath: string): {
   db.pragma("foreign_keys = ON");
   migrate(db);
   return {
-    budgetRepo: new SqliteBudgetRepository(db),
     db,
     ruleRepo: new SqliteCategoryRuleRepository(db),
     txnRepo: new SqliteTransactionRepository(db),

@@ -219,14 +219,14 @@ describe("createImportCommand", () => {
 
   describe("mock subcommand", () => {
     it("seeds data with explicit month", async () => {
-      mockSeedMockData.execute.mockReturnValue({ budgetCreated: true, transactionCount: 17 });
+      mockSeedMockData.execute.mockReturnValue({ transactionCount: 17 });
       await run("mock", "2026-03");
       expect(mockSeedMockData.execute).toHaveBeenCalled();
       expect(console.log).toHaveBeenCalled();
     });
 
     it("defaults to current month", async () => {
-      mockSeedMockData.execute.mockReturnValue({ budgetCreated: true, transactionCount: 17 });
+      mockSeedMockData.execute.mockReturnValue({ transactionCount: 17 });
       await run("mock");
       expect(mockSeedMockData.execute).toHaveBeenCalled();
     });
