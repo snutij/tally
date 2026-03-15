@@ -40,12 +40,8 @@ export function detectDateFormat(samples: string[]): DetectionResult<string> {
   const dashSamples = nonEmpty.filter((sample) => DASH_PATTERN.test(sample));
   if (dashSamples.length > 0) {
     const hasUnambiguous = dashSamples.some((sample) => {
-      const match = DASH_PATTERN.exec(sample);
-      if (!match) {
-        return false;
-      }
-      const [, dayStr] = match;
-      return Number.parseInt(dayStr ?? "", 10) > 12;
+      const dayStr = DASH_PATTERN.exec(sample)?.[1] ?? "";
+      return Number.parseInt(dayStr, 10) > 12;
     });
     return { confident: hasUnambiguous, value: "DD-MM-YYYY" };
   }
