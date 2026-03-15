@@ -11,8 +11,13 @@ repos:
         entry: npm run lint
         language: system
         pass_filenames: false
+      - id: build
+        name: build
+        entry: npm run build
+        language: system
+        pass_filenames: false
       - id: test
         name: test
-        entry: npm run test
+        entry: npm run test:coverage
         language: system
         pass_filenames: false
