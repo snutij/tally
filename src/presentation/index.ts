@@ -4,6 +4,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
 import { Command } from "commander";
 import { DomainError } from "../domain/error/index.js";
+import { ExitPromptError } from "@inquirer/core";
 import { GenerateReport } from "../application/usecase/generate-report.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { LearnCategoryRules } from "../application/usecase/learn-category-rules.js";
@@ -67,7 +68,9 @@ program.addCommand(createDbCommand());
 try {
   await program.parseAsync();
 } catch (error: unknown) {
-  if (error instanceof DomainError) {
+  if (error instanceof ExitPromptError) {
+    // Ctrl+C during any interactive prompt — exit cleanly
+  } else if (error instanceof DomainError) {
     console.error(error.message);
     process.exitCode = 1;
   } else {

@@ -202,6 +202,19 @@ describe("createImportCommand", () => {
 
       expect(console.log).toHaveBeenCalledWith("Skipping 1 already-categorized transactions.");
     });
+
+    it("propagates ExitPromptError from column mapping (handled at top-level)", async () => {
+      class MockExitPromptError extends Error {}
+      vi.mocked(collectColumnMapping).mockRejectedValue(new MockExitPromptError("sigint"));
+
+      const originalIsTTY = process.stdout.isTTY;
+      process.stdout.isTTY = true;
+      try {
+        await expect(run("csv", "file.csv")).rejects.toBeInstanceOf(MockExitPromptError);
+      } finally {
+        process.stdout.isTTY = originalIsTTY;
+      }
+    });
   });
 
   describe("mock subcommand", () => {
