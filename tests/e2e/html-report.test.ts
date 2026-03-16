@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
-import type Database from "better-sqlite3";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
@@ -22,7 +21,7 @@ const CSV_MAPPING = new CsvColumnMapping({
 
 describe("e2e: HTML report output", () => {
   let tmpDir: string;
-  let db: Database.Database;
+  let close: () => void;
   let importTxns: ImportTransactions;
   let generateReport: GenerateReport;
   const renderer = new HtmlRenderer();
@@ -33,15 +32,15 @@ describe("e2e: HTML report output", () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-e2e-html-"));
-    const { db: database, txnRepo } = openDatabase(join(tmpDir, "test.db"));
-    db = database;
+    const { close: closeDb, txnRepo } = openDatabase(join(tmpDir, "test.db"));
+    close = closeDb;
 
     importTxns = new ImportTransactions(txnRepo);
     generateReport = new GenerateReport(txnRepo);
   });
 
   afterEach(() => {
-    db.close();
+    close();
     rmSync(tmpDir, { recursive: true });
   });
 

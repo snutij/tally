@@ -69,7 +69,7 @@ function migrate(db: Database.Database): void {
   }
 }
 
-export class SqliteTransactionRepository implements TransactionRepository {
+class SqliteTransactionRepository implements TransactionRepository {
   private db: Database.Database;
 
   constructor(db: Database.Database) {
@@ -157,7 +157,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
   }
 }
 
-export class SqliteCategoryRuleRepository implements CategoryRuleRepository {
+class SqliteCategoryRuleRepository implements CategoryRuleRepository {
   private db: Database.Database;
 
   constructor(db: Database.Database) {
@@ -207,16 +207,16 @@ export class SqliteCategoryRuleRepository implements CategoryRuleRepository {
 }
 
 export function openDatabase(dbPath: string): {
-  db: Database.Database;
-  txnRepo: SqliteTransactionRepository;
-  ruleRepo: SqliteCategoryRuleRepository;
+  txnRepo: TransactionRepository;
+  ruleRepo: CategoryRuleRepository;
+  close(): void;
 } {
   const db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   migrate(db);
   return {
-    db,
+    close: () => db.close(),
     ruleRepo: new SqliteCategoryRuleRepository(db),
     txnRepo: new SqliteTransactionRepository(db),
   };

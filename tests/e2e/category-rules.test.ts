@@ -4,7 +4,6 @@ import { ApplyCategoryRules } from "../../src/application/usecase/apply-category
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
-import type Database from "better-sqlite3";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { join } from "node:path";
@@ -23,22 +22,22 @@ const parser = new CsvTransactionParser(CSV_MAPPING);
 
 describe("e2e: auto-categorization rules", () => {
   let tmpDir: string;
-  let db: Database.Database;
+  let close: () => void;
   let importTxns: ImportTransactions;
   let applyCategoryRules: ApplyCategoryRules;
   let learnCategoryRules: LearnCategoryRules;
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-rules-e2e-"));
-    const { db: database, txnRepo, ruleRepo } = openDatabase(join(tmpDir, "test.db"));
-    db = database;
+    const { close: closeDb, txnRepo, ruleRepo } = openDatabase(join(tmpDir, "test.db"));
+    close = closeDb;
     importTxns = new ImportTransactions(txnRepo);
     applyCategoryRules = new ApplyCategoryRules(ruleRepo);
     learnCategoryRules = new LearnCategoryRules(ruleRepo);
   });
 
   afterEach(() => {
-    db.close();
+    close();
     rmSync(tmpDir, { recursive: true });
   });
 

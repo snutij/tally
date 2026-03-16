@@ -1,36 +1,30 @@
-import {
-  type SqliteCategoryRuleRepository,
-  type SqliteTransactionRepository,
-  openDatabase,
-} from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
-import type Database from "better-sqlite3";
+import type { CategoryRuleRepository } from "../../src/application/gateway/category-rule-repository.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
+import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 import { join } from "node:path";
+import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
 
 describe("SqliteRepository", () => {
   let tmpDir: string;
-  let db: Database.Database;
-  let txnRepo: SqliteTransactionRepository;
-  let ruleRepo: SqliteCategoryRuleRepository;
+  let close: () => void;
+  let txnRepo: TransactionRepository;
+  let ruleRepo: CategoryRuleRepository;
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-test-"));
-    const result = openDatabase(join(tmpDir, "test.db"));
-    ({ db } = result);
-    ({ txnRepo } = result);
-    ({ ruleRepo } = result);
+    ({ close, txnRepo, ruleRepo } = openDatabase(join(tmpDir, "test.db")));
   });
 
   afterEach(() => {
-    db.close();
+    close();
     rmSync(tmpDir, { recursive: true });
   });
 
@@ -76,13 +70,13 @@ describe("SqliteRepository", () => {
       const learnedRule = createCategoryRule(String.raw`\bcarrefour\b`, "w02", "learned");
       ruleRepo.removeByPattern(String.raw`\bcarrefour\b`);
       ruleRepo.save(learnedRule);
-      db.close();
+      close();
 
       const result2 = openDatabase(dbPath);
       const found = result2.ruleRepo.findByPattern(String.raw`\bcarrefour\b`);
       expect(found?.source).toBe("learned");
       expect(found?.categoryId).toBe("w02");
-      result2.db.close();
+      result2.close();
     });
   });
 

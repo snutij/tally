@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
-import type Database from "better-sqlite3";
 import { Month } from "../../src/domain/value-object/month.js";
 import { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import { join } from "node:path";
@@ -9,20 +8,20 @@ import { tmpdir } from "node:os";
 
 describe("SeedMockData", () => {
   let tmpDir: string;
-  let db: Database.Database;
+  let close: () => void;
   let seedMockData: SeedMockData;
 
   const month = Month.from("2026-03");
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-mock-"));
-    const { db: database, txnRepo } = openDatabase(join(tmpDir, "test.db"));
-    db = database;
+    const { close: closeDb, txnRepo } = openDatabase(join(tmpDir, "test.db"));
+    close = closeDb;
     seedMockData = new SeedMockData(txnRepo);
   });
 
   afterEach(() => {
-    db.close();
+    close();
     rmSync(tmpDir, { recursive: true });
   });
 
