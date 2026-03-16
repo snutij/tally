@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@inquirer/select": "^5.1.0",
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "^12.8.0",
     "commander": "^14.0.3",
     "csv-parse": "^6.1.0"
   },
