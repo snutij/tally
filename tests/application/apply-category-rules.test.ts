@@ -1,16 +1,18 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
 function txn(label: string, id = "t1"): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(-10),
     date: DateOnly.from("2026-03-15"),
-    id,
+    id: TransactionId(id),
     label,
     source: "csv",
   });
@@ -50,7 +52,7 @@ describe("ApplyCategoryRules", () => {
   it("skips rules with invalid regex without crashing", () => {
     // Manually inject an invalid pattern (bypassing factory validation)
     ruleRepo["store"].set("[bad", {
-      categoryId: "n02",
+      categoryId: CategoryId("n02"),
       id: "x",
       pattern: "[bad",
       source: "default",

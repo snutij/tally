@@ -1,17 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
 function makeTxn(id: string, amount: number, date: string, categoryId?: string): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(amount),
-    categoryId,
+    categoryId: categoryId ? CategoryId(categoryId) : undefined,
     date: DateOnly.from(date),
-    id,
+    id: TransactionId(id),
     label: `txn-${id}`,
     source: "csv",
   });

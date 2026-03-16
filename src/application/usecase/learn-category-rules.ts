@@ -1,3 +1,4 @@
+import type { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRuleRepository } from "../gateway/category-rule-repository.js";
 import type { Transaction } from "../../domain/entity/transaction.js";
 import { createCategoryRule } from "../../domain/entity/category-rule.js";
@@ -18,7 +19,7 @@ export class LearnCategoryRules {
     }
   }
 
-  private learnOne(label: string, categoryId: string): void {
+  private learnOne(label: string, categoryId: CategoryId): void {
     const pattern = extractPattern(label);
     if (!pattern) {
       return;

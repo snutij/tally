@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { Command } from "commander";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import type { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
@@ -7,6 +8,7 @@ import type { LearnCategoryRules } from "../../src/application/usecase/learn-cat
 import { Money } from "../../src/domain/value-object/money.js";
 import type { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
 vi.mock("../../src/presentation/prompt/categorize-prompt.js", () => ({
   categorizePrompt: vi.fn(),
@@ -25,9 +27,9 @@ import { createImportCommand } from "../../src/presentation/command/import-comma
 function txn(overrides: { id?: string; categoryId?: string } = {}): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(-42),
-    categoryId: overrides.categoryId,
+    categoryId: overrides.categoryId ? CategoryId(overrides.categoryId) : undefined,
     date: DateOnly.from("2026-03-15"),
-    id: overrides.id ?? "t1",
+    id: TransactionId(overrides.id ?? "t1"),
     label: "TEST",
     source: "csv",
   });
@@ -111,7 +113,7 @@ describe("createImportCommand", () => {
       // apply returns all as unmatched → prompt receives them
       mockApplyCategoryRules.apply.mockReturnValue({ matched: [], unmatched: parsed });
       vi.mocked(categorizePrompt).mockResolvedValue({
-        categorized: [base.categorize("n01")],
+        categorized: [base.categorize(CategoryId("n01"))],
         interrupted: false,
       });
       mockImportTransactions.save.mockReturnValue({ count: 1 });
@@ -138,7 +140,7 @@ describe("createImportCommand", () => {
       });
       mockApplyCategoryRules.apply.mockReturnValue({ matched: [], unmatched: parsed });
       vi.mocked(categorizePrompt).mockResolvedValue({
-        categorized: [base.categorize("n01")],
+        categorized: [base.categorize(CategoryId("n01"))],
         interrupted: true,
       });
       mockImportTransactions.save.mockReturnValue({ count: 1 });
@@ -156,7 +158,7 @@ describe("createImportCommand", () => {
 
     it("displays auto-categorization summary when rules match", async () => {
       const base = txn();
-      const matched = base.categorize("n02");
+      const matched = base.categorize(CategoryId("n02"));
       mockImportTransactions.parse.mockReturnValue([base]);
       mockImportTransactions.splitByCategoryStatus.mockReturnValue({
         alreadyCategorized: [],
@@ -187,7 +189,7 @@ describe("createImportCommand", () => {
       });
       mockApplyCategoryRules.apply.mockReturnValue({ matched: [], unmatched: [t2] });
       vi.mocked(categorizePrompt).mockResolvedValue({
-        categorized: [t2.categorize("n02")],
+        categorized: [t2.categorize(CategoryId("n02"))],
         interrupted: false,
       });
       mockImportTransactions.save.mockReturnValue({ count: 2 });

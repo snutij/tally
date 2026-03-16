@@ -10,6 +10,7 @@ import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -91,14 +92,14 @@ describe("SqliteRepository", () => {
         Transaction.create({
           amount: Money.fromEuros(-800),
           date: DateOnly.from("2026-03-01"),
-          id: "tx-1",
+          id: TransactionId("tx-1"),
           label: "Rent",
           source: "csv",
         }),
         Transaction.create({
           amount: Money.fromEuros(-800),
           date: DateOnly.from("2026-04-01"),
-          id: "tx-2",
+          id: TransactionId("tx-2"),
           label: "Rent April",
           source: "csv",
         }),

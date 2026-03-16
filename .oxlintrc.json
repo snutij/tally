@@ -10,6 +10,7 @@
     "nursery": "error"
   },
   "rules": {
+    "new-cap": ["error", { "capIsNewExceptions": ["CategoryId", "TransactionId"] }],
     "no-await-in-loop": "off",
     "no-console": "off",
     "no-empty-function": "off",

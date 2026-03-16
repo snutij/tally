@@ -1,4 +1,5 @@
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
+import { CategoryId } from "../../domain/value-object/category-id.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { ExitPromptError } from "@inquirer/core";
 import type { Transaction } from "../../domain/entity/transaction.js";
@@ -54,7 +55,7 @@ export async function categorizePrompt(transactions: Transaction[]): Promise<Cat
       if (answer === "__skip__") {
         result.push(txn);
       } else {
-        result.push(txn.categorize(answer));
+        result.push(txn.categorize(CategoryId(answer)));
       }
     }
   } catch (error) {

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
 import type Database from "better-sqlite3";
@@ -61,7 +62,7 @@ describe("e2e: auto-categorization rules", () => {
     }
 
     // Simulate user manually categorizing the first transaction
-    const manuallyCategorized = [firstTxn.categorize("n02")];
+    const manuallyCategorized = [firstTxn.categorize(CategoryId("n02"))];
     learnCategoryRules.learn(manuallyCategorized);
 
     // On second import pass, the same transaction label should now auto-match

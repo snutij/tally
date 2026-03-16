@@ -1,3 +1,4 @@
+import { TransactionId } from "../../domain/value-object/transaction-id.js";
 import { createHash } from "node:crypto";
 
 export function deterministicTransactionId(
@@ -6,7 +7,7 @@ export function deterministicTransactionId(
   label: string,
   amountCents: number,
   seq: number,
-): string {
+): TransactionId {
   const input = `${source}|${date}|${label}|${amountCents}|${seq}`;
-  return createHash("sha256").update(input).digest("hex").slice(0, 32);
+  return TransactionId(createHash("sha256").update(input).digest("hex").slice(0, 32));
 }

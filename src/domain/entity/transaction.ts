@@ -1,23 +1,25 @@
+import type { CategoryId } from "../value-object/category-id.js";
 import type { DateOnly } from "../value-object/date-only.js";
 import type { Money } from "../value-object/money.js";
+import type { TransactionId } from "../value-object/transaction-id.js";
 
 export type TransactionSource = "csv" | "mock";
 
 export interface TransactionParams {
-  readonly id: string;
+  readonly id: TransactionId;
   readonly date: DateOnly;
   readonly label: string;
   readonly amount: Money;
-  readonly categoryId?: string | undefined;
+  readonly categoryId?: CategoryId | undefined;
   readonly source: TransactionSource;
 }
 
 export class Transaction {
-  readonly id: string;
+  readonly id: TransactionId;
   readonly date: DateOnly;
   readonly label: string;
   readonly amount: Money;
-  readonly categoryId: string | undefined;
+  readonly categoryId: CategoryId | undefined;
   readonly source: TransactionSource;
 
   private constructor(params: TransactionParams) {
@@ -33,7 +35,7 @@ export class Transaction {
     return new Transaction(params);
   }
 
-  categorize(categoryId: string): Transaction {
+  categorize(categoryId: CategoryId): Transaction {
     return Transaction.create({
       amount: this.amount,
       categoryId,
