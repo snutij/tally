@@ -1,17 +1,23 @@
-import type { CategoryRuleRepository } from "../../application/gateway/category-rule-repository.js";
+import type { AddRule } from "../../application/usecase/add-rule.js";
 import { Command } from "commander";
-import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
+import { DomainError } from "../../domain/error/index.js";
+import type { ListRules } from "../../application/usecase/list-rules.js";
+import type { RemoveRule } from "../../application/usecase/remove-rule.js";
 import type { Renderer } from "../renderer/renderer.js";
-import { createCategoryRule } from "../../domain/entity/category-rule.js";
 
-export function createRulesCommand(ruleRepo: CategoryRuleRepository, renderer: Renderer): Command {
+export function createRulesCommand(
+  listRules: ListRules,
+  addRule: AddRule,
+  removeRule: RemoveRule,
+  renderer: Renderer,
+): Command {
   const cmd = new Command("rules").description("Manage auto-categorization rules");
 
   cmd
     .command("list")
     .description("List all category rules")
     .action(() => {
-      const rules = ruleRepo.findAll();
+      const rules = listRules.findAll();
       console.log(renderer.render(rules));
     });
 
@@ -22,30 +28,16 @@ export function createRulesCommand(ruleRepo: CategoryRuleRepository, renderer: R
     .argument("<category-id>", "Category ID to assign (e.g. n02, w06)")
     .action((pattern: string, categoryId: string) => {
       try {
-        // eslint-disable-next-line no-new -- validation only
-        new RegExp(pattern, "i");
-      } catch {
-        console.error(`Invalid regex pattern: "${pattern}"`);
-        process.exitCode = 1;
-        return;
+        const { categoryName } = addRule.execute(pattern, categoryId);
+        console.log(`Rule added: "${pattern}" → ${categoryName}`);
+      } catch (error) {
+        if (error instanceof DomainError) {
+          console.error(error.message);
+          process.exitCode = 1;
+        } else {
+          throw error;
+        }
       }
-
-      const category = DEFAULT_CATEGORIES.find((cat) => cat.id === categoryId);
-      if (!category) {
-        console.error(`Unknown category ID: "${categoryId}"`);
-        process.exitCode = 1;
-        return;
-      }
-
-      if (ruleRepo.findByPattern(pattern)) {
-        console.error(`A rule for pattern "${pattern}" already exists.`);
-        process.exitCode = 1;
-        return;
-      }
-
-      const rule = createCategoryRule(pattern, categoryId, "learned");
-      ruleRepo.save(rule);
-      console.log(`Rule added: "${pattern}" → ${category.name}`);
     });
 
   cmd
@@ -53,13 +45,12 @@ export function createRulesCommand(ruleRepo: CategoryRuleRepository, renderer: R
     .description("Remove a categorization rule by pattern")
     .argument("<pattern>", "Exact pattern string to remove")
     .action((pattern: string) => {
-      const existing = ruleRepo.findByPattern(pattern);
-      if (!existing) {
+      const removed = removeRule.execute(pattern);
+      if (removed) {
+        console.log(`Rule removed: "${pattern}"`);
+      } else {
         console.log(`No rule found for pattern "${pattern}".`);
-        return;
       }
-      ruleRepo.removeByPattern(pattern);
-      console.log(`Rule removed: "${pattern}"`);
     });
 
   return cmd;

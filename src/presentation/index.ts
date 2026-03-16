@@ -1,7 +1,9 @@
 import { VALID_FORMATS, createRenderer } from "./renderer/create-renderer.js";
 import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { existsSync, mkdirSync } from "node:fs";
+import { AddRule } from "../application/usecase/add-rule.js";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
+import { CategorizeTransactions } from "../application/usecase/categorize-transactions.js";
 import { Command } from "commander";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
 import { DomainError } from "../domain/error/index.js";
@@ -9,6 +11,9 @@ import { ExitPromptError } from "@inquirer/core";
 import { GenerateReport } from "../application/usecase/generate-report.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { LearnCategoryRules } from "../application/usecase/learn-category-rules.js";
+import { ListRules } from "../application/usecase/list-rules.js";
+import { ListTransactions } from "../application/usecase/list-transactions.js";
+import { RemoveRule } from "../application/usecase/remove-rule.js";
 import { SeedMockData } from "../application/usecase/seed-mock-data.js";
 import { createDbCommand } from "./command/db-command.js";
 import { createImportCommand } from "./command/import-command.js";
@@ -30,6 +35,11 @@ const generateReport = new GenerateReport(txnRepo);
 const seedMockData = new SeedMockData(txnRepo);
 const applyCategoryRules = new ApplyCategoryRules(ruleRepo);
 const learnCategoryRules = new LearnCategoryRules(ruleRepo);
+const listTransactions = new ListTransactions(txnRepo);
+const categorizeTransactions = new CategorizeTransactions(txnRepo);
+const listRules = new ListRules(ruleRepo);
+const addRule = new AddRule(ruleRepo);
+const removeRule = new RemoveRule(ruleRepo);
 
 // --- CLI ---
 const program = new Command();
@@ -55,8 +65,8 @@ program.addCommand(
   }),
 );
 program.addCommand(createReportCommand(generateReport, renderer));
-program.addCommand(createTransactionsCommand(txnRepo, renderer));
-program.addCommand(createRulesCommand(ruleRepo, renderer));
+program.addCommand(createTransactionsCommand(listTransactions, categorizeTransactions, renderer));
+program.addCommand(createRulesCommand(listRules, addRule, removeRule, renderer));
 program.addCommand(createDbCommand());
 
 try {

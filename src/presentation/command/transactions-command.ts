@@ -1,8 +1,9 @@
+import type { CategorizeTransactions } from "../../application/usecase/categorize-transactions.js";
 import { Command } from "commander";
+import type { ListTransactions } from "../../application/usecase/list-transactions.js";
 import { Month } from "../../domain/value-object/month.js";
 import type { Renderer } from "../renderer/renderer.js";
 import type { Transaction } from "../../domain/entity/transaction.js";
-import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
 
 function serializeTransaction(txn: Transaction): Record<string, unknown> {
@@ -17,7 +18,8 @@ function serializeTransaction(txn: Transaction): Record<string, unknown> {
 }
 
 export function createTransactionsCommand(
-  txnRepo: TransactionRepository,
+  listTransactions: ListTransactions,
+  categorizeTransactions: CategorizeTransactions,
   renderer: Renderer,
 ): Command {
   const cmd = new Command("transactions").description("List and manage transactions");
@@ -27,7 +29,7 @@ export function createTransactionsCommand(
     .description("List transactions for a month")
     .action((monthStr: string) => {
       const month = Month.from(monthStr);
-      const transactions = txnRepo.findByMonth(month);
+      const transactions = listTransactions.findByMonth(month);
       console.log(renderer.render(transactions.map((txn) => serializeTransaction(txn))));
     });
 
@@ -37,14 +39,13 @@ export function createTransactionsCommand(
     .description("Interactively categorize uncategorized transactions")
     .action(async (monthStr: string) => {
       const month = Month.from(monthStr);
-      const transactions = txnRepo.findByMonth(month);
-      const uncategorized = transactions.filter((txn) => !txn.categoryId);
+      const { all, uncategorized } = categorizeTransactions.findUncategorized(month);
 
       if (uncategorized.length === 0) {
         console.log(
           renderer.render({
             message: "All transactions are categorized",
-            total: transactions.length,
+            total: all.length,
           }),
         );
         return;
@@ -53,7 +54,7 @@ export function createTransactionsCommand(
       const { categorized, interrupted } = await categorizePrompt(uncategorized);
 
       const updated = categorized.filter((txn) => txn.categoryId);
-      txnRepo.saveAll(updated);
+      categorizeTransactions.saveCategorized(updated);
 
       if (interrupted) {
         console.log(
@@ -64,7 +65,7 @@ export function createTransactionsCommand(
           renderer.render({
             categorized: updated.length,
             skipped: uncategorized.length - updated.length,
-            total: transactions.length,
+            total: all.length,
           }),
         );
       }

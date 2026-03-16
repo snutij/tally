@@ -25,11 +25,8 @@ function txn(overrides: { id?: string; categoryId?: string } = {}): Transaction 
 }
 
 describe("createTransactionsCommand", () => {
-  const mockTxnRepo = {
-    findByIds: vi.fn(),
-    findByMonth: vi.fn(),
-    saveAll: vi.fn(),
-  };
+  const mockListTransactions = { findByMonth: vi.fn() };
+  const mockCategorizeTransactions = { findUncategorized: vi.fn(), saveCategorized: vi.fn() };
   const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
 
   beforeEach(() => {
@@ -38,20 +35,27 @@ describe("createTransactionsCommand", () => {
   });
 
   function run(...args: string[]): Promise<unknown> {
-    const cmd = createTransactionsCommand(mockTxnRepo, mockRenderer);
+    const cmd = createTransactionsCommand(
+      mockListTransactions as never,
+      mockCategorizeTransactions as never,
+      mockRenderer,
+    );
     const program = new Command().addCommand(cmd);
     return program.parseAsync(["node", "tally", "transactions", ...args]);
   }
 
   it("lists transactions for a month", async () => {
-    mockTxnRepo.findByMonth.mockReturnValue([txn()]);
+    mockListTransactions.findByMonth.mockReturnValue([txn()]);
     await run("2026-03");
-    expect(mockTxnRepo.findByMonth).toHaveBeenCalled();
+    expect(mockListTransactions.findByMonth).toHaveBeenCalled();
     expect(console.log).toHaveBeenCalled();
   });
 
   it("categorize shows message when all categorized", async () => {
-    mockTxnRepo.findByMonth.mockReturnValue([txn({ categoryId: "n01" })]);
+    mockCategorizeTransactions.findUncategorized.mockReturnValue({
+      all: [txn({ categoryId: "n01" })],
+      uncategorized: [],
+    });
     await run("categorize", "2026-03");
     expect(mockRenderer.render).toHaveBeenCalledWith(
       expect.objectContaining({ message: "All transactions are categorized" }),
@@ -61,7 +65,10 @@ describe("createTransactionsCommand", () => {
   it("categorize prompts and saves uncategorized transactions", async () => {
     const tx = txn();
     const categorized = tx.categorize(CategoryId("n01"));
-    mockTxnRepo.findByMonth.mockReturnValue([tx]);
+    mockCategorizeTransactions.findUncategorized.mockReturnValue({
+      all: [tx],
+      uncategorized: [tx],
+    });
     vi.mocked(categorizePrompt).mockResolvedValue({
       categorized: [categorized],
       interrupted: false,
@@ -70,12 +77,15 @@ describe("createTransactionsCommand", () => {
     await run("categorize", "2026-03");
 
     expect(categorizePrompt).toHaveBeenCalledWith([tx]);
-    expect(mockTxnRepo.saveAll).toHaveBeenCalledWith([categorized]);
+    expect(mockCategorizeTransactions.saveCategorized).toHaveBeenCalledWith([categorized]);
   });
 
   it("categorize handles interruption", async () => {
     const tx = txn();
-    mockTxnRepo.findByMonth.mockReturnValue([tx]);
+    mockCategorizeTransactions.findUncategorized.mockReturnValue({
+      all: [tx],
+      uncategorized: [tx],
+    });
     vi.mocked(categorizePrompt).mockResolvedValue({
       categorized: [],
       interrupted: true,
