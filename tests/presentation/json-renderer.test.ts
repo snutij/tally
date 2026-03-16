@@ -5,8 +5,8 @@ import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { JsonRenderer } from "../../src/presentation/renderer/json-renderer.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
-import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-report.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
 
@@ -25,7 +25,7 @@ describe("JsonRenderer", () => {
   const renderer = new JsonRenderer();
 
   it("serializes a MonthlyReport", () => {
-    const report = MonthlyReport.compute(Month.from("2026-03"), targets, []);
+    const report = computeMonthlyReport(Month.from("2026-03"), targets, []);
     const parsed = JSON.parse(renderer.render(report));
     expect(parsed.month).toBe("2026-03");
     expect(parsed.groups).toHaveLength(4);
@@ -34,7 +34,7 @@ describe("JsonRenderer", () => {
   });
 
   it("serializes totalExpenseTarget instead of totalExpenseBudgeted", () => {
-    const report = MonthlyReport.compute(Month.from("2026-03"), targets, [
+    const report = computeMonthlyReport(Month.from("2026-03"), targets, [
       makeTxn("1", 3000, "2026-03-01", "inc01"),
     ]);
     const parsed = JSON.parse(renderer.render(report));
@@ -45,7 +45,7 @@ describe("JsonRenderer", () => {
   });
 
   it("serializes kpis without adherenceRate or categoryVariance", () => {
-    const report = MonthlyReport.compute(Month.from("2026-03"), targets, [
+    const report = computeMonthlyReport(Month.from("2026-03"), targets, [
       makeTxn("1", 3000, "2026-03-01", "inc01"),
       makeTxn("2", -800, "2026-03-02", "n01"),
     ]);

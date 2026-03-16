@@ -1,4 +1,4 @@
-import { MonthlyReport } from "../../domain/entity/monthly-report.js";
+import { type MonthlyReport, isMonthlyReport } from "../../domain/read-model/monthly-report.js";
 import type { Renderer } from "./renderer.js";
 
 export class JsonRenderer implements Renderer {
@@ -8,7 +8,7 @@ export class JsonRenderer implements Renderer {
   }
 
   private static serialize(data: unknown): unknown {
-    if (data instanceof MonthlyReport) {
+    if (isMonthlyReport(data)) {
       return JsonRenderer.serializeReport(data);
     }
     return data;

@@ -3,7 +3,7 @@ import { Command } from "commander";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
 import type { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { Month } from "../../src/domain/value-object/month.js";
-import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
+import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-report.js";
 import { createReportCommand } from "../../src/presentation/command/report-command.js";
 
 describe("createReportCommand", () => {
@@ -23,7 +23,7 @@ describe("createReportCommand", () => {
   }
 
   it("calls execute with default targets when no flags", async () => {
-    const report = MonthlyReport.compute(Month.from("2026-03"), DEFAULT_SPENDING_TARGETS, []);
+    const report = computeMonthlyReport(Month.from("2026-03"), DEFAULT_SPENDING_TARGETS, []);
     mockGenerateReport.execute.mockReturnValue(report);
 
     await run("2026-03");
@@ -36,7 +36,7 @@ describe("createReportCommand", () => {
   });
 
   it("passes custom targets when all three flags provided", async () => {
-    const report = MonthlyReport.compute(Month.from("2026-03"), DEFAULT_SPENDING_TARGETS, []);
+    const report = computeMonthlyReport(Month.from("2026-03"), DEFAULT_SPENDING_TARGETS, []);
     mockGenerateReport.execute.mockReturnValue(report);
 
     await run("2026-03", "--needs", "60", "--wants", "20", "--invest", "20");

@@ -4,8 +4,8 @@ import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
-import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-report.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
 
@@ -26,7 +26,7 @@ describe("HtmlRenderer", () => {
   const renderer = new HtmlRenderer();
 
   describe("render(MonthlyReport)", () => {
-    const report = MonthlyReport.compute(Month.from("2026-03"), targets, txns);
+    const report = computeMonthlyReport(Month.from("2026-03"), targets, txns);
     const html = renderer.render(report);
 
     it("produces a valid HTML5 document", () => {
@@ -79,7 +79,7 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReport) — no transactions", () => {
     it("omits insights section when there are no expense transactions", () => {
-      const report = MonthlyReport.compute(Month.from("2026-03"), targets, []);
+      const report = computeMonthlyReport(Month.from("2026-03"), targets, []);
       const html = renderer.render(report);
       const [, body] = html.split("<body>");
       expect(body).not.toContain("Top Spending");
@@ -89,7 +89,7 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReport) — insights edge cases", () => {
     it("shows largest expenses but no top spending when all uncategorized", () => {
-      const report = MonthlyReport.compute(Month.from("2026-03"), targets, [
+      const report = computeMonthlyReport(Month.from("2026-03"), targets, [
         makeTxn("1", -200, "2026-03-05"),
       ]);
       const html = renderer.render(report);
@@ -99,7 +99,7 @@ describe("HtmlRenderer", () => {
     });
 
     it("shows top spending but no largest expenses when only refunds", () => {
-      const report = MonthlyReport.compute(Month.from("2026-03"), targets, [
+      const report = computeMonthlyReport(Month.from("2026-03"), targets, [
         makeTxn("1", 100, "2026-03-05", "n01"),
       ]);
       const html = renderer.render(report);
@@ -111,7 +111,7 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReport) — uncategorized", () => {
     it("shows uncategorized section when non-zero", () => {
-      const report = MonthlyReport.compute(Month.from("2026-03"), targets, [
+      const report = computeMonthlyReport(Month.from("2026-03"), targets, [
         makeTxn("3", -100, "2026-03-05"),
       ]);
       const html = renderer.render(report);
@@ -120,7 +120,7 @@ describe("HtmlRenderer", () => {
     });
 
     it("omits uncategorized section when zero", () => {
-      const report = MonthlyReport.compute(Month.from("2026-03"), targets, txns);
+      const report = computeMonthlyReport(Month.from("2026-03"), targets, txns);
       const html = renderer.render(report);
       expect(html).not.toContain('class="uncategorized"');
     });

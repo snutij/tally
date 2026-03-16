@@ -1,8 +1,9 @@
 import {
   type GroupSummary,
-  MonthlyReport,
+  type MonthlyReport,
   type ReportKpis,
-} from "../../domain/entity/monthly-report.js";
+  isMonthlyReport,
+} from "../../domain/read-model/monthly-report.js";
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
 import type { Money } from "../../domain/value-object/money.js";
 import type { Renderer } from "./renderer.js";
@@ -96,7 +97,7 @@ function fmtDelta(delta: Money, signed: boolean): string {
 export class HtmlRenderer implements Renderer {
   // eslint-disable-next-line class-methods-use-this -- implements Renderer interface
   render(data: unknown): string {
-    if (data instanceof MonthlyReport) {
+    if (isMonthlyReport(data)) {
       return HtmlRenderer.renderReport(data);
     }
     return HtmlRenderer.wrapHtml("Data", `<pre>${esc(JSON.stringify(data, undefined, 2))}</pre>`);
