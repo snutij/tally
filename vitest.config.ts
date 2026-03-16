@@ -6,7 +6,6 @@ export default defineConfig({
       exclude: [
         "src/application/gateway/*.ts",
         "src/domain/entity/category.ts",
-        "src/domain/entity/transaction.ts",
         "src/presentation/prompt/column-mapping-prompt.ts",
         "src/presentation/renderer/renderer.ts",
         "src/presentation/index.ts",

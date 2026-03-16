@@ -3,18 +3,18 @@ import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import type { Transaction } from "../../src/domain/entity/transaction.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
 function txn(label: string, categoryId?: string, id = "t1"): Transaction {
-  return {
+  return Transaction.create({
     amount: Money.fromEuros(-10),
     categoryId,
     date: DateOnly.from("2026-03-15"),
     id,
     label,
     source: "csv",
-  };
+  });
 }
 
 describe("LearnCategoryRules", () => {

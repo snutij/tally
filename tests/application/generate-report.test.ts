@@ -4,6 +4,18 @@ import { GenerateReport } from "../../src/application/usecase/generate-report.js
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
+
+function makeTxn(id: string, amount: number, date: string, categoryId?: string): Transaction {
+  return Transaction.create({
+    amount: Money.fromEuros(amount),
+    categoryId,
+    date: DateOnly.from(date),
+    id,
+    label: `txn-${id}`,
+    source: "csv",
+  });
+}
 
 describe("GenerateReport", () => {
   let txnRepo: InMemoryTransactionRepository;
@@ -17,22 +29,8 @@ describe("GenerateReport", () => {
   it("generates report with transactions (no budget needed)", () => {
     const month = Month.from("2026-03");
     txnRepo.saveAll([
-      {
-        amount: Money.fromEuros(3000),
-        categoryId: "inc01",
-        date: DateOnly.from("2026-03-01"),
-        id: "1",
-        label: "Salary",
-        source: "test",
-      },
-      {
-        amount: Money.fromEuros(-800),
-        categoryId: "n01",
-        date: DateOnly.from("2026-03-05"),
-        id: "2",
-        label: "Rent",
-        source: "test",
-      },
+      makeTxn("1", 3000, "2026-03-01", "inc01"),
+      makeTxn("2", -800, "2026-03-05", "n01"),
     ]);
 
     const report = useCase.execute(month);
@@ -51,22 +49,8 @@ describe("GenerateReport", () => {
   it("only includes transactions from the requested month", () => {
     const march = Month.from("2026-03");
     txnRepo.saveAll([
-      {
-        amount: Money.fromEuros(-800),
-        categoryId: "n01",
-        date: DateOnly.from("2026-03-01"),
-        id: "1",
-        label: "March Rent",
-        source: "test",
-      },
-      {
-        amount: Money.fromEuros(-800),
-        categoryId: "n01",
-        date: DateOnly.from("2026-04-01"),
-        id: "2",
-        label: "April Rent",
-        source: "test",
-      },
+      makeTxn("1", -800, "2026-03-01", "n01"),
+      makeTxn("2", -800, "2026-04-01", "n01"),
     ]);
 
     const report = useCase.execute(march);
@@ -76,15 +60,7 @@ describe("GenerateReport", () => {
 
   it("handles uncategorized transactions gracefully", () => {
     const month = Month.from("2026-03");
-    txnRepo.saveAll([
-      {
-        amount: Money.fromEuros(-50),
-        date: DateOnly.from("2026-03-15"),
-        id: "1",
-        label: "Mystery",
-        source: "test",
-      },
-    ]);
+    txnRepo.saveAll([makeTxn("1", -50, "2026-03-15")]);
 
     const report = useCase.execute(month);
     expect(report.transactionCount).toBe(1);
@@ -94,16 +70,7 @@ describe("GenerateReport", () => {
 
   it("accepts custom spending targets", () => {
     const month = Month.from("2026-03");
-    txnRepo.saveAll([
-      {
-        amount: Money.fromEuros(2000),
-        categoryId: "inc01",
-        date: DateOnly.from("2026-03-01"),
-        id: "1",
-        label: "Salary",
-        source: "test",
-      },
-    ]);
+    txnRepo.saveAll([makeTxn("1", 2000, "2026-03-01", "inc01")]);
 
     const report = useCase.execute(month, { invest: 10, needs: 60, wants: 30 });
     const needs = report.groups.find((grp) => grp.group === "NEEDS");

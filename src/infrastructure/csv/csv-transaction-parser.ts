@@ -2,7 +2,7 @@ import type { CsvColumnMapping } from "./csv-column-mapping.js";
 import { DateOnly } from "../../domain/value-object/date-only.js";
 import { InvalidCsvData } from "../../domain/error/index.js";
 import { Money } from "../../domain/value-object/money.js";
-import type { Transaction } from "../../domain/entity/transaction.js";
+import { Transaction } from "../../domain/entity/transaction.js";
 import type { TransactionParser } from "../../application/gateway/transaction-parser.js";
 import { decodeFileContent } from "./encoding.js";
 import { deterministicTransactionId } from "./transaction-id.js";
@@ -135,12 +135,12 @@ export class CsvTransactionParser implements TransactionParser {
     const seq = seen.get(key) ?? 0;
     seen.set(key, seq + 1);
 
-    return {
+    return Transaction.create({
       amount: Money.fromCents(amountCents),
       date,
       id: deterministicTransactionId("csv", isoDate, label, amountCents, seq),
       label,
       source: "csv",
-    };
+    });
   }
 }

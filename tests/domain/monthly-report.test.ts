@@ -5,21 +5,21 @@ import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
-import type { Transaction } from "../../src/domain/entity/transaction.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
 
 // DEFAULT_SPENDING_TARGETS = 50/30/20
 const targets = DEFAULT_SPENDING_TARGETS;
 const month = Month.from("2026-03");
 
 function txn(id: string, amount: number, categoryId?: string, date = "2026-03-01"): Transaction {
-  return {
+  return Transaction.create({
     amount: Money.fromEuros(amount),
     categoryId,
     date: DateOnly.from(date),
     id,
     label: `txn-${id}`,
-    source: "test",
-  };
+    source: "csv",
+  });
 }
 
 describe("MonthlyReport", () => {

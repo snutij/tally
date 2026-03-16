@@ -9,6 +9,7 @@ import type Database from "better-sqlite3";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -87,20 +88,20 @@ describe("SqliteRepository", () => {
   describe("TransactionRepository", () => {
     it("saves and retrieves transactions by month", () => {
       txnRepo.saveAll([
-        {
+        Transaction.create({
           amount: Money.fromEuros(-800),
           date: DateOnly.from("2026-03-01"),
           id: "tx-1",
           label: "Rent",
-          source: "credit-mutuel",
-        },
-        {
+          source: "csv",
+        }),
+        Transaction.create({
           amount: Money.fromEuros(-800),
           date: DateOnly.from("2026-04-01"),
           id: "tx-2",
           label: "Rent April",
-          source: "credit-mutuel",
-        },
+          source: "csv",
+        }),
       ]);
 
       const marchTxns = txnRepo.findByMonth(Month.from("2026-03"));

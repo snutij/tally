@@ -3,27 +3,27 @@ import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import type { Transaction } from "../../src/domain/entity/transaction.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
 import type { TransactionParser } from "../../src/application/gateway/transaction-parser.js";
 
 class StubParser implements TransactionParser {
   // eslint-disable-next-line class-methods-use-this -- implements TransactionParser interface
   parse(_filePath: string): Transaction[] {
     return [
-      {
+      Transaction.create({
         amount: Money.fromEuros(-42.5),
         date: DateOnly.from("2026-03-01"),
         id: "tx-1",
         label: "Test transaction",
         source: "csv",
-      },
-      {
+      }),
+      Transaction.create({
         amount: Money.fromEuros(-10),
         date: DateOnly.from("2026-03-15"),
         id: "tx-2",
         label: "Another transaction",
         source: "csv",
-      },
+      }),
     ];
   }
 }
@@ -52,14 +52,14 @@ describe("ImportTransactions", () => {
   });
 
   it("splits by category status", () => {
-    const categorized: Transaction = {
+    const categorized = Transaction.create({
       amount: Money.fromEuros(-42.5),
       categoryId: "n01",
       date: DateOnly.from("2026-03-01"),
       id: "tx-1",
       label: "Test transaction",
       source: "csv",
-    };
+    });
     txnRepo.saveAll([categorized]);
 
     const parsed = useCase.parse(parser, "dummy.csv");

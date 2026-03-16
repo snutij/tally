@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import type { Transaction } from "../../src/domain/entity/transaction.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
 import { buildCategoryChoices } from "../../src/presentation/prompt/categorize-prompt.js";
 
 vi.mock("@inquirer/select", () => ({ default: vi.fn() }));
@@ -10,15 +10,14 @@ vi.mock("@inquirer/core", () => ({
   ExitPromptError: class ExitPromptError extends Error {},
 }));
 
-function txn(overrides: Partial<Transaction> = {}): Transaction {
-  return {
-    amount: Money.fromEuros(-42),
+function txn(overrides: { amount?: Money; id?: string } = {}): Transaction {
+  return Transaction.create({
+    amount: overrides.amount ?? Money.fromEuros(-42),
     date: DateOnly.from("2026-01-15"),
-    id: "t1",
+    id: overrides.id ?? "t1",
     label: "TEST",
-    source: "test",
-    ...overrides,
-  };
+    source: "csv",
+  });
 }
 
 describe("buildCategoryChoices", () => {

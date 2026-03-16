@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import type { Transaction } from "../../src/domain/entity/transaction.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
 
 vi.mock("../../src/presentation/prompt/categorize-prompt.js", () => ({
   categorizePrompt: vi.fn(),
@@ -11,15 +11,15 @@ vi.mock("../../src/presentation/prompt/categorize-prompt.js", () => ({
 import { categorizePrompt } from "../../src/presentation/prompt/categorize-prompt.js";
 import { createTransactionsCommand } from "../../src/presentation/command/transactions-command.js";
 
-function txn(overrides: Partial<Transaction> = {}): Transaction {
-  return {
+function txn(overrides: { id?: string; categoryId?: string } = {}): Transaction {
+  return Transaction.create({
     amount: Money.fromEuros(-42),
+    categoryId: overrides.categoryId,
     date: DateOnly.from("2026-03-15"),
-    id: "t1",
+    id: overrides.id ?? "t1",
     label: "TEST",
-    source: "test",
-    ...overrides,
-  };
+    source: "csv",
+  });
 }
 
 describe("createTransactionsCommand", () => {
@@ -58,16 +58,17 @@ describe("createTransactionsCommand", () => {
 
   it("categorize prompts and saves uncategorized transactions", async () => {
     const tx = txn();
+    const categorized = tx.categorize("n01");
     mockTxnRepo.findByMonth.mockReturnValue([tx]);
     vi.mocked(categorizePrompt).mockResolvedValue({
-      categorized: [{ ...tx, categoryId: "n01" }],
+      categorized: [categorized],
       interrupted: false,
     });
 
     await run("categorize", "2026-03");
 
     expect(categorizePrompt).toHaveBeenCalledWith([tx]);
-    expect(mockTxnRepo.saveAll).toHaveBeenCalledWith([{ ...tx, categoryId: "n01" }]);
+    expect(mockTxnRepo.saveAll).toHaveBeenCalledWith([categorized]);
   });
 
   it("categorize handles interruption", async () => {

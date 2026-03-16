@@ -54,7 +54,7 @@ export async function categorizePrompt(transactions: Transaction[]): Promise<Cat
       if (answer === "__skip__") {
         result.push(txn);
       } else {
-        result.push({ ...txn, categoryId: answer });
+        result.push(txn.categorize(answer));
       }
     }
   } catch (error) {

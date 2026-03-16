@@ -3,17 +3,17 @@ import { ApplyCategoryRules } from "../../src/application/usecase/apply-category
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import type { Transaction } from "../../src/domain/entity/transaction.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
 function txn(label: string, id = "t1"): Transaction {
-  return {
+  return Transaction.create({
     amount: Money.fromEuros(-10),
     date: DateOnly.from("2026-03-15"),
     id,
     label,
     source: "csv",
-  };
+  });
 }
 
 describe("ApplyCategoryRules", () => {
@@ -64,6 +64,12 @@ describe("ApplyCategoryRules", () => {
     ruleRepo.save(createCategoryRule(String.raw`\bcarrefour\b`, "n02", "default"));
     const { matched } = useCase.apply([txn("carte cb carrefour city")]);
     expect(matched[0]?.categoryId).toBe("n02");
+  });
+
+  it("matched transactions are Transaction instances", () => {
+    ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
+    const { matched } = useCase.apply([txn("PRLV SEPA SPOTIFY")]);
+    expect(matched[0]).toBeInstanceOf(Transaction);
   });
 
   it("handles empty transaction list", () => {

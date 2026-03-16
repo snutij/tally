@@ -42,7 +42,7 @@ export class ApplyCategoryRules {
       if (categoryId === undefined) {
         unmatched.push(txn);
       } else {
-        matched.push({ ...txn, categoryId });
+        matched.push(txn.categorize(categoryId));
       }
     }
 

@@ -61,7 +61,7 @@ describe("e2e: auto-categorization rules", () => {
     }
 
     // Simulate user manually categorizing the first transaction
-    const manuallyCategorized = [{ ...firstTxn, categoryId: "n02" }];
+    const manuallyCategorized = [firstTxn.categorize("n02")];
     learnCategoryRules.learn(manuallyCategorized);
 
     // On second import pass, the same transaction label should now auto-match

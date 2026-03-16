@@ -6,8 +6,20 @@ import { JsonRenderer } from "../../src/presentation/renderer/json-renderer.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
+
+function makeTxn(id: string, amount: number, date: string, categoryId?: string): Transaction {
+  return Transaction.create({
+    amount: Money.fromEuros(amount),
+    categoryId,
+    date: DateOnly.from(date),
+    id,
+    label: `txn-${id}`,
+    source: "csv",
+  });
+}
 
 describe("JsonRenderer", () => {
   const renderer = new JsonRenderer();
@@ -23,14 +35,7 @@ describe("JsonRenderer", () => {
 
   it("serializes totalExpenseTarget instead of totalExpenseBudgeted", () => {
     const report = MonthlyReport.compute(Month.from("2026-03"), targets, [
-      {
-        amount: Money.fromEuros(3000),
-        categoryId: "inc01",
-        date: DateOnly.from("2026-03-01"),
-        id: "1",
-        label: "Salary",
-        source: "cm",
-      },
+      makeTxn("1", 3000, "2026-03-01", "inc01"),
     ]);
     const parsed = JSON.parse(renderer.render(report));
     expect(parsed.totalExpenseTarget).toBe(3000); // 50+30+20 = 100% of income
@@ -41,22 +46,8 @@ describe("JsonRenderer", () => {
 
   it("serializes kpis without adherenceRate or categoryVariance", () => {
     const report = MonthlyReport.compute(Month.from("2026-03"), targets, [
-      {
-        amount: Money.fromEuros(3000),
-        categoryId: "inc01",
-        date: DateOnly.from("2026-03-01"),
-        id: "1",
-        label: "Salary",
-        source: "cm",
-      },
-      {
-        amount: Money.fromEuros(-800),
-        categoryId: "n01",
-        date: DateOnly.from("2026-03-02"),
-        id: "2",
-        label: "Rent",
-        source: "cm",
-      },
+      makeTxn("1", 3000, "2026-03-01", "inc01"),
+      makeTxn("2", -800, "2026-03-02", "n01"),
     ]);
     const parsed = JSON.parse(renderer.render(report));
 
@@ -67,7 +58,7 @@ describe("JsonRenderer", () => {
     expect(parsed.kpis.topSpendingCategories[0].actual).toBe(800);
     expect(parsed.kpis.topSpendingCategories[0].group).toBe(CategoryGroup.NEEDS);
     expect(parsed.kpis.largestExpenses).toHaveLength(1);
-    expect(parsed.kpis.largestExpenses[0].label).toBe("Rent");
+    expect(parsed.kpis.largestExpenses[0].label).toBe("txn-2");
     expect(parsed.kpis.uncategorizedRatio).toBe(0);
     expect("adherenceRate" in parsed.kpis).toBe(false);
     expect("categoryVariance" in parsed.kpis).toBe(false);

@@ -5,27 +5,22 @@ import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
+import { Transaction } from "../../src/domain/entity/transaction.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
 
-const txns = [
-  {
-    amount: Money.fromEuros(3000),
-    categoryId: "inc01",
-    date: DateOnly.from("2026-03-01"),
-    id: "1",
-    label: "Salary",
-    source: "cm",
-  },
-  {
-    amount: Money.fromEuros(-750),
-    categoryId: "n01",
-    date: DateOnly.from("2026-03-02"),
-    id: "2",
-    label: "Rent",
-    source: "cm",
-  },
-];
+function makeTxn(id: string, amount: number, date: string, categoryId?: string): Transaction {
+  return Transaction.create({
+    amount: Money.fromEuros(amount),
+    categoryId,
+    date: DateOnly.from(date),
+    id,
+    label: `txn-${id}`,
+    source: "csv",
+  });
+}
+
+const txns = [makeTxn("1", 3000, "2026-03-01", "inc01"), makeTxn("2", -750, "2026-03-02", "n01")];
 
 describe("HtmlRenderer", () => {
   const renderer = new HtmlRenderer();
@@ -94,16 +89,9 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReport) — insights edge cases", () => {
     it("shows largest expenses but no top spending when all uncategorized", () => {
-      const uncatTxns = [
-        {
-          amount: Money.fromEuros(-200),
-          date: DateOnly.from("2026-03-05"),
-          id: "1",
-          label: "Mystery purchase",
-          source: "cm",
-        },
-      ];
-      const report = MonthlyReport.compute(Month.from("2026-03"), targets, uncatTxns);
+      const report = MonthlyReport.compute(Month.from("2026-03"), targets, [
+        makeTxn("1", -200, "2026-03-05"),
+      ]);
       const html = renderer.render(report);
       const [, body] = html.split("<body>");
       expect(body).toContain("Largest Expenses");
@@ -111,17 +99,9 @@ describe("HtmlRenderer", () => {
     });
 
     it("shows top spending but no largest expenses when only refunds", () => {
-      const refundTxns = [
-        {
-          amount: Money.fromEuros(100),
-          categoryId: "n01",
-          date: DateOnly.from("2026-03-05"),
-          id: "1",
-          label: "Rent refund",
-          source: "cm",
-        },
-      ];
-      const report = MonthlyReport.compute(Month.from("2026-03"), targets, refundTxns);
+      const report = MonthlyReport.compute(Month.from("2026-03"), targets, [
+        makeTxn("1", 100, "2026-03-05", "n01"),
+      ]);
       const html = renderer.render(report);
       const [, body] = html.split("<body>");
       expect(body).toContain("Top Spending");
@@ -131,16 +111,9 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReport) — uncategorized", () => {
     it("shows uncategorized section when non-zero", () => {
-      const uncatTxns = [
-        {
-          amount: Money.fromEuros(-100),
-          date: DateOnly.from("2026-03-05"),
-          id: "3",
-          label: "Mystery",
-          source: "cm",
-        },
-      ];
-      const report = MonthlyReport.compute(Month.from("2026-03"), targets, uncatTxns);
+      const report = MonthlyReport.compute(Month.from("2026-03"), targets, [
+        makeTxn("3", -100, "2026-03-05"),
+      ]);
       const html = renderer.render(report);
       expect(html).toContain("Uncategorized");
       expect(html).toContain("100.00 €");

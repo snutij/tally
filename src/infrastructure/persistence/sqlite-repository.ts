@@ -9,7 +9,7 @@ import Database from "better-sqlite3";
 import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
 import type { Month } from "../../domain/value-object/month.js";
-import type { Transaction } from "../../domain/entity/transaction.js";
+import { Transaction } from "../../domain/entity/transaction.js";
 import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
 
 function migrate(db: Database.Database): void {
@@ -114,14 +114,16 @@ export class SqliteTransactionRepository implements TransactionRepository {
       source: string;
     }[];
 
-    return rows.map((dbRow) => ({
-      amount: Money.fromCents(dbRow.amount_cents),
-      categoryId: dbRow.category_id ?? undefined,
-      date: DateOnly.from(dbRow.date),
-      id: dbRow.id,
-      label: dbRow.label,
-      source: dbRow.source,
-    }));
+    return rows.map((dbRow) =>
+      Transaction.create({
+        amount: Money.fromCents(dbRow.amount_cents),
+        categoryId: dbRow.category_id ?? undefined,
+        date: DateOnly.from(dbRow.date),
+        id: dbRow.id,
+        label: dbRow.label,
+        source: dbRow.source as Transaction["source"],
+      }),
+    );
   }
 
   findByMonth(month: Month): Transaction[] {
@@ -140,14 +142,16 @@ export class SqliteTransactionRepository implements TransactionRepository {
       source: string;
     }[];
 
-    return rows.map((dbRow) => ({
-      amount: Money.fromCents(dbRow.amount_cents),
-      categoryId: dbRow.category_id ?? undefined,
-      date: DateOnly.from(dbRow.date),
-      id: dbRow.id,
-      label: dbRow.label,
-      source: dbRow.source,
-    }));
+    return rows.map((dbRow) =>
+      Transaction.create({
+        amount: Money.fromCents(dbRow.amount_cents),
+        categoryId: dbRow.category_id ?? undefined,
+        date: DateOnly.from(dbRow.date),
+        id: dbRow.id,
+        label: dbRow.label,
+        source: dbRow.source as Transaction["source"],
+      }),
+    );
   }
 }
 

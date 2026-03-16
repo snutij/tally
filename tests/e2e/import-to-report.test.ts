@@ -49,16 +49,16 @@ describe("e2e: import → report (no budget step)", () => {
 
     const categorized = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return { ...txn, categoryId: "n01" };
+        return txn.categorize("n01");
       }
       if (txn.label.includes("GROCERY")) {
-        return { ...txn, categoryId: "n02" };
+        return txn.categorize("n02");
       }
       if (txn.label.includes("SALARY")) {
-        return { ...txn, categoryId: "inc01" };
+        return txn.categorize("inc01");
       }
       if (txn.label.includes("RESTAURANT")) {
-        return { ...txn, categoryId: "w02" };
+        return txn.categorize("w02");
       }
       return txn;
     });
@@ -82,7 +82,7 @@ describe("e2e: import → report (no budget step)", () => {
   it("group targets computed from actual income (50/30/20)", () => {
     const parsed = importTxns.parse(parser, CSV);
     const withSalary = parsed.map((txn) =>
-      txn.label.includes("SALARY") ? { ...txn, categoryId: "inc01" } : txn,
+      txn.label.includes("SALARY") ? txn.categorize("inc01") : txn,
     );
     importTxns.save(withSalary);
 
@@ -107,10 +107,10 @@ describe("e2e: import → report (no budget step)", () => {
     const parsed = importTxns.parse(parser, CSV);
     const partial = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return { ...txn, categoryId: "n01" };
+        return txn.categorize("n01");
       }
       if (txn.label.includes("SALARY")) {
-        return { ...txn, categoryId: "inc01" };
+        return txn.categorize("inc01");
       }
       return txn;
     });
