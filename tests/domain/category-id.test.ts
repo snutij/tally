@@ -31,4 +31,8 @@ describe("CategoryId", () => {
     const obj = { categoryId: CategoryId.from("n02") };
     expect(JSON.stringify(obj)).toBe('{"categoryId":"n02"}');
   });
+
+  it("rejects empty string", () => {
+    expect(() => CategoryId.from("")).toThrow("CategoryId cannot be empty");
+  });
 });

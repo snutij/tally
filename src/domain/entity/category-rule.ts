@@ -18,7 +18,7 @@ export interface DefaultRuleEntry {
 
 export function createCategoryRule(
   pattern: string,
-  categoryId: string,
+  categoryId: CategoryId | string,
   source: CategoryRuleSource,
 ): CategoryRule {
   try {
@@ -28,5 +28,6 @@ export function createCategoryRule(
     throw new DomainError(`Invalid regex pattern: "${pattern}"`);
   }
   const id = createHash("sha256").update(pattern).digest("hex").slice(0, 32);
-  return { categoryId: CategoryId.from(categoryId), id, pattern, source };
+  const resolved = categoryId instanceof CategoryId ? categoryId : CategoryId.from(categoryId);
+  return { categoryId: resolved, id, pattern, source };
 }

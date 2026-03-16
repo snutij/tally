@@ -31,4 +31,8 @@ describe("TransactionId", () => {
     const obj = { id: TransactionId.from("tx-99") };
     expect(JSON.stringify(obj)).toBe('{"id":"tx-99"}');
   });
+
+  it("rejects empty string", () => {
+    expect(() => TransactionId.from("")).toThrow("TransactionId cannot be empty");
+  });
 });

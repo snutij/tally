@@ -32,7 +32,7 @@ export class LearnCategoryRules {
     }
 
     // Otherwise upsert: create a new learned rule (replaces any existing default for this pattern)
-    const rule = createCategoryRule(pattern, categoryId.value, "learned");
+    const rule = createCategoryRule(pattern, categoryId, "learned");
     this.ruleRepo.save(rule);
   }
 }

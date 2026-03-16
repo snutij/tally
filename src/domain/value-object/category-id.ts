@@ -1,23 +1,15 @@
-export class CategoryId {
-  readonly value: string;
+import { BrandedId } from "./branded-id.js";
 
+export class CategoryId extends BrandedId {
   private constructor(value: string) {
-    this.value = value;
+    super(value);
   }
 
   static from(value: string): CategoryId {
     return new CategoryId(value);
   }
 
-  equals(other: CategoryId): boolean {
-    return this.value === other.value;
-  }
-
-  toString(): string {
-    return this.value;
-  }
-
-  toJSON(): string {
-    return this.value;
+  override equals(other: CategoryId): boolean {
+    return super.equals(other);
   }
 }
