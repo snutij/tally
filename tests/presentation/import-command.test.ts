@@ -16,10 +16,6 @@ vi.mock("../../src/presentation/prompt/categorize-prompt.js", () => ({
 vi.mock("../../src/presentation/prompt/column-mapping-prompt.js", () => ({
   collectColumnMapping: vi.fn(),
 }));
-vi.mock("../../src/infrastructure/csv/csv-transaction-parser.js", () => ({
-  CsvTransactionParser: vi.fn(),
-}));
-
 import { categorizePrompt } from "../../src/presentation/prompt/categorize-prompt.js";
 import { collectColumnMapping } from "../../src/presentation/prompt/column-mapping-prompt.js";
 import { createImportCommand } from "../../src/presentation/command/import-command.js";
@@ -47,6 +43,10 @@ describe("createImportCommand", () => {
   };
   const mockLearnCategoryRules = { learn: vi.fn() };
   const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
+  const mockDeps = {
+    parserFactory: vi.fn().mockReturnValue({ parse: vi.fn() }),
+    renderer: mockRenderer,
+  };
 
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -64,7 +64,7 @@ describe("createImportCommand", () => {
       mockSeedMockData as unknown as SeedMockData,
       mockApplyCategoryRules as unknown as ApplyCategoryRules,
       mockLearnCategoryRules as unknown as LearnCategoryRules,
-      mockRenderer,
+      mockDeps,
     );
     const program = new Command().addCommand(cmd);
     return program.parseAsync(["node", "tally", "import", ...args]);

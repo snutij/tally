@@ -1,20 +1,26 @@
 import type { ApplyCategoryRules } from "../../application/usecase/apply-category-rules.js";
 import { Command } from "commander";
-import { CsvTransactionParser } from "../../infrastructure/csv/csv-transaction-parser.js";
+import type { CsvColumnMapping } from "../../infrastructure/csv/csv-column-mapping.js";
 import type { ImportTransactions } from "../../application/usecase/import-transactions.js";
 import type { LearnCategoryRules } from "../../application/usecase/learn-category-rules.js";
 import { Month } from "../../domain/value-object/month.js";
 import type { Renderer } from "../renderer/renderer.js";
 import type { SeedMockData } from "../../application/usecase/seed-mock-data.js";
+import type { TransactionParser } from "../../application/gateway/transaction-parser.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
 import { collectColumnMapping } from "../prompt/column-mapping-prompt.js";
+
+interface ImportCommandDeps {
+  parserFactory: (mapping: CsvColumnMapping) => TransactionParser;
+  renderer: Renderer;
+}
 
 export function createImportCommand(
   importTransactions: ImportTransactions,
   seedMockData: SeedMockData,
   applyCategoryRules: ApplyCategoryRules,
   learnCategoryRules: LearnCategoryRules,
-  renderer: Renderer,
+  deps: ImportCommandDeps,
 ): Command {
   const cmd = new Command("import").description("Import bank transactions");
 
@@ -26,7 +32,7 @@ export function createImportCommand(
       const month = Month.from(monthStr ?? new Date().toISOString().slice(0, 7));
       const result = seedMockData.execute(month);
       console.log(
-        renderer.render({
+        deps.renderer.render({
           mock: true,
           month: month.value,
           transactionCount: result.transactionCount,
@@ -47,12 +53,12 @@ export function createImportCommand(
       }
 
       const mapping = await collectColumnMapping(file);
-      const parser = new CsvTransactionParser(mapping);
+      const parser = deps.parserFactory(mapping);
       const parsed = importTransactions.parse(parser, file);
 
       if (!opts.categorize) {
         const result = importTransactions.save(parsed);
-        console.log(renderer.render(result));
+        console.log(deps.renderer.render(result));
         return;
       }
 
@@ -80,7 +86,7 @@ export function createImportCommand(
       if (interrupted) {
         console.log(`\nInterrupted — saved ${result.count} of ${parsed.length} transactions.`);
       } else {
-        console.log(renderer.render(result));
+        console.log(deps.renderer.render(result));
       }
     });
 

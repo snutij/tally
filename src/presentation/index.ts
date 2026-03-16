@@ -3,6 +3,7 @@ import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { existsSync, mkdirSync } from "node:fs";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
 import { Command } from "commander";
+import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
 import { DomainError } from "../domain/error/index.js";
 import { ExitPromptError } from "@inquirer/core";
 import { GenerateReport } from "../application/usecase/generate-report.js";
@@ -48,13 +49,10 @@ const renderer = {
 };
 
 program.addCommand(
-  createImportCommand(
-    importTransactions,
-    seedMockData,
-    applyCategoryRules,
-    learnCategoryRules,
+  createImportCommand(importTransactions, seedMockData, applyCategoryRules, learnCategoryRules, {
+    parserFactory: (mapping) => new CsvTransactionParser(mapping),
     renderer,
-  ),
+  }),
 );
 program.addCommand(createReportCommand(generateReport, renderer));
 program.addCommand(createTransactionsCommand(txnRepo, renderer));
