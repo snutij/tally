@@ -1,17 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
 function txn(label: string, categoryId?: string, id = "t1"): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(-10),
-    categoryId,
+    categoryId: categoryId ? CategoryId.from(categoryId) : undefined,
     date: DateOnly.from("2026-03-15"),
-    id,
+    id: TransactionId.from(id),
     label,
     source: "csv",
   });
@@ -30,7 +32,7 @@ describe("LearnCategoryRules", () => {
     useCase.learn([txn("PRLV SEPA SPOTIFY", "w06")]);
     const rule = ruleRepo.findByPattern(String.raw`\bspotify\b`);
     expect(rule).toBeDefined();
-    expect(rule?.categoryId).toBe("w06");
+    expect(rule?.categoryId.value).toBe("w06");
     expect(rule?.source).toBe("learned");
   });
 
@@ -52,7 +54,7 @@ describe("LearnCategoryRules", () => {
     useCase.learn([txn("CARTE CB CARREFOUR CITY", "w02")]);
     const rule = ruleRepo.findByPattern(String.raw`\bcarrefour\s+city\b`);
     expect(rule?.source).toBe("learned");
-    expect(rule?.categoryId).toBe("w02");
+    expect(rule?.categoryId.value).toBe("w02");
   });
 
   it("does not create a rule when no meaningful pattern can be extracted", () => {

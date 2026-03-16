@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
@@ -6,15 +7,16 @@ import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { MonthlyReport } from "../../src/domain/entity/monthly-report.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
 
 function makeTxn(id: string, amount: number, date: string, categoryId?: string): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(amount),
-    categoryId,
+    categoryId: categoryId ? CategoryId.from(categoryId) : undefined,
     date: DateOnly.from(date),
-    id,
+    id: TransactionId.from(id),
     label: `txn-${id}`,
     source: "csv",
   });

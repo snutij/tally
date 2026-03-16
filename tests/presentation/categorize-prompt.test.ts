@@ -3,6 +3,7 @@ import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import { buildCategoryChoices } from "../../src/presentation/prompt/categorize-prompt.js";
 
 vi.mock("@inquirer/select", () => ({ default: vi.fn() }));
@@ -14,7 +15,7 @@ function txn(overrides: { amount?: Money; id?: string } = {}): Transaction {
   return Transaction.create({
     amount: overrides.amount ?? Money.fromEuros(-42),
     date: DateOnly.from("2026-01-15"),
-    id: overrides.id ?? "t1",
+    id: TransactionId.from(overrides.id ?? "t1"),
     label: "TEST",
     source: "csv",
   });
@@ -28,7 +29,7 @@ describe("buildCategoryChoices", () => {
       .map((ch) => ch.value);
 
     for (const cat of DEFAULT_CATEGORIES) {
-      expect(selectableValues).toContain(cat.id);
+      expect(selectableValues).toContain(cat.id.value);
     }
   });
 
@@ -73,7 +74,7 @@ describe("categorizePrompt", () => {
 
     expect(result.interrupted).toBe(false);
     expect(result.categorized).toHaveLength(1);
-    expect(result.categorized[0]?.categoryId).toBe("n02");
+    expect(result.categorized[0]?.categoryId?.value).toBe("n02");
   });
 
   it("does not assign categoryId when skip is selected", async () => {
@@ -91,7 +92,7 @@ describe("categorizePrompt", () => {
 
     const result = await categorizePrompt([txn()]);
 
-    expect(result.categorized[0]?.categoryId).toBe("inc01");
+    expect(result.categorized[0]?.categoryId?.value).toBe("inc01");
   });
 
   it("formats positive amount with + sign in prompt header", async () => {
@@ -124,6 +125,6 @@ describe("categorizePrompt", () => {
 
     expect(result.interrupted).toBe(true);
     expect(result.categorized).toHaveLength(1);
-    expect(result.categorized[0]?.categoryId).toBe("n01");
+    expect(result.categorized[0]?.categoryId?.value).toBe("n01");
   });
 });

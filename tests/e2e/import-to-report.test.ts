@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
@@ -49,16 +50,16 @@ describe("e2e: import → report (no budget step)", () => {
 
     const categorized = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return txn.categorize("n01");
+        return txn.categorize(CategoryId.from("n01"));
       }
       if (txn.label.includes("GROCERY")) {
-        return txn.categorize("n02");
+        return txn.categorize(CategoryId.from("n02"));
       }
       if (txn.label.includes("SALARY")) {
-        return txn.categorize("inc01");
+        return txn.categorize(CategoryId.from("inc01"));
       }
       if (txn.label.includes("RESTAURANT")) {
-        return txn.categorize("w02");
+        return txn.categorize(CategoryId.from("w02"));
       }
       return txn;
     });
@@ -82,7 +83,7 @@ describe("e2e: import → report (no budget step)", () => {
   it("group targets computed from actual income (50/30/20)", () => {
     const parsed = importTxns.parse(parser, CSV);
     const withSalary = parsed.map((txn) =>
-      txn.label.includes("SALARY") ? txn.categorize("inc01") : txn,
+      txn.label.includes("SALARY") ? txn.categorize(CategoryId.from("inc01")) : txn,
     );
     importTxns.save(withSalary);
 
@@ -107,10 +108,10 @@ describe("e2e: import → report (no budget step)", () => {
     const parsed = importTxns.parse(parser, CSV);
     const partial = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return txn.categorize("n01");
+        return txn.categorize(CategoryId.from("n01"));
       }
       if (txn.label.includes("SALARY")) {
-        return txn.categorize("inc01");
+        return txn.categorize(CategoryId.from("inc01"));
       }
       return txn;
     });
@@ -121,6 +122,9 @@ describe("e2e: import → report (no budget step)", () => {
 
     expect(alreadyCategorized).toHaveLength(2);
     expect(uncategorized).toHaveLength(2);
-    expect(alreadyCategorized.map((txn) => txn.categoryId).toSorted()).toEqual(["inc01", "n01"]);
+    expect(alreadyCategorized.map((txn) => txn.categoryId?.value).toSorted()).toEqual([
+      "inc01",
+      "n01",
+    ]);
   });
 });

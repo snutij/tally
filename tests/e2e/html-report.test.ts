@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
 import type Database from "better-sqlite3";
@@ -48,16 +49,16 @@ describe("e2e: HTML report output", () => {
     const parsed = importTxns.parse(parser, CSV);
     const categorized = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return txn.categorize("n01");
+        return txn.categorize(CategoryId.from("n01"));
       }
       if (txn.label.includes("GROCERY")) {
-        return txn.categorize("n02");
+        return txn.categorize(CategoryId.from("n02"));
       }
       if (txn.label.includes("SALARY")) {
-        return txn.categorize("inc01");
+        return txn.categorize(CategoryId.from("inc01"));
       }
       if (txn.label.includes("RESTAURANT")) {
-        return txn.categorize("w02");
+        return txn.categorize(CategoryId.from("w02"));
       }
       return txn;
     });

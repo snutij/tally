@@ -3,6 +3,7 @@ import { DateOnly } from "../../domain/value-object/date-only.js";
 import { InvalidCsvData } from "../../domain/error/index.js";
 import { Money } from "../../domain/value-object/money.js";
 import { Transaction } from "../../domain/entity/transaction.js";
+import { TransactionId } from "../../domain/value-object/transaction-id.js";
 import type { TransactionParser } from "../../application/gateway/transaction-parser.js";
 import { decodeFileContent } from "./encoding.js";
 import { deterministicTransactionId } from "./transaction-id.js";
@@ -138,7 +139,7 @@ export class CsvTransactionParser implements TransactionParser {
     return Transaction.create({
       amount: Money.fromCents(amountCents),
       date,
-      id: deterministicTransactionId("csv", isoDate, label, amountCents, seq),
+      id: TransactionId.from(deterministicTransactionId("csv", isoDate, label, amountCents, seq)),
       label,
       source: "csv",
     });

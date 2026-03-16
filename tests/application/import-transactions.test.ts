@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import type { TransactionParser } from "../../src/application/gateway/transaction-parser.js";
 
 class StubParser implements TransactionParser {
@@ -13,14 +15,14 @@ class StubParser implements TransactionParser {
       Transaction.create({
         amount: Money.fromEuros(-42.5),
         date: DateOnly.from("2026-03-01"),
-        id: "tx-1",
+        id: TransactionId.from("tx-1"),
         label: "Test transaction",
         source: "csv",
       }),
       Transaction.create({
         amount: Money.fromEuros(-10),
         date: DateOnly.from("2026-03-15"),
-        id: "tx-2",
+        id: TransactionId.from("tx-2"),
         label: "Another transaction",
         source: "csv",
       }),
@@ -54,9 +56,9 @@ describe("ImportTransactions", () => {
   it("splits by category status", () => {
     const categorized = Transaction.create({
       amount: Money.fromEuros(-42.5),
-      categoryId: "n01",
+      categoryId: CategoryId.from("n01"),
       date: DateOnly.from("2026-03-01"),
-      id: "tx-1",
+      id: TransactionId.from("tx-1"),
       label: "Test transaction",
       source: "csv",
     });
@@ -66,8 +68,8 @@ describe("ImportTransactions", () => {
     const { alreadyCategorized, uncategorized } = useCase.splitByCategoryStatus(parsed);
 
     expect(alreadyCategorized).toHaveLength(1);
-    expect(alreadyCategorized[0]?.categoryId).toBe("n01");
+    expect(alreadyCategorized[0]?.categoryId?.value).toBe("n01");
     expect(uncategorized).toHaveLength(1);
-    expect(uncategorized[0]?.id).toBe("tx-2");
+    expect(uncategorized[0]?.id.value).toBe("tx-2");
   });
 });

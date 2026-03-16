@@ -30,7 +30,7 @@ export function createRulesCommand(ruleRepo: CategoryRuleRepository, renderer: R
         return;
       }
 
-      const category = DEFAULT_CATEGORIES.find((cat) => cat.id === categoryId);
+      const category = DEFAULT_CATEGORIES.find((cat) => cat.id.value === categoryId);
       if (!category) {
         console.error(`Unknown category ID: "${categoryId}"`);
         process.exitCode = 1;

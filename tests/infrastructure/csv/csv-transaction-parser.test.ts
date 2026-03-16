@@ -45,7 +45,7 @@ describe("CsvTransactionParser", () => {
     it("generates deterministic IDs", () => {
       const txns1 = parser.parse(join(FIXTURES, "sample-semicolon.csv"));
       const txns2 = parser.parse(join(FIXTURES, "sample-semicolon.csv"));
-      expect(txns1[0]?.id).toBe(txns2[0]?.id);
+      expect(txns1[0]?.id.value).toBe(txns2[0]?.id.value);
     });
   });
 
@@ -99,7 +99,7 @@ describe("CsvTransactionParser", () => {
       // sample-semicolon.csv has no dupes, so create an in-memory test via mocking
       // Just verify the deterministic ID function behaviour via separate rows
       const txns = parser.parse(join(FIXTURES, "sample-semicolon.csv"));
-      const ids = new Set(txns.map((txn) => txn.id));
+      const ids = new Set(txns.map((txn) => txn.id.value));
       expect(ids.size).toBe(txns.length);
     });
   });

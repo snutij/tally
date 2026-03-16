@@ -1,4 +1,5 @@
 import { CategoryGroup } from "../../domain/value-object/category-group.js";
+import { CategoryId } from "../../domain/value-object/category-id.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { ExitPromptError } from "@inquirer/core";
 import type { Transaction } from "../../domain/entity/transaction.js";
@@ -19,7 +20,7 @@ export function buildCategoryChoices(): Choice[] {
   for (const group of Object.values(CategoryGroup)) {
     choices.push({ separator: GROUP_LABELS[group], type: "separator" as const });
     for (const cat of DEFAULT_CATEGORIES.filter((dc) => dc.group === group)) {
-      choices.push({ name: cat.name, value: cat.id });
+      choices.push({ name: cat.name, value: cat.id.value });
     }
   }
 
@@ -54,7 +55,7 @@ export async function categorizePrompt(transactions: Transaction[]): Promise<Cat
       if (answer === "__skip__") {
         result.push(txn);
       } else {
-        result.push(txn.categorize(answer));
+        result.push(txn.categorize(CategoryId.from(answer)));
       }
     }
   } catch (error) {

@@ -2,6 +2,7 @@ import type { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import type { CategoryRuleRepository } from "../../src/application/gateway/category-rule-repository.js";
 import type { Month } from "../../src/domain/value-object/month.js";
 import type { Transaction } from "../../src/domain/entity/transaction.js";
+import type { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 
 export class InMemoryCategoryRuleRepository implements CategoryRuleRepository {
@@ -31,9 +32,9 @@ export class InMemoryTransactionRepository implements TransactionRepository {
     this.saved.push(...transactions);
   }
 
-  findByIds(ids: string[]): Transaction[] {
-    const idSet = new Set(ids);
-    return this.saved.filter((txn) => idSet.has(txn.id));
+  findByIds(ids: TransactionId[]): Transaction[] {
+    const idSet = new Set(ids.map((id) => id.value));
+    return this.saved.filter((txn) => idSet.has(txn.id.value));
   }
 
   findByMonth(month: Month): Transaction[] {

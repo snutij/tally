@@ -5,7 +5,7 @@ import { mockTransactions } from "../../src/domain/mock-dataset.js";
 
 describe("mockTransactions", () => {
   const txns = mockTransactions(2026, 3);
-  const validIds = new Set(DEFAULT_CATEGORIES.map((cat) => cat.id));
+  const validIds = new Set(DEFAULT_CATEGORIES.map((cat) => cat.id.value));
 
   it("contains at least 15 transactions", () => {
     expect(txns.length).toBeGreaterThanOrEqual(15);
@@ -15,7 +15,7 @@ describe("mockTransactions", () => {
     const categorized = txns.filter((txn) => txn.categoryId);
     const groups = new Set(
       categorized.map((txn) => {
-        const cat = DEFAULT_CATEGORIES.find((dc) => dc.id === txn.categoryId);
+        const cat = DEFAULT_CATEGORIES.find((dc) => txn.categoryId && dc.id.equals(txn.categoryId));
         return cat?.group;
       }),
     );
@@ -33,13 +33,13 @@ describe("mockTransactions", () => {
   it("uses only valid DEFAULT_CATEGORIES IDs", () => {
     for (const txn of txns) {
       if (txn.categoryId) {
-        expect(validIds).toContain(txn.categoryId);
+        expect(validIds).toContain(txn.categoryId.value);
       }
     }
   });
 
   it("generates unique IDs", () => {
-    const ids = txns.map((txn) => txn.id);
+    const ids = txns.map((txn) => txn.id.value);
     expect(new Set(ids).size).toBe(ids.length);
   });
 });

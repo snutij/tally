@@ -1,8 +1,9 @@
+import type { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRule } from "../../domain/entity/category-rule.js";
 import type { CategoryRuleRepository } from "../gateway/category-rule-repository.js";
 import type { Transaction } from "../../domain/entity/transaction.js";
 
-function firstMatch(label: string, rules: CategoryRule[]): string | undefined {
+function firstMatch(label: string, rules: CategoryRule[]): CategoryId | undefined {
   for (const rule of rules) {
     let regex: RegExp;
     try {

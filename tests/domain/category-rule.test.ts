@@ -6,7 +6,7 @@ describe("createCategoryRule", () => {
   it("creates a valid rule", () => {
     const rule = createCategoryRule(String.raw`\bcarrefour\b`, "n02", "default");
     expect(rule.pattern).toBe(String.raw`\bcarrefour\b`);
-    expect(rule.categoryId).toBe("n02");
+    expect(rule.categoryId.value).toBe("n02");
     expect(rule.source).toBe("default");
     expect(rule.id).toHaveLength(32);
   });

@@ -19,12 +19,14 @@ export class ImportTransactions {
     uncategorized: Transaction[];
   } {
     const existing = this.txnRepo.findByIds(transactions.map((txn) => txn.id));
-    const categorizedIds = new Set(existing.filter((txn) => txn.categoryId).map((txn) => txn.id));
+    const categorizedIds = new Set(
+      existing.filter((txn) => txn.categoryId).map((txn) => txn.id.value),
+    );
     const alreadyCategorized: Transaction[] = [];
     const uncategorized: Transaction[] = [];
     for (const txn of transactions) {
-      const match = categorizedIds.has(txn.id)
-        ? existing.find((ex) => ex.id === txn.id)
+      const match = categorizedIds.has(txn.id.value)
+        ? existing.find((ex) => ex.id.equals(txn.id))
         : undefined;
       if (match) {
         alreadyCategorized.push(match);

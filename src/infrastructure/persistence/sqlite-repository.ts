@@ -3,6 +3,7 @@ import {
   DEFAULT_LOCALE,
   getDefaultRulesForLocale,
 } from "../../domain/default-category-rules/index.js";
+import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRuleRepository } from "../../application/gateway/category-rule-repository.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import Database from "better-sqlite3";
@@ -10,6 +11,7 @@ import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
 import type { Month } from "../../domain/value-object/month.js";
 import { Transaction } from "../../domain/entity/transaction.js";
+import { TransactionId } from "../../domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
 
 function migrate(db: Database.Database): void {
@@ -55,7 +57,7 @@ function migrate(db: Database.Database): void {
     `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
   );
   for (const cat of DEFAULT_CATEGORIES) {
-    upsertCat.run(cat.id, cat.name, cat.group);
+    upsertCat.run(cat.id.value, cat.name, cat.group);
   }
 
   const insertRule = db.prepare(
@@ -63,7 +65,7 @@ function migrate(db: Database.Database): void {
   );
   for (const entry of getDefaultRulesForLocale(DEFAULT_LOCALE)) {
     const rule = createCategoryRule(entry.pattern, entry.categoryId, "default");
-    insertRule.run(rule.id, rule.pattern, rule.categoryId, rule.source);
+    insertRule.run(rule.id, rule.pattern, rule.categoryId.value, rule.source);
   }
 }
 
@@ -82,12 +84,12 @@ export class SqliteTransactionRepository implements TransactionRepository {
       );
       for (const txn of transactions) {
         stmt.run(
-          txn.id,
+          txn.id.value,
           txn.date.toString(),
           txn.label,
           txn.amount.cents,
           // eslint-disable-next-line unicorn/no-null -- SQLite requires null for missing column values
-          txn.categoryId ?? null,
+          txn.categoryId?.value ?? null,
           txn.source,
         );
       }
@@ -95,7 +97,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
     runTx();
   }
 
-  findByIds(ids: string[]): Transaction[] {
+  findByIds(ids: TransactionId[]): Transaction[] {
     if (ids.length === 0) {
       return [];
     }
@@ -105,7 +107,7 @@ export class SqliteTransactionRepository implements TransactionRepository {
         `SELECT id, date, label, amount_cents, category_id, source
          FROM transactions WHERE id IN (${placeholders})`,
       )
-      .all(...ids) as {
+      .all(...ids.map((id) => id.value)) as {
       id: string;
       date: string;
       label: string;
@@ -117,9 +119,9 @@ export class SqliteTransactionRepository implements TransactionRepository {
     return rows.map((dbRow) =>
       Transaction.create({
         amount: Money.fromCents(dbRow.amount_cents),
-        categoryId: dbRow.category_id ?? undefined,
+        categoryId: dbRow.category_id ? CategoryId.from(dbRow.category_id) : undefined,
         date: DateOnly.from(dbRow.date),
-        id: dbRow.id,
+        id: TransactionId.from(dbRow.id),
         label: dbRow.label,
         source: dbRow.source as Transaction["source"],
       }),
@@ -145,9 +147,9 @@ export class SqliteTransactionRepository implements TransactionRepository {
     return rows.map((dbRow) =>
       Transaction.create({
         amount: Money.fromCents(dbRow.amount_cents),
-        categoryId: dbRow.category_id ?? undefined,
+        categoryId: dbRow.category_id ? CategoryId.from(dbRow.category_id) : undefined,
         date: DateOnly.from(dbRow.date),
-        id: dbRow.id,
+        id: TransactionId.from(dbRow.id),
         label: dbRow.label,
         source: dbRow.source as Transaction["source"],
       }),
@@ -167,7 +169,7 @@ export class SqliteCategoryRuleRepository implements CategoryRuleRepository {
       .prepare(
         `INSERT OR REPLACE INTO category_rules (id, pattern, category_id, source) VALUES (?, ?, ?, ?)`,
       )
-      .run(rule.id, rule.pattern, rule.categoryId, rule.source);
+      .run(rule.id, rule.pattern, rule.categoryId.value, rule.source);
   }
 
   findAll(): CategoryRule[] {
@@ -175,7 +177,7 @@ export class SqliteCategoryRuleRepository implements CategoryRuleRepository {
       .prepare(`SELECT id, pattern, category_id, source FROM category_rules`)
       .all() as { id: string; pattern: string; category_id: string; source: string }[];
     return rows.map((row) => ({
-      categoryId: row.category_id,
+      categoryId: CategoryId.from(row.category_id),
       id: row.id,
       pattern: row.pattern,
       source: row.source as CategoryRule["source"],
@@ -192,7 +194,7 @@ export class SqliteCategoryRuleRepository implements CategoryRuleRepository {
       return undefined;
     }
     return {
-      categoryId: row.category_id,
+      categoryId: CategoryId.from(row.category_id),
       id: row.id,
       pattern: row.pattern,
       source: row.source as CategoryRule["source"],

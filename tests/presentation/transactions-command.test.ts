@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { Command } from "commander";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
 vi.mock("../../src/presentation/prompt/categorize-prompt.js", () => ({
   categorizePrompt: vi.fn(),
@@ -14,9 +16,9 @@ import { createTransactionsCommand } from "../../src/presentation/command/transa
 function txn(overrides: { id?: string; categoryId?: string } = {}): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(-42),
-    categoryId: overrides.categoryId,
+    categoryId: overrides.categoryId ? CategoryId.from(overrides.categoryId) : undefined,
     date: DateOnly.from("2026-03-15"),
-    id: overrides.id ?? "t1",
+    id: TransactionId.from(overrides.id ?? "t1"),
     label: "TEST",
     source: "csv",
   });
@@ -58,7 +60,7 @@ describe("createTransactionsCommand", () => {
 
   it("categorize prompts and saves uncategorized transactions", async () => {
     const tx = txn();
-    const categorized = tx.categorize("n01");
+    const categorized = tx.categorize(CategoryId.from("n01"));
     mockTxnRepo.findByMonth.mockReturnValue([tx]);
     vi.mocked(categorizePrompt).mockResolvedValue({
       categorized: [categorized],

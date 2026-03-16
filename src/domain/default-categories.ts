@@ -1,8 +1,9 @@
 import type { Category } from "./entity/category.js";
 import { CategoryGroup } from "./value-object/category-group.js";
+import { CategoryId } from "./value-object/category-id.js";
 
 function cat(id: string, name: string, group: CategoryGroup): Category {
-  return { group, id, name };
+  return { group, id: CategoryId.from(id), name };
 }
 
 const { NEEDS, WANTS, INVESTMENTS: INVEST, INCOME: INC } = CategoryGroup;

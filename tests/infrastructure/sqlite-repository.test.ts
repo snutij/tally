@@ -10,6 +10,7 @@ import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -46,7 +47,7 @@ describe("SqliteRepository", () => {
       ruleRepo.save(rule);
       const found = ruleRepo.findByPattern(String.raw`\bcustommerchant\b`);
       expect(found).toBeDefined();
-      expect(found?.categoryId).toBe("w06");
+      expect(found?.categoryId.value).toBe("w06");
       expect(found?.source).toBe("learned");
     });
 
@@ -56,7 +57,7 @@ describe("SqliteRepository", () => {
       ruleRepo.save(learnedRule);
       const found = ruleRepo.findByPattern(String.raw`\bspotify\b`);
       expect(found?.source).toBe("learned");
-      expect(found?.categoryId).toBe("w01");
+      expect(found?.categoryId.value).toBe("w01");
     });
 
     it("findByPattern returns undefined for unknown pattern", () => {
@@ -80,7 +81,7 @@ describe("SqliteRepository", () => {
       const result2 = openDatabase(dbPath);
       const found = result2.ruleRepo.findByPattern(String.raw`\bcarrefour\b`);
       expect(found?.source).toBe("learned");
-      expect(found?.categoryId).toBe("w02");
+      expect(found?.categoryId.value).toBe("w02");
       result2.db.close();
     });
   });
@@ -91,14 +92,14 @@ describe("SqliteRepository", () => {
         Transaction.create({
           amount: Money.fromEuros(-800),
           date: DateOnly.from("2026-03-01"),
-          id: "tx-1",
+          id: TransactionId.from("tx-1"),
           label: "Rent",
           source: "csv",
         }),
         Transaction.create({
           amount: Money.fromEuros(-800),
           date: DateOnly.from("2026-04-01"),
-          id: "tx-2",
+          id: TransactionId.from("tx-2"),
           label: "Rent April",
           source: "csv",
         }),
@@ -106,11 +107,11 @@ describe("SqliteRepository", () => {
 
       const marchTxns = txnRepo.findByMonth(Month.from("2026-03"));
       expect(marchTxns).toHaveLength(1);
-      expect(marchTxns[0]?.id).toBe("tx-1");
+      expect(marchTxns[0]?.id.value).toBe("tx-1");
 
       const aprilTxns = txnRepo.findByMonth(Month.from("2026-04"));
       expect(aprilTxns).toHaveLength(1);
-      expect(aprilTxns[0]?.id).toBe("tx-2");
+      expect(aprilTxns[0]?.id.value).toBe("tx-2");
     });
 
     it("returns empty array when findByIds called with empty array", () => {
