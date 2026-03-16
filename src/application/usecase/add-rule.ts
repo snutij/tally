@@ -11,13 +11,6 @@ export class AddRule {
   }
 
   execute(pattern: string, categoryId: string): { rule: CategoryRule; categoryName: string } {
-    try {
-      // eslint-disable-next-line no-new -- validation only
-      new RegExp(pattern, "i");
-    } catch {
-      throw new DomainError(`Invalid regex pattern: "${pattern}"`);
-    }
-
     const category = DEFAULT_CATEGORIES.find((cat) => cat.id === categoryId);
     if (!category) {
       throw new DomainError(`Unknown category ID: "${categoryId}"`);
