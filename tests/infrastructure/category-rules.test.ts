@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getDefaultPrefixesForLocale,
   getDefaultRulesForLocale,
-} from "../../src/domain/default-category-rules/index.js";
+} from "../../src/infrastructure/config/category-rules/index.js";
 
 describe("getDefaultRulesForLocale", () => {
   it("returns French rules for locale 'fr'", () => {

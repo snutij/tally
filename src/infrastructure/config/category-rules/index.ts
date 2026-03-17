@@ -1,5 +1,5 @@
 import { FR_BANK_PREFIXES, FR_DEFAULT_RULES } from "./fr.js";
-import type { DefaultRuleEntry } from "../entity/category-rule.js";
+import type { DefaultRuleEntry } from "../../../domain/entity/category-rule.js";
 
 export const DEFAULT_LOCALE = "fr";
 

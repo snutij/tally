@@ -1,8 +1,5 @@
 import { type CategoryRule, createCategoryRule } from "../../domain/entity/category-rule.js";
-import {
-  DEFAULT_LOCALE,
-  getDefaultRulesForLocale,
-} from "../../domain/default-category-rules/index.js";
+import { DEFAULT_LOCALE, getDefaultRulesForLocale } from "../config/category-rules/index.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRuleRepository } from "../../application/gateway/category-rule-repository.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";

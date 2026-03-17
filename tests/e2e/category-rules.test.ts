@@ -4,7 +4,7 @@ import { ApplyCategoryRules } from "../../src/application/usecase/apply-category
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
-import { FR_BANK_PREFIXES } from "../../src/domain/default-category-rules/fr.js";
+import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { join } from "node:path";

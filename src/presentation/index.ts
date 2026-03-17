@@ -1,7 +1,7 @@
 import {
   DEFAULT_LOCALE,
   getDefaultPrefixesForLocale,
-} from "../domain/default-category-rules/index.js";
+} from "../infrastructure/config/category-rules/index.js";
 import { VALID_FORMATS, createRenderer } from "./renderer/create-renderer.js";
 import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { existsSync, mkdirSync } from "node:fs";

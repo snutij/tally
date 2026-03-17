@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FR_BANK_PREFIXES } from "../../../src/domain/default-category-rules/fr.js";
+import { FR_BANK_PREFIXES } from "../../../src/infrastructure/config/category-rules/fr.js";
 import { extractPattern } from "../../../src/domain/service/extract-pattern.js";
 
 describe("extractPattern", () => {
