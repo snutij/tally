@@ -13,7 +13,27 @@ import { TransactionId } from "../../domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
 import type { UnitOfWork } from "../../application/gateway/unit-of-work.js";
 
-function migrate(db: Database.Database): void {
+interface TransactionRow {
+  id: string;
+  date: string;
+  label: string;
+  amount_cents: number;
+  category_id: string | null;
+  source: string;
+}
+
+function rowToTransaction(row: TransactionRow): Transaction {
+  return Transaction.create({
+    amount: Money.fromCents(row.amount_cents),
+    categoryId: row.category_id ? CategoryId(row.category_id) : undefined,
+    date: DateOnly.from(row.date),
+    id: TransactionId(row.id),
+    label: row.label,
+    source: row.source as Transaction["source"],
+  });
+}
+
+function migrateSchema(db: Database.Database): void {
   // Drop obsolete budget tables from previous schema
   db.exec(`
     DROP TABLE IF EXISTS budget_lines;
@@ -51,7 +71,9 @@ function migrate(db: Database.Database): void {
   } catch {
     // Column already named `source` on fresh databases
   }
+}
 
+function seedDefaults(db: Database.Database): void {
   const upsertCat = db.prepare(
     `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
   );
@@ -111,25 +133,9 @@ class SqliteTransactionRepository implements TransactionRepository {
         `SELECT id, date, label, amount_cents, category_id, source
          FROM transactions WHERE id IN (${placeholders})`,
       )
-      .all(...ids) as {
-      id: string;
-      date: string;
-      label: string;
-      amount_cents: number;
-      category_id: string | null;
-      source: string;
-    }[];
+      .all(...ids) as TransactionRow[];
 
-    return rows.map((dbRow) =>
-      Transaction.create({
-        amount: Money.fromCents(dbRow.amount_cents),
-        categoryId: dbRow.category_id ? CategoryId(dbRow.category_id) : undefined,
-        date: DateOnly.from(dbRow.date),
-        id: TransactionId(dbRow.id),
-        label: dbRow.label,
-        source: dbRow.source as Transaction["source"],
-      }),
-    );
+    return rows.map((row) => rowToTransaction(row));
   }
 
   findByMonth(month: Month): Transaction[] {
@@ -139,25 +145,9 @@ class SqliteTransactionRepository implements TransactionRepository {
         `SELECT id, date, label, amount_cents, category_id, source
          FROM transactions WHERE date LIKE ?`,
       )
-      .all(pattern) as {
-      id: string;
-      date: string;
-      label: string;
-      amount_cents: number;
-      category_id: string | null;
-      source: string;
-    }[];
+      .all(pattern) as TransactionRow[];
 
-    return rows.map((dbRow) =>
-      Transaction.create({
-        amount: Money.fromCents(dbRow.amount_cents),
-        categoryId: dbRow.category_id ? CategoryId(dbRow.category_id) : undefined,
-        date: DateOnly.from(dbRow.date),
-        id: TransactionId(dbRow.id),
-        label: dbRow.label,
-        source: dbRow.source as Transaction["source"],
-      }),
-    );
+    return rows.map((row) => rowToTransaction(row));
   }
 }
 
@@ -223,7 +213,8 @@ export function openDatabase(dbPath: string): {
   const db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
-  migrate(db);
+  migrateSchema(db);
+  seedDefaults(db);
   return {
     close: () => db.close(),
     ruleRepo: new SqliteCategoryRuleRepository(db),
