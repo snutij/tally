@@ -1,4 +1,4 @@
-import { type MonthlyReport, isMonthlyReport } from "../../domain/read-model/monthly-report.js";
+import { type MonthlyReportDto, isMonthlyReportDto } from "../../application/dto/report-dto.js";
 import type { Renderer } from "./renderer.js";
 
 export class JsonRenderer implements Renderer {
@@ -8,13 +8,13 @@ export class JsonRenderer implements Renderer {
   }
 
   private static serialize(data: unknown): unknown {
-    if (isMonthlyReport(data)) {
+    if (isMonthlyReportDto(data)) {
       return JsonRenderer.serializeReport(data);
     }
     return data;
   }
 
-  private static serializeReport(report: MonthlyReport): Record<string, unknown> {
+  private static serializeReport(report: MonthlyReportDto): Record<string, unknown> {
     return {
       groups: report.groups,
       kpis: report.kpis,

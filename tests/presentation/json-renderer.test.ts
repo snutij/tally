@@ -8,6 +8,7 @@ import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-report.js";
+import { toMonthlyReportDto } from "../../src/application/dto/report-dto.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
 const categoryMap = buildCategoryMap(DEFAULT_CATEGORIES);
@@ -26,8 +27,10 @@ function makeTxn(id: string, amount: number, date: string, categoryId?: string):
 describe("JsonRenderer", () => {
   const renderer = new JsonRenderer();
 
-  it("serializes a MonthlyReport", () => {
-    const report = computeMonthlyReport(Month.from("2026-03"), targets, [], categoryMap);
+  it("serializes a MonthlyReportDto", () => {
+    const report = toMonthlyReportDto(
+      computeMonthlyReport(Month.from("2026-03"), targets, [], categoryMap),
+    );
     const parsed = JSON.parse(renderer.render(report));
     expect(parsed.month).toBe("2026-03");
     expect(parsed.groups).toHaveLength(4);
@@ -36,11 +39,13 @@ describe("JsonRenderer", () => {
   });
 
   it("serializes totalExpenseTarget instead of totalExpenseBudgeted", () => {
-    const report = computeMonthlyReport(
-      Month.from("2026-03"),
-      targets,
-      [makeTxn("1", 3000, "2026-03-01", "inc01")],
-      categoryMap,
+    const report = toMonthlyReportDto(
+      computeMonthlyReport(
+        Month.from("2026-03"),
+        targets,
+        [makeTxn("1", 3000, "2026-03-01", "inc01")],
+        categoryMap,
+      ),
     );
     const parsed = JSON.parse(renderer.render(report));
     expect(parsed.totalExpenseTarget).toBe(3000); // 50+30+20 = 100% of income
@@ -50,11 +55,13 @@ describe("JsonRenderer", () => {
   });
 
   it("serializes kpis without adherenceRate or categoryVariance", () => {
-    const report = computeMonthlyReport(
-      Month.from("2026-03"),
-      targets,
-      [makeTxn("1", 3000, "2026-03-01", "inc01"), makeTxn("2", -800, "2026-03-02", "n01")],
-      categoryMap,
+    const report = toMonthlyReportDto(
+      computeMonthlyReport(
+        Month.from("2026-03"),
+        targets,
+        [makeTxn("1", 3000, "2026-03-01", "inc01"), makeTxn("2", -800, "2026-03-02", "n01")],
+        categoryMap,
+      ),
     );
     const parsed = JSON.parse(renderer.render(report));
 

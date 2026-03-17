@@ -1,4 +1,4 @@
-import type { CategoryRule } from "../../domain/entity/category-rule.js";
+import { type CategoryRuleDto, toCategoryRuleDto } from "../dto/category-rule-dto.js";
 import type { CategoryRuleRepository } from "../gateway/category-rule-repository.js";
 
 export class ListRules {
@@ -8,7 +8,7 @@ export class ListRules {
     this.ruleRepo = ruleRepo;
   }
 
-  findAll(): CategoryRule[] {
-    return this.ruleRepo.findAll();
+  execute(): CategoryRuleDto[] {
+    return this.ruleRepo.findAll().map((rule) => toCategoryRuleDto(rule));
   }
 }

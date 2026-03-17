@@ -52,11 +52,3 @@ export interface MonthlyReport {
   readonly transactionCount: number;
   readonly uncategorized: Money;
 }
-
-export function isMonthlyReport(data: unknown): data is MonthlyReport {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    (data as { _type?: unknown })._type === "MonthlyReport"
-  );
-}

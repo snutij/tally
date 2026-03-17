@@ -1,6 +1,6 @@
 import type { AddRule } from "../../application/usecase/add-rule.js";
 import { Command } from "commander";
-import { DomainError } from "../../domain/error/index.js";
+import { DomainError } from "../../application/error.js";
 import type { ListRules } from "../../application/usecase/list-rules.js";
 import type { RemoveRule } from "../../application/usecase/remove-rule.js";
 import type { Renderer } from "../renderer/renderer.js";
@@ -17,7 +17,7 @@ export function createRulesCommand(
     .command("list")
     .description("List all category rules")
     .action(() => {
-      const rules = listRules.findAll();
+      const rules = listRules.execute();
       console.log(renderer.render(rules));
     });
 

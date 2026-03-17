@@ -7,18 +7,19 @@ import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { existsSync, mkdirSync } from "node:fs";
 import { AddRule } from "../application/usecase/add-rule.js";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
-import { CategorizeTransactions } from "../application/usecase/categorize-transactions.js";
 import { Command } from "commander";
 import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
-import { DomainError } from "../domain/error/index.js";
+import { DomainError } from "../application/error.js";
 import { ExitPromptError } from "@inquirer/core";
+import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { LearnCategoryRules } from "../application/usecase/learn-category-rules.js";
 import { ListRules } from "../application/usecase/list-rules.js";
 import { ListTransactions } from "../application/usecase/list-transactions.js";
 import { RemoveRule } from "../application/usecase/remove-rule.js";
+import { SaveCategorizedTransactions } from "../application/usecase/save-categorized-transactions.js";
 import { SeedMockData } from "../application/usecase/seed-mock-data.js";
 import { createDbCommand } from "./command/db-command.js";
 import { createImportCommand } from "./command/import-command.js";
@@ -44,7 +45,8 @@ const learnCategoryRules = new LearnCategoryRules(
   getDefaultPrefixesForLocale(DEFAULT_LOCALE),
 );
 const listTransactions = new ListTransactions(txnRepo);
-const categorizeTransactions = new CategorizeTransactions(txnRepo);
+const findUncategorizedTransactions = new FindUncategorizedTransactions(txnRepo);
+const saveCategorizedTransactions = new SaveCategorizedTransactions(txnRepo);
 const listRules = new ListRules(ruleRepo);
 const addRule = new AddRule(ruleRepo);
 const removeRule = new RemoveRule(ruleRepo);
@@ -74,7 +76,14 @@ program.addCommand(
   }),
 );
 program.addCommand(createReportCommand(generateReport, renderer));
-program.addCommand(createTransactionsCommand(listTransactions, categorizeTransactions, renderer));
+program.addCommand(
+  createTransactionsCommand(
+    listTransactions,
+    findUncategorizedTransactions,
+    saveCategorizedTransactions,
+    renderer,
+  ),
+);
 program.addCommand(createRulesCommand(listRules, addRule, removeRule, renderer));
 program.addCommand(createDbCommand());
 

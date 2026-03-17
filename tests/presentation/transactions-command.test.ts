@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { Command } from "commander";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
-import { Money } from "../../src/domain/value-object/money.js";
-import { Transaction } from "../../src/domain/entity/transaction.js";
-import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
+import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
 
 vi.mock("../../src/presentation/prompt/categorize-prompt.js", () => ({
   categorizePrompt: vi.fn(),
@@ -13,20 +9,21 @@ vi.mock("../../src/presentation/prompt/categorize-prompt.js", () => ({
 import { categorizePrompt } from "../../src/presentation/prompt/categorize-prompt.js";
 import { createTransactionsCommand } from "../../src/presentation/command/transactions-command.js";
 
-function txn(overrides: { id?: string; categoryId?: string } = {}): Transaction {
-  return Transaction.create({
-    amount: Money.fromEuros(-42),
-    categoryId: overrides.categoryId ? CategoryId(overrides.categoryId) : undefined,
-    date: DateOnly.from("2026-03-15"),
-    id: TransactionId(overrides.id ?? "t1"),
+function dto(overrides: { id?: string; categoryId?: string } = {}): TransactionDto {
+  return {
+    amount: -42,
+    categoryId: overrides.categoryId,
+    date: "2026-03-15",
+    id: overrides.id ?? "t1",
     label: "TEST",
     source: "csv",
-  });
+  };
 }
 
 describe("createTransactionsCommand", () => {
-  const mockListTransactions = { findByMonth: vi.fn() };
-  const mockCategorizeTransactions = { findUncategorized: vi.fn(), saveCategorized: vi.fn() };
+  const mockListTransactions = { execute: vi.fn() };
+  const mockFindUncategorized = { execute: vi.fn() };
+  const mockSaveCategorized = { execute: vi.fn() };
   const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
 
   beforeEach(() => {
@@ -37,7 +34,8 @@ describe("createTransactionsCommand", () => {
   function run(...args: string[]): Promise<unknown> {
     const cmd = createTransactionsCommand(
       mockListTransactions as never,
-      mockCategorizeTransactions as never,
+      mockFindUncategorized as never,
+      mockSaveCategorized as never,
       mockRenderer,
     );
     const program = new Command().addCommand(cmd);
@@ -45,15 +43,15 @@ describe("createTransactionsCommand", () => {
   }
 
   it("lists transactions for a month", async () => {
-    mockListTransactions.findByMonth.mockReturnValue([txn()]);
+    mockListTransactions.execute.mockReturnValue([dto()]);
     await run("2026-03");
-    expect(mockListTransactions.findByMonth).toHaveBeenCalled();
+    expect(mockListTransactions.execute).toHaveBeenCalledWith("2026-03");
     expect(console.log).toHaveBeenCalled();
   });
 
   it("categorize shows message when all categorized", async () => {
-    mockCategorizeTransactions.findUncategorized.mockReturnValue({
-      all: [txn({ categoryId: "n01" })],
+    mockFindUncategorized.execute.mockReturnValue({
+      all: [dto({ categoryId: "n01" })],
       uncategorized: [],
     });
     await run("categorize", "2026-03");
@@ -63,9 +61,9 @@ describe("createTransactionsCommand", () => {
   });
 
   it("categorize prompts and saves uncategorized transactions", async () => {
-    const tx = txn();
-    const categorized = tx.categorize(CategoryId("n01"));
-    mockCategorizeTransactions.findUncategorized.mockReturnValue({
+    const tx = dto();
+    const categorized = { ...tx, categoryId: "n01" };
+    mockFindUncategorized.execute.mockReturnValue({
       all: [tx],
       uncategorized: [tx],
     });
@@ -77,12 +75,12 @@ describe("createTransactionsCommand", () => {
     await run("categorize", "2026-03");
 
     expect(categorizePrompt).toHaveBeenCalledWith([tx]);
-    expect(mockCategorizeTransactions.saveCategorized).toHaveBeenCalledWith([categorized]);
+    expect(mockSaveCategorized.execute).toHaveBeenCalledWith([{ categoryId: "n01", id: tx.id }]);
   });
 
   it("categorize handles interruption", async () => {
-    const tx = txn();
-    mockCategorizeTransactions.findUncategorized.mockReturnValue({
+    const tx = dto();
+    mockFindUncategorized.execute.mockReturnValue({
       all: [tx],
       uncategorized: [tx],
     });

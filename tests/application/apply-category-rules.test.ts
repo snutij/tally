@@ -1,21 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
-import { Money } from "../../src/domain/value-object/money.js";
-import { Transaction } from "../../src/domain/entity/transaction.js";
-import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
+import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
-function txn(label: string, id = "t1"): Transaction {
-  return Transaction.create({
-    amount: Money.fromEuros(-10),
-    date: DateOnly.from("2026-03-15"),
-    id: TransactionId(id),
+function txn(label: string, id = "t1"): TransactionDto {
+  return {
+    amount: -10,
+    categoryId: undefined,
+    date: "2026-03-15",
+    id,
     label,
     source: "csv",
-  });
+  };
 }
 
 describe("ApplyCategoryRules", () => {
@@ -68,10 +66,12 @@ describe("ApplyCategoryRules", () => {
     expect(matched[0]?.categoryId).toBe("n02");
   });
 
-  it("matched transactions are Transaction instances", () => {
+  it("matched transactions are DTOs with categoryId set", () => {
     ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
     const { matched } = useCase.apply([txn("PRLV SEPA SPOTIFY")]);
-    expect(matched[0]).toBeInstanceOf(Transaction);
+    const [dto] = matched;
+    expect(typeof dto?.categoryId).toBe("string");
+    expect(typeof dto?.amount).toBe("number");
   });
 
   it("handles empty transaction list", () => {

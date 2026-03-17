@@ -1,7 +1,6 @@
 import { Command } from "commander";
 import { DEFAULT_SPENDING_TARGETS } from "../../domain/config/spending-targets.js";
 import type { GenerateReport } from "../../application/usecase/generate-report.js";
-import { Month } from "../../domain/value-object/month.js";
 import type { Renderer } from "../renderer/renderer.js";
 
 interface ReportOptions {
@@ -18,8 +17,6 @@ export function createReportCommand(generateReport: GenerateReport, renderer: Re
     .option("--wants <pct>", "Percentage target for Wants (0-100)", Number.parseInt)
     .option("--invest <pct>", "Percentage target for Investments (0-100)", Number.parseInt)
     .action((monthStr: string, opts: ReportOptions) => {
-      const month = Month.from(monthStr);
-
       const hasAny =
         opts.needs !== undefined || opts.wants !== undefined || opts.invest !== undefined;
 
@@ -41,7 +38,7 @@ export function createReportCommand(generateReport: GenerateReport, renderer: Re
         targets = { invest, needs, wants };
       }
 
-      const result = generateReport.execute(month, targets);
+      const result = generateReport.execute(monthStr, targets);
       console.log(renderer.render(result));
     });
 }

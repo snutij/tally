@@ -6,10 +6,10 @@ import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transacti
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
-import { Month } from "../../src/domain/value-object/month.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
+import { toTransactionDto } from "../../src/application/dto/transaction-dto.js";
 
 // credit-mutuel-sample.csv: Date;Date de valeur;Montant;Libellé;Solde
 const CSV_MAPPING = new CsvColumnMapping({
@@ -26,7 +26,6 @@ describe("e2e: import → report (no budget step)", () => {
   let generateReport: GenerateReport;
 
   const CSV = join(import.meta.dirname, "../fixtures/credit-mutuel-sample.csv");
-  const month = Month.from("2026-03");
   const parser = new CsvTransactionParser(CSV_MAPPING);
 
   beforeEach(() => {
@@ -49,74 +48,72 @@ describe("e2e: import → report (no budget step)", () => {
 
     const categorized = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return txn.categorize(CategoryId("n01"));
+        return toTransactionDto(txn.categorize(CategoryId("n01")));
       }
       if (txn.label.includes("GROCERY")) {
-        return txn.categorize(CategoryId("n02"));
+        return toTransactionDto(txn.categorize(CategoryId("n02")));
       }
       if (txn.label.includes("SALARY")) {
-        return txn.categorize(CategoryId("inc01"));
+        return toTransactionDto(txn.categorize(CategoryId("inc01")));
       }
       if (txn.label.includes("RESTAURANT")) {
-        return txn.categorize(CategoryId("w02"));
+        return toTransactionDto(txn.categorize(CategoryId("w02")));
       }
-      return txn;
+      return toTransactionDto(txn);
     });
 
     importTxns.save(categorized);
 
     // No budget.init step — report works directly
-    const report = generateReport.execute(month);
+    const report = generateReport.execute("2026-03");
 
     expect(report.transactionCount).toBe(4);
     let expectedNet = 0;
     for (const txn of parsed) {
-      expectedNet += txn.amount.cents;
+      expectedNet += txn.amount.toEuros();
     }
-    expect(report.net.cents).toBe(expectedNet);
-    expect(report.totalIncomeActual.cents).toBe(250_000); // 2500€ salary
-    expect(report.totalExpenseActual.cents).toBe(80_000 + 5230 + 3550); // rent + grocery + restaurant
-    expect(report.uncategorized.cents).toBe(0);
+    expect(report.net).toBeCloseTo(expectedNet, 2);
+    expect(report.totalIncomeActual).toBe(2500); // 2500€ salary
+    expect(report.totalExpenseActual).toBeCloseTo(800 + 52.3 + 35.5, 1); // rent + grocery + restaurant
+    expect(report.uncategorized).toBe(0);
   });
 
   it("group targets computed from actual income (50/30/20)", () => {
     const parsed = parser.parse(CSV);
     const withSalary = parsed.map((txn) =>
-      txn.label.includes("SALARY") ? txn.categorize(CategoryId("inc01")) : txn,
+      toTransactionDto(txn.label.includes("SALARY") ? txn.categorize(CategoryId("inc01")) : txn),
     );
     importTxns.save(withSalary);
 
-    const report = generateReport.execute(month);
+    const report = generateReport.execute("2026-03");
     const needs = report.groups.find((grp) => grp.group === "NEEDS");
-    expect(needs?.budgeted.cents).toBe(
-      Math.round((250_000 * DEFAULT_SPENDING_TARGETS.needs) / 100),
-    );
+    expect(needs?.budgeted).toBeCloseTo((2500 * DEFAULT_SPENDING_TARGETS.needs) / 100, 2);
   });
 
   it("uncategorized transactions show up in uncategorized total", () => {
     const parsed = parser.parse(CSV);
-    importTxns.save(parsed);
+    importTxns.save(parsed.map((txn) => toTransactionDto(txn)));
 
-    const report = generateReport.execute(month);
+    const report = generateReport.execute("2026-03");
 
     expect(report.transactionCount).toBe(4);
-    expect(report.uncategorized.cents).toBe(80_000 + 5230 + 250_000 + 3550);
+    expect(report.uncategorized).toBeCloseTo(800 + 52.3 + 2500 + 35.5, 1);
   });
 
   it("re-import preserves previously categorized transactions", () => {
     const parsed = parser.parse(CSV);
     const partial = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return txn.categorize(CategoryId("n01"));
+        return toTransactionDto(txn.categorize(CategoryId("n01")));
       }
       if (txn.label.includes("SALARY")) {
-        return txn.categorize(CategoryId("inc01"));
+        return toTransactionDto(txn.categorize(CategoryId("inc01")));
       }
-      return txn;
+      return toTransactionDto(txn);
     });
     importTxns.save(partial);
 
-    const reparsed = parser.parse(CSV);
+    const reparsed = parser.parse(CSV).map((txn) => toTransactionDto(txn));
     const { alreadyCategorized, uncategorized } = importTxns.splitByCategoryStatus(reparsed);
 
     expect(alreadyCategorized).toHaveLength(2);

@@ -7,6 +7,7 @@ import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-report.js";
+import { toMonthlyReportDto } from "../../src/application/dto/report-dto.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
 const categoryMap = buildCategoryMap(DEFAULT_CATEGORIES);
@@ -27,8 +28,10 @@ const txns = [makeTxn("1", 3000, "2026-03-01", "inc01"), makeTxn("2", -750, "202
 describe("HtmlRenderer", () => {
   const renderer = new HtmlRenderer();
 
-  describe("render(MonthlyReport)", () => {
-    const report = computeMonthlyReport(Month.from("2026-03"), targets, txns, categoryMap);
+  describe("render(MonthlyReportDto)", () => {
+    const report = toMonthlyReportDto(
+      computeMonthlyReport(Month.from("2026-03"), targets, txns, categoryMap),
+    );
     const html = renderer.render(report);
 
     it("produces a valid HTML5 document", () => {
@@ -81,7 +84,9 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReport) — no transactions", () => {
     it("omits insights section when there are no expense transactions", () => {
-      const report = computeMonthlyReport(Month.from("2026-03"), targets, [], categoryMap);
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(Month.from("2026-03"), targets, [], categoryMap),
+      );
       const html = renderer.render(report);
       const [, body] = html.split("<body>");
       expect(body).not.toContain("Top Spending");
@@ -91,11 +96,13 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReport) — insights edge cases", () => {
     it("shows largest expenses but no top spending when all uncategorized", () => {
-      const report = computeMonthlyReport(
-        Month.from("2026-03"),
-        targets,
-        [makeTxn("1", -200, "2026-03-05")],
-        categoryMap,
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(
+          Month.from("2026-03"),
+          targets,
+          [makeTxn("1", -200, "2026-03-05")],
+          categoryMap,
+        ),
       );
       const html = renderer.render(report);
       const [, body] = html.split("<body>");
@@ -104,11 +111,13 @@ describe("HtmlRenderer", () => {
     });
 
     it("shows top spending but no largest expenses when only refunds", () => {
-      const report = computeMonthlyReport(
-        Month.from("2026-03"),
-        targets,
-        [makeTxn("1", 100, "2026-03-05", "n01")],
-        categoryMap,
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(
+          Month.from("2026-03"),
+          targets,
+          [makeTxn("1", 100, "2026-03-05", "n01")],
+          categoryMap,
+        ),
       );
       const html = renderer.render(report);
       const [, body] = html.split("<body>");
@@ -119,11 +128,13 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReport) — uncategorized", () => {
     it("shows uncategorized section when non-zero", () => {
-      const report = computeMonthlyReport(
-        Month.from("2026-03"),
-        targets,
-        [makeTxn("3", -100, "2026-03-05")],
-        categoryMap,
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(
+          Month.from("2026-03"),
+          targets,
+          [makeTxn("3", -100, "2026-03-05")],
+          categoryMap,
+        ),
       );
       const html = renderer.render(report);
       expect(html).toContain("Uncategorized");
@@ -131,7 +142,9 @@ describe("HtmlRenderer", () => {
     });
 
     it("omits uncategorized section when zero", () => {
-      const report = computeMonthlyReport(Month.from("2026-03"), targets, txns, categoryMap);
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(Month.from("2026-03"), targets, txns, categoryMap),
+      );
       const html = renderer.render(report);
       expect(html).not.toContain('class="uncategorized"');
     });

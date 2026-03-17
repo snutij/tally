@@ -100,7 +100,10 @@ describe("createImportCommand", () => {
 
       expect(collectColumnMapping).toHaveBeenCalledWith("file.csv");
       expect(mockParser.parse).toHaveBeenCalled();
-      expect(mockImportTransactions.save).toHaveBeenCalledWith(parsed);
+      // save() receives DTOs (mapped from parser output)
+      expect(mockImportTransactions.save).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.objectContaining({ amount: -42, id: "t1" })]),
+      );
     });
 
     it("with TTY prompts for categorization", async () => {

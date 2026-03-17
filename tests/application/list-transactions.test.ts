@@ -3,7 +3,6 @@ import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { ListTransactions } from "../../src/application/usecase/list-transactions.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
@@ -28,19 +27,23 @@ describe("ListTransactions", () => {
 
   it("returns transactions for the given month", () => {
     txnRepo.saveAll([txn("t1", "2026-03-01"), txn("t2", "2026-03-15")]);
-    const result = useCase.findByMonth(Month.from("2026-03"));
+    const result = useCase.execute("2026-03");
     expect(result).toHaveLength(2);
   });
 
   it("excludes transactions from other months", () => {
     txnRepo.saveAll([txn("t1", "2026-03-01"), txn("t2", "2026-04-01")]);
-    const result = useCase.findByMonth(Month.from("2026-03"));
+    const result = useCase.execute("2026-03");
     expect(result).toHaveLength(1);
     expect(result[0]?.id).toBe("t1");
   });
 
   it("returns empty array when no transactions exist for the month", () => {
-    const result = useCase.findByMonth(Month.from("2026-03"));
+    const result = useCase.execute("2026-03");
     expect(result).toHaveLength(0);
+  });
+
+  it("throws on invalid month format", () => {
+    expect(() => useCase.execute("not-a-month")).toThrow();
   });
 });

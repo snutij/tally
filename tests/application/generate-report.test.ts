@@ -4,7 +4,6 @@ import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
@@ -29,53 +28,48 @@ describe("GenerateReport", () => {
   });
 
   it("generates report with transactions (no budget needed)", () => {
-    const month = Month.from("2026-03");
     txnRepo.saveAll([
       makeTxn("1", 3000, "2026-03-01", "inc01"),
       makeTxn("2", -800, "2026-03-05", "n01"),
     ]);
 
-    const report = useCase.execute(month);
-    expect(report.totalIncomeActual.cents).toBe(300_000);
-    expect(report.totalExpenseActual.cents).toBe(80_000);
+    const report = useCase.execute("2026-03");
+    expect(report.totalIncomeActual).toBe(3000);
+    expect(report.totalExpenseActual).toBe(800);
     expect(report.transactionCount).toBe(2);
   });
 
   it("returns empty report when no transactions exist", () => {
-    const month = Month.from("2026-03");
-    const report = useCase.execute(month);
-    expect(report.totalExpenseActual.cents).toBe(0);
+    const report = useCase.execute("2026-03");
+    expect(report.totalExpenseActual).toBe(0);
     expect(report.transactionCount).toBe(0);
   });
 
   it("only includes transactions from the requested month", () => {
-    const march = Month.from("2026-03");
     txnRepo.saveAll([
       makeTxn("1", -800, "2026-03-01", "n01"),
       makeTxn("2", -800, "2026-04-01", "n01"),
     ]);
 
-    const report = useCase.execute(march);
+    const report = useCase.execute("2026-03");
     expect(report.transactionCount).toBe(1);
-    expect(report.totalExpenseActual.cents).toBe(80_000);
+    expect(report.totalExpenseActual).toBe(800);
   });
 
   it("handles uncategorized transactions gracefully", () => {
-    const month = Month.from("2026-03");
     txnRepo.saveAll([makeTxn("1", -50, "2026-03-15")]);
 
-    const report = useCase.execute(month);
+    const report = useCase.execute("2026-03");
     expect(report.transactionCount).toBe(1);
-    expect(report.uncategorized.cents).toBe(5000);
-    expect(report.totalExpenseActual.cents).toBe(0);
+    expect(report.uncategorized).toBe(50);
+    expect(report.totalExpenseActual).toBe(0);
   });
 
   it("accepts custom spending targets", () => {
-    const month = Month.from("2026-03");
     txnRepo.saveAll([makeTxn("1", 2000, "2026-03-01", "inc01")]);
 
-    const report = useCase.execute(month, { invest: 10, needs: 60, wants: 30 });
+    const report = useCase.execute("2026-03", { invest: 10, needs: 60, wants: 30 });
     const needs = report.groups.find((grp) => grp.group === "NEEDS");
-    expect(needs?.budgeted.cents).toBe(120_000); // 2000 × 60%
+    expect(needs?.budgeted).toBe(1200); // 2000 × 60%
   });
 });

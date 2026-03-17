@@ -18,11 +18,11 @@ describe("ListRules", () => {
   it("returns all rules", () => {
     ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
     ruleRepo.save(createCategoryRule(String.raw`\bmonoprix\b`, "n02", "learned"));
-    expect(useCase.findAll()).toHaveLength(2);
+    expect(useCase.execute()).toHaveLength(2);
   });
 
   it("returns empty array when no rules exist", () => {
-    expect(useCase.findAll()).toHaveLength(0);
+    expect(useCase.execute()).toHaveLength(0);
   });
 });
 
@@ -45,6 +45,11 @@ describe("AddRule", () => {
   it("persists the rule in the repository", () => {
     useCase.execute(String.raw`\bmonoprix\b`, "n02");
     expect(ruleRepo.findByPattern(String.raw`\bmonoprix\b`)).toBeDefined();
+  });
+
+  it("throws DomainError for empty pattern", () => {
+    expect(() => useCase.execute("", "n02")).toThrow(DomainError);
+    expect(() => useCase.execute("  ", "n02")).toThrow(/must not be empty/);
   });
 
   it("throws DomainError for invalid regex", () => {
@@ -83,5 +88,10 @@ describe("RemoveRule", () => {
   it("returns false when pattern not found", () => {
     const result = useCase.execute(String.raw`\bnotfound\b`);
     expect(result).toBe(false);
+  });
+
+  it("throws DomainError for empty pattern", () => {
+    expect(() => useCase.execute("")).toThrow(DomainError);
+    expect(() => useCase.execute("  ")).toThrow(DomainError);
   });
 });

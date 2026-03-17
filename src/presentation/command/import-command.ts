@@ -3,13 +3,13 @@ import { Command } from "commander";
 import type { CsvColumnMappingParams } from "../../infrastructure/csv/csv-column-mapping.js";
 import type { ImportTransactions } from "../../application/usecase/import-transactions.js";
 import type { LearnCategoryRules } from "../../application/usecase/learn-category-rules.js";
-import { Month } from "../../domain/value-object/month.js";
 import type { Renderer } from "../renderer/renderer.js";
 import type { SeedMockData } from "../../application/usecase/seed-mock-data.js";
 import type { TransactionParser } from "../../application/gateway/transaction-parser.js";
 import type { UnitOfWork } from "../../application/gateway/unit-of-work.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
 import { collectColumnMapping } from "../prompt/column-mapping-prompt.js";
+import { toTransactionDto } from "../../application/dto/transaction-dto.js";
 
 interface ImportCommandDeps {
   parserFactory: (mapping: CsvColumnMappingParams) => TransactionParser;
@@ -31,12 +31,12 @@ export function createImportCommand(
     .description("Seed DB with pre-categorized mock data for testing")
     .argument("[month]", "Month in YYYY-MM format (defaults to current month)")
     .action((monthStr?: string) => {
-      const month = Month.from(monthStr ?? new Date().toISOString().slice(0, 7));
-      const result = seedMockData.execute(month);
+      const monthValue = monthStr ?? new Date().toISOString().slice(0, 7);
+      const result = seedMockData.execute(monthValue);
       console.log(
         deps.renderer.render({
           mock: true,
-          month: month.value,
+          month: monthValue,
           transactionCount: result.transactionCount,
         }),
       );
@@ -56,7 +56,7 @@ export function createImportCommand(
 
       const mapping = await collectColumnMapping(file);
       const parser = deps.parserFactory(mapping);
-      const parsed = parser.parse(file);
+      const parsed = parser.parse(file).map((txn) => toTransactionDto(txn));
 
       if (!opts.categorize) {
         let result: { count: number } = { count: 0 };

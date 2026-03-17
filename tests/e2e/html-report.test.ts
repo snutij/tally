@@ -6,10 +6,10 @@ import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transacti
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
-import { Month } from "../../src/domain/value-object/month.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
+import { toTransactionDto } from "../../src/application/dto/transaction-dto.js";
 
 // credit-mutuel-sample.csv: Date;Date de valeur;Montant;Libellé;Solde
 const CSV_MAPPING = new CsvColumnMapping({
@@ -27,7 +27,6 @@ describe("e2e: HTML report output", () => {
   const renderer = new HtmlRenderer();
 
   const CSV = join(import.meta.dirname, "../fixtures/credit-mutuel-sample.csv");
-  const month = Month.from("2026-03");
   const parser = new CsvTransactionParser(CSV_MAPPING);
 
   beforeEach(() => {
@@ -48,22 +47,22 @@ describe("e2e: HTML report output", () => {
     const parsed = parser.parse(CSV);
     const categorized = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return txn.categorize(CategoryId("n01"));
+        return toTransactionDto(txn.categorize(CategoryId("n01")));
       }
       if (txn.label.includes("GROCERY")) {
-        return txn.categorize(CategoryId("n02"));
+        return toTransactionDto(txn.categorize(CategoryId("n02")));
       }
       if (txn.label.includes("SALARY")) {
-        return txn.categorize(CategoryId("inc01"));
+        return toTransactionDto(txn.categorize(CategoryId("inc01")));
       }
       if (txn.label.includes("RESTAURANT")) {
-        return txn.categorize(CategoryId("w02"));
+        return toTransactionDto(txn.categorize(CategoryId("w02")));
       }
-      return txn;
+      return toTransactionDto(txn);
     });
     importTxns.save(categorized);
 
-    const report = generateReport.execute(month);
+    const report = generateReport.execute("2026-03");
     const html = renderer.render(report);
 
     expect(html).toMatch(/^<!DOCTYPE html>/);

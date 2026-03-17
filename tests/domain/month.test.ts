@@ -31,6 +31,10 @@ describe("Month", () => {
     expect(Month.from("2026-03").toString()).toBe("2026-03");
   });
 
+  it("converts to JSON", () => {
+    expect(Month.from("2026-03").toJSON()).toBe("2026-03");
+  });
+
   it("returns days in month for regular months", () => {
     expect(Month.from("2024-01").daysInMonth()).toBe(31);
     expect(Month.from("2024-04").daysInMonth()).toBe(30);

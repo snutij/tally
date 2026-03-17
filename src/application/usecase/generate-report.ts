@@ -3,8 +3,8 @@ import {
   DEFAULT_SPENDING_TARGETS,
   type SpendingTargets,
 } from "../../domain/config/spending-targets.js";
-import type { Month } from "../../domain/value-object/month.js";
-import type { MonthlyReport } from "../../domain/read-model/monthly-report.js";
+import { type MonthlyReportDto, toMonthlyReportDto } from "../dto/report-dto.js";
+import { Month } from "../../domain/value-object/month.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
 import { computeMonthlyReport } from "../../domain/service/compute-monthly-report.js";
 
@@ -17,8 +17,10 @@ export class GenerateReport {
     this.txnRepo = txnRepo;
   }
 
-  execute(month: Month, targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): MonthlyReport {
+  execute(monthStr: string, targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): MonthlyReportDto {
+    const month = Month.from(monthStr);
     const transactions = this.txnRepo.findByMonth(month);
-    return computeMonthlyReport(month, targets, transactions, DEFAULT_CATEGORY_MAP);
+    const report = computeMonthlyReport(month, targets, transactions, DEFAULT_CATEGORY_MAP);
+    return toMonthlyReportDto(report);
   }
 }

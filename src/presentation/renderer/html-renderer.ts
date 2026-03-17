@@ -1,11 +1,9 @@
 import {
-  type GroupSummary,
-  type MonthlyReport,
-  type ReportKpis,
-  isMonthlyReport,
-} from "../../domain/read-model/monthly-report.js";
-import { CategoryGroup } from "../../domain/value-object/category-group.js";
-import type { Money } from "../../domain/value-object/money.js";
+  type GroupSummaryDto,
+  type MonthlyReportDto,
+  type ReportKpisDto,
+  isMonthlyReportDto,
+} from "../../application/dto/report-dto.js";
 import type { Renderer } from "./renderer.js";
 
 const MONTH_NAMES = [
@@ -33,11 +31,11 @@ function esc(str: string): string {
     .replaceAll('"', "&quot;");
 }
 
-function deltaColor(delta: Money): string {
-  if (delta.isPositive()) {
+function deltaColor(delta: number): string {
+  if (delta > 0) {
     return "under-budget";
   }
-  if (delta.isNegative()) {
+  if (delta < 0) {
     return "over-budget";
   }
   return "";
@@ -84,15 +82,16 @@ function item(label: string, value: string, cls = ""): string {
   return `<div class="total-item"><span class="total-label">${label}</span><span class="total-value${cls ? ` ${cls}` : ""}">${value}</span></div>`;
 }
 
-function fmt(money: Money): string {
-  return `${money.format()} €`;
+function fmt(amount: number): string {
+  const sign = amount < 0 ? "-" : "";
+  return `${sign}${Math.abs(amount).toFixed(2)} €`;
 }
 
-function fmtDelta(delta: Money, signed: boolean): string {
-  if (!signed || delta.isZero()) {
+function fmtDelta(delta: number, signed: boolean): string {
+  if (!signed || delta === 0) {
     return fmt(delta);
   }
-  if (delta.isPositive()) {
+  if (delta > 0) {
     return `+${fmt(delta)}`;
   }
   return fmt(delta);
@@ -101,7 +100,7 @@ function fmtDelta(delta: Money, signed: boolean): string {
 export class HtmlRenderer implements Renderer {
   // eslint-disable-next-line class-methods-use-this -- implements Renderer interface
   render(data: unknown): string {
-    if (isMonthlyReport(data)) {
+    if (isMonthlyReportDto(data)) {
       return HtmlRenderer.renderReport(data);
     }
     return HtmlRenderer.wrapHtml("Data", `<pre>${esc(JSON.stringify(data, undefined, 2))}</pre>`);
@@ -109,7 +108,7 @@ export class HtmlRenderer implements Renderer {
 
   // ── Report ─────────────────────────────────────────────
 
-  private static renderReport(report: MonthlyReport): string {
+  private static renderReport(report: MonthlyReportDto): string {
     const sections = [
       HtmlRenderer.heroHeader(report, "Financial Report"),
       HtmlRenderer.kpiSection(report.kpis),
@@ -122,8 +121,8 @@ export class HtmlRenderer implements Renderer {
     return HtmlRenderer.wrapHtml(`Monthly Report — ${report.month}`, sections.join("\n"));
   }
 
-  private static heroHeader(ref: { month: unknown }, eyebrow: string): string {
-    const [year, monthNum] = `${ref.month}`.split("-") as [string, string];
+  private static heroHeader(ref: { month: string }, eyebrow: string): string {
+    const [year, monthNum] = ref.month.split("-") as [string, string];
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- monthNum is 01-12, always valid index
     const monthName = MONTH_NAMES[Number.parseInt(monthNum, 10) - 1]!;
     return `<header class="hero">
@@ -132,7 +131,7 @@ export class HtmlRenderer implements Renderer {
 </header>`;
   }
 
-  private static kpiSection(kpis: ReportKpis): string {
+  private static kpiSection(kpis: ReportKpisDto): string {
     const cards = [
       card("Savings Rate", fmtPct(kpis.savingsRate), true),
       card("Daily Avg Spending", fmt(kpis.dailyAverageSpending)),
@@ -146,7 +145,7 @@ export class HtmlRenderer implements Renderer {
 </section>`;
   }
 
-  private static allocationBar(kpis: ReportKpis): string {
+  private static allocationBar(kpis: ReportKpisDto): string {
     const needsPct = kpis.fiftyThirtyTwenty.needs ?? 0;
     const wantsPct = kpis.fiftyThirtyTwenty.wants ?? 0;
     const inv = kpis.fiftyThirtyTwenty.investments ?? 0;
@@ -169,10 +168,10 @@ export class HtmlRenderer implements Renderer {
 </div>`;
   }
 
-  private static groupTable(groups: GroupSummary[]): string {
+  private static groupTable(groups: GroupSummaryDto[]): string {
     const rows = groups
       .map((grp) => {
-        const isExpense = grp.group !== CategoryGroup.INCOME;
+        const isExpense = grp.group !== "INCOME";
         const cls = isExpense ? deltaColor(grp.delta) : "";
         return `<tr>
   <td>${esc(grp.group)}</td>
@@ -192,7 +191,7 @@ export class HtmlRenderer implements Renderer {
 </section>`;
   }
 
-  private static insightsSection(kpis: ReportKpis): string {
+  private static insightsSection(kpis: ReportKpisDto): string {
     const hasSpending = kpis.topSpendingCategories.length > 0;
     const hasExpenses = kpis.largestExpenses.length > 0;
     if (!hasSpending && !hasExpenses) {
@@ -223,18 +222,18 @@ export class HtmlRenderer implements Renderer {
 </section>`;
   }
 
-  private static uncategorizedSection(amount: Money): string {
-    if (amount.isZero()) {
+  private static uncategorizedSection(amount: number): string {
+    if (amount === 0) {
       return "";
     }
     return `<section class="uncategorized"><span class="uncat-dot"></span><p>Uncategorized transactions total: <strong>${fmt(amount)}</strong></p></section>`;
   }
 
-  private static reportFooter(report: MonthlyReport): string {
+  private static reportFooter(report: MonthlyReportDto): string {
     let netCls = "";
-    if (report.net.isPositive()) {
+    if (report.net > 0) {
       netCls = "positive";
-    } else if (report.net.isNegative()) {
+    } else if (report.net < 0) {
       netCls = "negative";
     }
 

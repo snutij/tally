@@ -1,25 +1,16 @@
-import { CategoryGroup } from "../../domain/value-object/category-group.js";
-import { CategoryId } from "../../domain/value-object/category-id.js";
-import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { ExitPromptError } from "@inquirer/core";
-import type { Transaction } from "../../domain/entity/transaction.js";
+import type { TransactionDto } from "../../application/dto/transaction-dto.js";
+import { getCategoryChoiceGroups } from "../../application/category-choices.js";
 import select from "@inquirer/select";
-
-const GROUP_LABELS: Record<CategoryGroup, string> = {
-  INCOME: "— Income —",
-  INVESTMENTS: "— Investments —",
-  NEEDS: "— Needs —",
-  WANTS: "— Wants —",
-};
 
 type Choice = { value: string; name: string } | { type: "separator"; separator: string };
 
 export function buildCategoryChoices(): Choice[] {
   const choices: Choice[] = [];
 
-  for (const group of Object.values(CategoryGroup)) {
-    choices.push({ separator: GROUP_LABELS[group], type: "separator" as const });
-    for (const cat of DEFAULT_CATEGORIES.filter((dc) => dc.group === group)) {
+  for (const group of getCategoryChoiceGroups()) {
+    choices.push({ separator: group.label, type: "separator" as const });
+    for (const cat of group.categories) {
       choices.push({ name: cat.name, value: cat.id });
     }
   }
@@ -31,20 +22,21 @@ export function buildCategoryChoices(): Choice[] {
 }
 
 export interface CategorizeResult {
-  categorized: Transaction[];
+  categorized: TransactionDto[];
   interrupted: boolean;
 }
 
-export async function categorizePrompt(transactions: Transaction[]): Promise<CategorizeResult> {
+export async function categorizePrompt(transactions: TransactionDto[]): Promise<CategorizeResult> {
   const choices = buildCategoryChoices();
-  const result: Transaction[] = [];
+  const result: TransactionDto[] = [];
 
   try {
     for (let idx = 0; idx < transactions.length; idx += 1) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- idx bounded by transactions.length
       const txn = transactions[idx]!;
-      const sign = txn.amount.isNegative() ? "" : "+";
-      const header = `${idx + 1}/${transactions.length}  ${sign}${txn.amount.format()} €  ${txn.label}  (${txn.date})`;
+      const sign = txn.amount < 0 ? "" : "+";
+      const formatted = `${sign}${Math.abs(txn.amount).toFixed(2)}`;
+      const header = `${idx + 1}/${transactions.length}  ${formatted} €  ${txn.label}  (${txn.date})`;
 
       const answer = await select({
         choices,
@@ -55,7 +47,7 @@ export async function categorizePrompt(transactions: Transaction[]): Promise<Cat
       if (answer === "__skip__") {
         result.push(txn);
       } else {
-        result.push(txn.categorize(CategoryId(answer)));
+        result.push({ ...txn, categoryId: answer });
       }
     }
   } catch (error) {
