@@ -9,6 +9,7 @@ import { AddRule } from "../application/usecase/add-rule.js";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
 import { CategorizeTransactions } from "../application/usecase/categorize-transactions.js";
 import { Command } from "commander";
+import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
 import { DomainError } from "../domain/error/index.js";
 import { ExitPromptError } from "@inquirer/core";
@@ -67,7 +68,7 @@ const renderer = {
 
 program.addCommand(
   createImportCommand(importTransactions, seedMockData, applyCategoryRules, learnCategoryRules, {
-    parserFactory: (mapping) => new CsvTransactionParser(mapping),
+    parserFactory: (params) => new CsvTransactionParser(new CsvColumnMapping(params)),
     renderer,
     unitOfWork,
   }),

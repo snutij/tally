@@ -1,6 +1,6 @@
 import type { ApplyCategoryRules } from "../../application/usecase/apply-category-rules.js";
 import { Command } from "commander";
-import type { CsvColumnMapping } from "../../infrastructure/csv/csv-column-mapping.js";
+import type { CsvColumnMappingParams } from "../../infrastructure/csv/csv-column-mapping.js";
 import type { ImportTransactions } from "../../application/usecase/import-transactions.js";
 import type { LearnCategoryRules } from "../../application/usecase/learn-category-rules.js";
 import { Month } from "../../domain/value-object/month.js";
@@ -12,7 +12,7 @@ import { categorizePrompt } from "../prompt/categorize-prompt.js";
 import { collectColumnMapping } from "../prompt/column-mapping-prompt.js";
 
 interface ImportCommandDeps {
-  parserFactory: (mapping: CsvColumnMapping) => TransactionParser;
+  parserFactory: (mapping: CsvColumnMappingParams) => TransactionParser;
   renderer: Renderer;
   unitOfWork: UnitOfWork;
 }

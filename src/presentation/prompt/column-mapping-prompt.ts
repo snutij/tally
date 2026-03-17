@@ -1,4 +1,7 @@
-import { type ColumnField, CsvColumnMapping } from "../../infrastructure/csv/csv-column-mapping.js";
+import type {
+  ColumnField,
+  CsvColumnMappingParams,
+} from "../../infrastructure/csv/csv-column-mapping.js";
 import { decodeFileContent } from "../../infrastructure/csv/encoding.js";
 import { detectDateFormat } from "../../infrastructure/csv/detect-date-format.js";
 import { detectDecimalSeparator } from "../../infrastructure/csv/detect-decimal-separator.js";
@@ -45,7 +48,7 @@ function validateFields(fields: ColumnField[]): string | undefined {
   return undefined;
 }
 
-export async function collectColumnMapping(filePath: string): Promise<CsvColumnMapping> {
+export async function collectColumnMapping(filePath: string): Promise<CsvColumnMappingParams> {
   const rawContent = decodeFileContent(readFileSync(filePath));
   const lines = rawContent.split("\n").filter((line) => line.trim().length > 0);
 
@@ -125,7 +128,7 @@ export async function collectColumnMapping(filePath: string): Promise<CsvColumnM
         decimalSeparator = answer as "," | ".";
       }
 
-      return new CsvColumnMapping({ dateFormat, decimalSeparator, delimiter, fields });
+      return { dateFormat, decimalSeparator, delimiter, fields };
     }
   }
 }
