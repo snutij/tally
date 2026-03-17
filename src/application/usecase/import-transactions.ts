@@ -30,7 +30,9 @@ export class ImportTransactions {
   } {
     const ids = transactions.map((dto) => TransactionId(dto.id));
     const existing = this.txnRepo.findByIds(ids);
-    const categorizedIds = new Set(existing.filter((txn) => txn.categoryId).map((txn) => txn.id));
+    const categorizedIds = new Set(
+      existing.filter((txn) => txn.isCategorized).map((txn) => txn.id),
+    );
     const alreadyCategorized: TransactionDto[] = [];
     const uncategorized: TransactionDto[] = [];
     for (const dto of transactions) {
