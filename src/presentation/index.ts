@@ -9,18 +9,22 @@ import { AddRule } from "../application/usecase/add-rule.js";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
 import { Command } from "commander";
 import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
+import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector-impl.js";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
 import { DomainError } from "../application/error.js";
 import { ExitPromptError } from "@inquirer/core";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
+import { ImportCsvWorkflow } from "../application/usecase/import-csv-workflow.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { LearnCategoryRules } from "../application/usecase/learn-category-rules.js";
 import { ListRules } from "../application/usecase/list-rules.js";
 import { ListTransactions } from "../application/usecase/list-transactions.js";
+import { MockDataGeneratorImpl } from "../infrastructure/mock/mock-data-generator-impl.js";
 import { RemoveRule } from "../application/usecase/remove-rule.js";
 import { SaveCategorizedTransactions } from "../application/usecase/save-categorized-transactions.js";
 import { SeedMockData } from "../application/usecase/seed-mock-data.js";
+import { Sha256IdGenerator } from "../infrastructure/id/sha256-id-generator.js";
 import { createDbCommand } from "./command/db-command.js";
 import { createImportCommand } from "./command/import-command.js";
 import { createReportCommand } from "./command/report-command.js";
@@ -36,19 +40,29 @@ if (!existsSync(dataDir)) {
 // --- Composition root ---
 const { txnRepo, ruleRepo, unitOfWork } = openDatabase(dbPath);
 
+const idGenerator = new Sha256IdGenerator();
+const mockDataGenerator = new MockDataGeneratorImpl();
+const csvFormatDetector = new CsvFormatDetectorImpl();
 const importTransactions = new ImportTransactions(txnRepo);
 const generateReport = new GenerateReport(txnRepo);
-const seedMockData = new SeedMockData(txnRepo);
+const seedMockData = new SeedMockData(txnRepo, mockDataGenerator);
 const applyCategoryRules = new ApplyCategoryRules(ruleRepo);
 const learnCategoryRules = new LearnCategoryRules(
   ruleRepo,
   getDefaultPrefixesForLocale(DEFAULT_LOCALE),
+  idGenerator,
+);
+const importCsvWorkflow = new ImportCsvWorkflow(
+  importTransactions,
+  applyCategoryRules,
+  learnCategoryRules,
+  unitOfWork,
 );
 const listTransactions = new ListTransactions(txnRepo);
 const findUncategorizedTransactions = new FindUncategorizedTransactions(txnRepo);
 const saveCategorizedTransactions = new SaveCategorizedTransactions(txnRepo);
 const listRules = new ListRules(ruleRepo);
-const addRule = new AddRule(ruleRepo);
+const addRule = new AddRule(ruleRepo, idGenerator);
 const removeRule = new RemoveRule(ruleRepo);
 
 // --- CLI ---
@@ -69,10 +83,10 @@ const renderer = {
 };
 
 program.addCommand(
-  createImportCommand(importTransactions, seedMockData, applyCategoryRules, learnCategoryRules, {
+  createImportCommand(importTransactions, seedMockData, importCsvWorkflow, {
+    csvFormatDetector,
     parserFactory: (params) => new CsvTransactionParser(new CsvColumnMapping(params)),
     renderer,
-    unitOfWork,
   }),
 );
 program.addCommand(createReportCommand(generateReport, renderer));
@@ -85,7 +99,7 @@ program.addCommand(
   ),
 );
 program.addCommand(createRulesCommand(listRules, addRule, removeRule, renderer));
-program.addCommand(createDbCommand());
+program.addCommand(createDbCommand(dbPath));
 
 try {
   await program.parseAsync();

@@ -1,8 +1,7 @@
 import { existsSync, unlinkSync } from "node:fs";
 import { Command } from "commander";
-import { dbPath } from "../../infrastructure/persistence/data-dir.js";
 
-export function createDbCommand(): Command {
+export function createDbCommand(dbPath: string): Command {
   const db = new Command("db").description("Database maintenance");
 
   db.command("reset")

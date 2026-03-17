@@ -9,6 +9,14 @@ import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 import type { UnitOfWork } from "../../src/application/gateway/unit-of-work.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
+
+function makeTestRule(
+  pattern: string,
+  categoryId: string,
+  source: "default" | "learned",
+): ReturnType<typeof createCategoryRule> {
+  return createCategoryRule(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
+}
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
@@ -39,7 +47,7 @@ describe("SqliteRepository", () => {
 
     it("saves and retrieves a learned rule", () => {
       // Use a pattern not in the default ruleset to avoid conflicts
-      const rule = createCategoryRule(String.raw`\bcustommerchant\b`, "w06", "learned");
+      const rule = makeTestRule(String.raw`\bcustommerchant\b`, "w06", "learned");
       ruleRepo.save(rule);
       const found = ruleRepo.findByPattern(String.raw`\bcustommerchant\b`);
       expect(found).toBeDefined();
@@ -49,7 +57,7 @@ describe("SqliteRepository", () => {
 
     it("upserts an existing rule (learned overrides default)", () => {
       // spotify is a default rule → w06; override it with a learned rule → w01
-      const learnedRule = createCategoryRule(String.raw`\bspotify\b`, "w01", "learned");
+      const learnedRule = makeTestRule(String.raw`\bspotify\b`, "w01", "learned");
       ruleRepo.save(learnedRule);
       const found = ruleRepo.findByPattern(String.raw`\bspotify\b`);
       expect(found?.source).toBe("learned");
@@ -61,7 +69,7 @@ describe("SqliteRepository", () => {
     });
 
     it("removeByPattern deletes the rule", () => {
-      const rule = createCategoryRule(String.raw`\btoremove\b`, "w01", "learned");
+      const rule = makeTestRule(String.raw`\btoremove\b`, "w01", "learned");
       ruleRepo.save(rule);
       ruleRepo.removeByPattern(String.raw`\btoremove\b`);
       expect(ruleRepo.findByPattern(String.raw`\btoremove\b`)).toBeUndefined();
@@ -69,7 +77,7 @@ describe("SqliteRepository", () => {
 
     it("re-opening DB does not overwrite learned rule with default", () => {
       const dbPath = join(tmpDir, "test.db");
-      const learnedRule = createCategoryRule(String.raw`\bcarrefour\b`, "w02", "learned");
+      const learnedRule = makeTestRule(String.raw`\bcarrefour\b`, "w02", "learned");
       ruleRepo.removeByPattern(String.raw`\bcarrefour\b`);
       ruleRepo.save(learnedRule);
       close();
@@ -131,7 +139,7 @@ describe("SqliteRepository", () => {
             source: "csv",
           }),
         ]);
-        ruleRepo.save(createCategoryRule(String.raw`\buow\b`, "w01", "learned"));
+        ruleRepo.save(makeTestRule(String.raw`\buow\b`, "w01", "learned"));
       });
       expect(txnRepo.findByMonth(Month.from("2026-03"))).toHaveLength(1);
       expect(ruleRepo.findByPattern(String.raw`\buow\b`)).toBeDefined();

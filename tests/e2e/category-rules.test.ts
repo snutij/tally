@@ -6,9 +6,11 @@ import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mappin
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
 import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
+import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
+import { toTransactionDto } from "../../src/application/dto/transaction-dto.js";
 
 const CSV_MAPPING = new CsvColumnMapping({
   dateFormat: "DD/MM/YYYY",
@@ -31,7 +33,11 @@ describe("e2e: auto-categorization rules", () => {
     const { close: closeDb, ruleRepo } = openDatabase(join(tmpDir, "test.db"));
     close = closeDb;
     applyCategoryRules = new ApplyCategoryRules(ruleRepo);
-    learnCategoryRules = new LearnCategoryRules(ruleRepo, FR_BANK_PREFIXES);
+    learnCategoryRules = new LearnCategoryRules(
+      ruleRepo,
+      FR_BANK_PREFIXES,
+      new Sha256IdGenerator(),
+    );
   });
 
   afterEach(() => {
@@ -40,7 +46,7 @@ describe("e2e: auto-categorization rules", () => {
   });
 
   it("auto-categorizes transactions matching default rules, leaves others unmatched", () => {
-    const parsed = parser.parse(CSV);
+    const parsed = parser.parse(CSV).map((txn) => toTransactionDto(txn));
     expect(parsed.length).toBeGreaterThan(0);
 
     const { matched, unmatched } = applyCategoryRules.apply(parsed);
@@ -52,24 +58,20 @@ describe("e2e: auto-categorization rules", () => {
   });
 
   it("learned rules are applied on subsequent imports", () => {
-    const parsed = parser.parse(CSV);
-    const [firstTxn] = parsed;
+    const rawParsed = parser.parse(CSV);
+    const [firstTxn] = rawParsed;
     if (!firstTxn) {
       return;
     }
 
     // Simulate user manually categorizing the first transaction
-    const manuallyCategorized = [firstTxn.categorize(CategoryId("n02"))];
+    const manuallyCategorized = [toTransactionDto(firstTxn.categorize(CategoryId("n02")))];
     learnCategoryRules.learn(manuallyCategorized);
 
     // On second import pass, the same transaction label should now auto-match
-    const { matched } = applyCategoryRules.apply([firstTxn]);
+    const { matched } = applyCategoryRules.apply([toTransactionDto(firstTxn)]);
 
     // Either it matched a default rule OR our newly learned rule — no crash
     expect(matched.length + 0).toBeGreaterThanOrEqual(0);
-
-    // The learned rule should exist in the repo
-    // (we can verify by checking that applying returns the transaction as matched with the learned category)
-    // Since we can't easily check pattern directly, just verify no exception was thrown
   });
 });

@@ -3,12 +3,15 @@ import { type CategoryRuleDto, toCategoryRuleDto } from "../dto/category-rule-dt
 import type { CategoryRuleRepository } from "../gateway/category-rule-repository.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { DomainError } from "../../domain/error/index.js";
+import type { IdGenerator } from "../gateway/id-generator.js";
 
 export class AddRule {
   private readonly ruleRepo: CategoryRuleRepository;
+  private readonly idGenerator: IdGenerator;
 
-  constructor(ruleRepo: CategoryRuleRepository) {
+  constructor(ruleRepo: CategoryRuleRepository, idGenerator: IdGenerator) {
     this.ruleRepo = ruleRepo;
+    this.idGenerator = idGenerator;
   }
 
   execute(pattern: string, categoryId: string): { categoryName: string; rule: CategoryRuleDto } {
@@ -25,7 +28,8 @@ export class AddRule {
       throw new DomainError(`A rule for pattern "${pattern}" already exists.`);
     }
 
-    const rule: CategoryRule = createCategoryRule(pattern, categoryId, "learned");
+    const id = this.idGenerator.fromPattern(pattern);
+    const rule: CategoryRule = createCategoryRule(id, pattern, categoryId, "learned");
     this.ruleRepo.save(rule);
     return { categoryName: category.name, rule: toCategoryRuleDto(rule) };
   }

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
+import { MockDataGeneratorImpl } from "../../src/infrastructure/mock/mock-data-generator-impl.js";
 import { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
@@ -14,7 +15,7 @@ describe("SeedMockData", () => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-mock-"));
     const { close: closeDb, txnRepo } = openDatabase(join(tmpDir, "test.db"));
     close = closeDb;
-    seedMockData = new SeedMockData(txnRepo);
+    seedMockData = new SeedMockData(txnRepo, new MockDataGeneratorImpl());
   });
 
   afterEach(() => {

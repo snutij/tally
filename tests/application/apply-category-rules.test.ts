@@ -5,6 +5,14 @@ import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositorie
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
+function rule(
+  pattern: string,
+  categoryId: string,
+  source: "default" | "learned",
+): ReturnType<typeof createCategoryRule> {
+  return createCategoryRule(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
+}
+
 function txn(label: string, id = "t1"): TransactionDto {
   return {
     amount: -10,
@@ -26,7 +34,7 @@ describe("ApplyCategoryRules", () => {
   });
 
   it("auto-categorizes a matching transaction", () => {
-    ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleRepo.save(rule(String.raw`\bspotify\b`, "w06", "default"));
     const { matched, unmatched } = useCase.apply([txn("PRLV SEPA SPOTIFY")]);
     expect(matched).toHaveLength(1);
     expect(matched[0]?.categoryId).toBe("w06");
@@ -34,15 +42,15 @@ describe("ApplyCategoryRules", () => {
   });
 
   it("leaves non-matching transactions in unmatched", () => {
-    ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleRepo.save(rule(String.raw`\bspotify\b`, "w06", "default"));
     const { matched, unmatched } = useCase.apply([txn("SOME UNKNOWN MERCHANT")]);
     expect(matched).toHaveLength(0);
     expect(unmatched).toHaveLength(1);
   });
 
   it("learned rules take precedence over default rules", () => {
-    ruleRepo.save(createCategoryRule(String.raw`\bcarrefour\b`, "n02", "default"));
-    ruleRepo.save(createCategoryRule(String.raw`\bcarrefour\b`, "w02", "learned"));
+    ruleRepo.save(rule(String.raw`\bcarrefour\b`, "n02", "default"));
+    ruleRepo.save(rule(String.raw`\bcarrefour\b`, "w02", "learned"));
     const { matched } = useCase.apply([txn("CARREFOUR CITY PARIS")]);
     expect(matched[0]?.categoryId).toBe("w02");
   });
@@ -55,19 +63,19 @@ describe("ApplyCategoryRules", () => {
       pattern: "[bad",
       source: "default",
     });
-    ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleRepo.save(rule(String.raw`\bspotify\b`, "w06", "default"));
     const { matched } = useCase.apply([txn("PRLV SEPA SPOTIFY")]);
     expect(matched[0]?.categoryId).toBe("w06");
   });
 
   it("matching is case-insensitive", () => {
-    ruleRepo.save(createCategoryRule(String.raw`\bcarrefour\b`, "n02", "default"));
+    ruleRepo.save(rule(String.raw`\bcarrefour\b`, "n02", "default"));
     const { matched } = useCase.apply([txn("carte cb carrefour city")]);
     expect(matched[0]?.categoryId).toBe("n02");
   });
 
   it("matched transactions are DTOs with categoryId set", () => {
-    ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleRepo.save(rule(String.raw`\bspotify\b`, "w06", "default"));
     const { matched } = useCase.apply([txn("PRLV SEPA SPOTIFY")]);
     const [dto] = matched;
     expect(typeof dto?.categoryId).toBe("string");

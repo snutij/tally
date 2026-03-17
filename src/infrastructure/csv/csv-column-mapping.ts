@@ -1,26 +1,12 @@
-export type ColumnField =
-  | "date"
-  | "label"
-  | "amount"
-  | "expense"
-  | "income"
-  | "category"
-  | "ignore";
-
-export interface CsvColumnMappingParams {
-  fields: ColumnField[];
-  dateFormat: string;
-  decimalSeparator: "," | ".";
-  delimiter: string;
-}
+import type { CsvMappingConfig } from "../../application/dto/csv-mapping-config.js";
 
 export class CsvColumnMapping {
-  readonly fields: ColumnField[];
+  readonly fields: CsvMappingConfig["fields"];
   readonly dateFormat: string;
   readonly decimalSeparator: "," | ".";
   readonly delimiter: string;
 
-  constructor(params: CsvColumnMappingParams) {
+  constructor(params: CsvMappingConfig) {
     if (!params.fields.includes("date")) {
       throw new Error("CsvColumnMapping requires a 'date' field");
     }

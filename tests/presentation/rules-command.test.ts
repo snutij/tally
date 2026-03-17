@@ -8,6 +8,14 @@ import type { Renderer } from "../../src/presentation/renderer/renderer.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 import { createRulesCommand } from "../../src/presentation/command/rules-command.js";
 
+function makeTestRule(
+  pattern: string,
+  categoryId: string,
+  source: "default" | "learned",
+): ReturnType<typeof createCategoryRule> {
+  return createCategoryRule(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
+}
+
 describe("createRulesCommand", () => {
   let ruleRepo: InMemoryCategoryRuleRepository;
   let listRules: ListRules;
@@ -24,7 +32,7 @@ describe("createRulesCommand", () => {
   beforeEach(() => {
     ruleRepo = new InMemoryCategoryRuleRepository();
     listRules = new ListRules(ruleRepo);
-    addRule = new AddRule(ruleRepo);
+    addRule = new AddRule(ruleRepo, { fromPattern: (pat): string => `id-${pat}`.slice(0, 32) });
     removeRule = new RemoveRule(ruleRepo);
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -33,7 +41,7 @@ describe("createRulesCommand", () => {
 
   describe("list", () => {
     it("renders all rules via the renderer", async () => {
-      ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
+      ruleRepo.save(makeTestRule(String.raw`\bspotify\b`, "w06", "default"));
       await run("list");
       expect(mockRenderer.render).toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ pattern: "\\bspotify\\b" })]),
@@ -72,7 +80,7 @@ describe("createRulesCommand", () => {
     });
 
     it("rejects a duplicate pattern", async () => {
-      ruleRepo.save(createCategoryRule(String.raw`\bmonoprix\b`, "n02", "default"));
+      ruleRepo.save(makeTestRule(String.raw`\bmonoprix\b`, "n02", "default"));
       await run("add", String.raw`\bmonoprix\b`, "w01");
       expect(console.error).toHaveBeenCalledWith(expect.stringContaining("already exists"));
       expect(process.exitCode).toBe(1);
@@ -88,7 +96,7 @@ describe("createRulesCommand", () => {
 
   describe("remove", () => {
     it("removes an existing rule", async () => {
-      ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
+      ruleRepo.save(makeTestRule(String.raw`\bspotify\b`, "w06", "default"));
       await run("remove", String.raw`\bspotify\b`);
       expect(ruleRepo.findByPattern(String.raw`\bspotify\b`)).toBeUndefined();
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Rule removed"));

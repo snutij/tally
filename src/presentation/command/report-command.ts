@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { DEFAULT_SPENDING_TARGETS } from "../../domain/config/spending-targets.js";
+import { DEFAULT_SPENDING_TARGETS } from "../../application/config.js";
 import type { GenerateReport } from "../../application/usecase/generate-report.js";
 import type { Renderer } from "../renderer/renderer.js";
 

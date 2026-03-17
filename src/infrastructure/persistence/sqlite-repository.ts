@@ -7,6 +7,7 @@ import Database from "better-sqlite3";
 import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
 import type { Month } from "../../domain/value-object/month.js";
+import { Sha256IdGenerator } from "../id/sha256-id-generator.js";
 import { Transaction } from "../../domain/entity/transaction.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
@@ -61,8 +62,10 @@ function migrate(db: Database.Database): void {
   const insertRule = db.prepare(
     `INSERT OR IGNORE INTO category_rules (id, pattern, category_id, source) VALUES (?, ?, ?, ?)`,
   );
+  const idGenerator = new Sha256IdGenerator();
   for (const entry of getDefaultRulesForLocale(DEFAULT_LOCALE)) {
-    const rule = createCategoryRule(entry.pattern, entry.categoryId, "default");
+    const id = idGenerator.fromPattern(entry.pattern);
+    const rule = createCategoryRule(id, entry.pattern, entry.categoryId, "default");
     insertRule.run(rule.id, rule.pattern, rule.categoryId, rule.source);
   }
 }

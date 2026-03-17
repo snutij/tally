@@ -1,6 +1,5 @@
 import { CategoryId } from "../value-object/category-id.js";
 import { DomainError } from "../error/index.js";
-import { createHash } from "node:crypto";
 
 export type CategoryRuleSource = "default" | "learned";
 
@@ -17,6 +16,7 @@ export interface DefaultRuleEntry {
 }
 
 export function createCategoryRule(
+  id: string,
   pattern: string,
   categoryId: string,
   source: CategoryRuleSource,
@@ -27,6 +27,5 @@ export function createCategoryRule(
   } catch {
     throw new DomainError(`Invalid regex pattern: "${pattern}"`);
   }
-  const id = createHash("sha256").update(pattern).digest("hex").slice(0, 32);
   return { categoryId: CategoryId(categoryId), id, pattern, source };
 }

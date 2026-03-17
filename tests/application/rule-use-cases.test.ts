@@ -1,10 +1,23 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AddRule } from "../../src/application/usecase/add-rule.js";
 import { DomainError } from "../../src/domain/error/index.js";
+import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import { ListRules } from "../../src/application/usecase/list-rules.js";
 import { RemoveRule } from "../../src/application/usecase/remove-rule.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
+
+const stubIdGenerator: IdGenerator = {
+  fromPattern: (pattern: string) => `id-${pattern}`.slice(0, 32).padEnd(32, "-"),
+};
+
+function makeRule(
+  pattern: string,
+  categoryId: string,
+  source: "default" | "learned",
+): ReturnType<typeof createCategoryRule> {
+  return createCategoryRule(stubIdGenerator.fromPattern(pattern), pattern, categoryId, source);
+}
 
 describe("ListRules", () => {
   let ruleRepo: InMemoryCategoryRuleRepository;
@@ -16,8 +29,8 @@ describe("ListRules", () => {
   });
 
   it("returns all rules", () => {
-    ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
-    ruleRepo.save(createCategoryRule(String.raw`\bmonoprix\b`, "n02", "learned"));
+    ruleRepo.save(makeRule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleRepo.save(makeRule(String.raw`\bmonoprix\b`, "n02", "learned"));
     expect(useCase.execute()).toHaveLength(2);
   });
 
@@ -32,7 +45,7 @@ describe("AddRule", () => {
 
   beforeEach(() => {
     ruleRepo = new InMemoryCategoryRuleRepository();
-    useCase = new AddRule(ruleRepo);
+    useCase = new AddRule(ruleRepo, stubIdGenerator);
   });
 
   it("saves a learned rule and returns it with category name", () => {
@@ -63,7 +76,7 @@ describe("AddRule", () => {
   });
 
   it("throws DomainError for duplicate pattern", () => {
-    ruleRepo.save(createCategoryRule(String.raw`\bmonoprix\b`, "n02", "default"));
+    ruleRepo.save(makeRule(String.raw`\bmonoprix\b`, "n02", "default"));
     expect(() => useCase.execute(String.raw`\bmonoprix\b`, "n02")).toThrow(DomainError);
     expect(() => useCase.execute(String.raw`\bmonoprix\b`, "n02")).toThrow(/already exists/);
   });
@@ -79,7 +92,7 @@ describe("RemoveRule", () => {
   });
 
   it("removes an existing rule and returns true", () => {
-    ruleRepo.save(createCategoryRule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleRepo.save(makeRule(String.raw`\bspotify\b`, "w06", "default"));
     const result = useCase.execute(String.raw`\bspotify\b`);
     expect(result).toBe(true);
     expect(ruleRepo.findByPattern(String.raw`\bspotify\b`)).toBeUndefined();

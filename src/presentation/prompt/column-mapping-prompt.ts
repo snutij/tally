@@ -1,13 +1,6 @@
-import type {
-  ColumnField,
-  CsvColumnMappingParams,
-} from "../../infrastructure/csv/csv-column-mapping.js";
-import { decodeFileContent } from "../../infrastructure/csv/encoding.js";
-import { detectDateFormat } from "../../infrastructure/csv/detect-date-format.js";
-import { detectDecimalSeparator } from "../../infrastructure/csv/detect-decimal-separator.js";
-import { detectDelimiter } from "../../infrastructure/csv/detect-delimiter.js";
+import type { ColumnField, CsvMappingConfig } from "../../application/dto/csv-mapping-config.js";
+import type { CsvFormatDetector } from "../../application/gateway/csv-format-detector.js";
 import { parse } from "csv-parse/sync";
-import { readFileSync } from "node:fs";
 import select from "@inquirer/select";
 
 const FIELD_CHOICES: { name: string; value: ColumnField }[] = [
@@ -48,12 +41,15 @@ function validateFields(fields: ColumnField[]): string | undefined {
   return undefined;
 }
 
-export async function collectColumnMapping(filePath: string): Promise<CsvColumnMappingParams> {
-  const rawContent = decodeFileContent(readFileSync(filePath));
+export async function collectColumnMapping(
+  filePath: string,
+  detector: CsvFormatDetector,
+): Promise<CsvMappingConfig> {
+  const rawContent = detector.readFileContent(filePath);
   const lines = rawContent.split("\n").filter((line) => line.trim().length > 0);
 
   // 1. Detect delimiter
-  const delimResult = detectDelimiter(lines);
+  const delimResult = detector.detectDelimiter(lines);
   const delimiter = delimResult.confident
     ? delimResult.value
     : await select({
@@ -98,7 +94,7 @@ export async function collectColumnMapping(filePath: string): Promise<CsvColumnM
       // 4. Auto-detect date format from samples
       const dateIdx = fields.indexOf("date");
       const dateSamples = dataRows.map((row) => row[dateIdx] ?? "");
-      const dateFormatResult = detectDateFormat(dateSamples);
+      const dateFormatResult = detector.detectDateFormat(dateSamples);
       const dateFormat = dateFormatResult.confident
         ? dateFormatResult.value
         : await select({
@@ -112,7 +108,7 @@ export async function collectColumnMapping(filePath: string): Promise<CsvColumnM
         (field) => field === "amount" || field === "expense" || field === "income",
       );
       const amountSamples = amountIdx === -1 ? [] : dataRows.map((row) => row[amountIdx] ?? "");
-      const decimalResult = detectDecimalSeparator(amountSamples);
+      const decimalResult = detector.detectDecimalSeparator(amountSamples);
       let decimalSeparator: "," | ".";
       if (decimalResult.confident) {
         decimalSeparator = decimalResult.value;
