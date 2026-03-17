@@ -48,16 +48,6 @@ export class Money {
     return this.cents / 100;
   }
 
-  toJSON(): number {
-    return this.toEuros();
-  }
-
-  format(): string {
-    const euros = Math.abs(this.cents) / 100;
-    const sign = this.cents < 0 ? "-" : "";
-    return `${sign}${euros.toFixed(2)}`;
-  }
-
   equals(other: Money): boolean {
     return this.cents === other.cents;
   }

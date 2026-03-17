@@ -216,7 +216,6 @@ export function computeMonthlyReport(
   });
 
   return {
-    _type: "MonthlyReport",
     groups,
     kpis,
     month,

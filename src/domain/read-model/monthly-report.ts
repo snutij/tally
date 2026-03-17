@@ -41,7 +41,6 @@ export interface ReportKpis {
 }
 
 export interface MonthlyReport {
-  readonly _type: "MonthlyReport";
   readonly groups: GroupSummary[];
   readonly kpis: ReportKpis;
   readonly month: Month;
