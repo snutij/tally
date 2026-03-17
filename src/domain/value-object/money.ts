@@ -55,7 +55,7 @@ export class Money {
   format(): string {
     const euros = Math.abs(this.cents) / 100;
     const sign = this.cents < 0 ? "-" : "";
-    return `${sign}${euros.toFixed(2)} €`;
+    return `${sign}${euros.toFixed(2)}`;
   }
 
   equals(other: Money): boolean {

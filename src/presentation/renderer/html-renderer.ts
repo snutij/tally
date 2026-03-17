@@ -84,14 +84,18 @@ function item(label: string, value: string, cls = ""): string {
   return `<div class="total-item"><span class="total-label">${label}</span><span class="total-value${cls ? ` ${cls}` : ""}">${value}</span></div>`;
 }
 
+function fmt(money: Money): string {
+  return `${money.format()} €`;
+}
+
 function fmtDelta(delta: Money, signed: boolean): string {
   if (!signed || delta.isZero()) {
-    return delta.format();
+    return fmt(delta);
   }
   if (delta.isPositive()) {
-    return `+${delta.format()}`;
+    return `+${fmt(delta)}`;
   }
-  return delta.format();
+  return fmt(delta);
 }
 
 export class HtmlRenderer implements Renderer {
@@ -131,7 +135,7 @@ export class HtmlRenderer implements Renderer {
   private static kpiSection(kpis: ReportKpis): string {
     const cards = [
       card("Savings Rate", fmtPct(kpis.savingsRate), true),
-      card("Daily Avg Spending", kpis.dailyAverageSpending.format()),
+      card("Daily Avg Spending", fmt(kpis.dailyAverageSpending)),
       card("Uncategorized", fmtPct(kpis.uncategorizedRatio)),
     ];
 
@@ -172,8 +176,8 @@ export class HtmlRenderer implements Renderer {
         const cls = isExpense ? deltaColor(grp.delta) : "";
         return `<tr>
   <td>${esc(grp.group)}</td>
-  <td class="num">${grp.budgeted.format()}</td>
-  <td class="num">${grp.actual.format()}</td>
+  <td class="num">${fmt(grp.budgeted)}</td>
+  <td class="num">${fmt(grp.actual)}</td>
   <td class="num ${cls}">${fmtDelta(grp.delta, isExpense)}</td>
 </tr>`;
       })
@@ -199,7 +203,7 @@ export class HtmlRenderer implements Renderer {
       ? `<div class="insight-card"><h3>Top Spending</h3>${kpis.topSpendingCategories
           .map(
             (cat, idx) =>
-              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(cat.categoryName)}</span><span class="insight-value">${cat.actual.format()}</span></div>`,
+              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(cat.categoryName)}</span><span class="insight-value">${fmt(cat.actual)}</span></div>`,
           )
           .join("")}</div>`
       : "";
@@ -208,7 +212,7 @@ export class HtmlRenderer implements Renderer {
       ? `<div class="insight-card"><h3>Largest Expenses</h3>${kpis.largestExpenses
           .map(
             (expense, idx) =>
-              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(expense.label)}<span class="insight-date">${expense.date}</span></span><span class="insight-value">${expense.amount.format()}</span></div>`,
+              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(expense.label)}<span class="insight-date">${expense.date}</span></span><span class="insight-value">${fmt(expense.amount)}</span></div>`,
           )
           .join("")}</div>`
       : "";
@@ -223,7 +227,7 @@ export class HtmlRenderer implements Renderer {
     if (amount.isZero()) {
       return "";
     }
-    return `<section class="uncategorized"><span class="uncat-dot"></span><p>Uncategorized transactions total: <strong>${amount.format()}</strong></p></section>`;
+    return `<section class="uncategorized"><span class="uncat-dot"></span><p>Uncategorized transactions total: <strong>${fmt(amount)}</strong></p></section>`;
   }
 
   private static reportFooter(report: MonthlyReport): string {
@@ -236,10 +240,10 @@ export class HtmlRenderer implements Renderer {
 
     return `<footer class="footer-totals">
   <div class="totals-grid">
-    ${item("Income (Actual)", report.totalIncomeActual.format())}
-    ${item("Expense Target", report.totalExpenseTarget.format())}
-    ${item("Expenses (Actual)", report.totalExpenseActual.format())}
-    ${item("Net", report.net.format(), netCls)}
+    ${item("Income (Actual)", fmt(report.totalIncomeActual))}
+    ${item("Expense Target", fmt(report.totalExpenseTarget))}
+    ${item("Expenses (Actual)", fmt(report.totalExpenseActual))}
+    ${item("Net", fmt(report.net), netCls)}
     ${item("Transactions", `${report.transactionCount}`)}
   </div>
 </footer>

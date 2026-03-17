@@ -44,7 +44,7 @@ export async function categorizePrompt(transactions: Transaction[]): Promise<Cat
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- idx bounded by transactions.length
       const txn = transactions[idx]!;
       const sign = txn.amount.isNegative() ? "" : "+";
-      const header = `${idx + 1}/${transactions.length}  ${sign}${txn.amount.format()}  ${txn.label}  (${txn.date})`;
+      const header = `${idx + 1}/${transactions.length}  ${sign}${txn.amount.format()} €  ${txn.label}  (${txn.date})`;
 
       const answer = await select({
         choices,

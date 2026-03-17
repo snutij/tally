@@ -28,10 +28,10 @@ describe("Money", () => {
     expect(m1.subtract(m2).cents).toBe(300);
   });
 
-  it("formats as EUR string", () => {
-    expect(Money.fromCents(1050).format()).toBe("10.50 €");
-    expect(Money.fromCents(-1050).format()).toBe("-10.50 €");
-    expect(Money.zero().format()).toBe("0.00 €");
+  it("formats as number string without currency symbol", () => {
+    expect(Money.fromCents(1050).format()).toBe("10.50");
+    expect(Money.fromCents(-1050).format()).toBe("-10.50");
+    expect(Money.zero().format()).toBe("0.00");
   });
 
   it("converts to euros", () => {
