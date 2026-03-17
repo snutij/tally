@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import type { CategoryRuleRepository } from "../../src/application/gateway/category-rule-repository.js";
+import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Month } from "../../src/domain/value-object/month.js";
@@ -15,7 +16,13 @@ function makeTestRule(
   categoryId: string,
   source: "default" | "learned",
 ): ReturnType<typeof createCategoryRule> {
-  return createCategoryRule(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
+  return createCategoryRule(
+    `id-${pattern}`.slice(0, 32),
+    pattern,
+    categoryId,
+    source,
+    DEFAULT_CATEGORY_REGISTRY,
+  );
 }
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";

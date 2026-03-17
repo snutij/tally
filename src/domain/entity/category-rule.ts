@@ -1,4 +1,5 @@
 import { CategoryId } from "../value-object/category-id.js";
+import type { CategoryRegistry } from "../service/category-registry.js";
 import { DomainError } from "../error/index.js";
 
 export type CategoryRuleSource = "default" | "learned";
@@ -20,7 +21,9 @@ export function createCategoryRule(
   pattern: string,
   categoryId: string,
   source: CategoryRuleSource,
+  registry: CategoryRegistry,
 ): CategoryRule {
+  registry.assertValid(categoryId);
   try {
     // eslint-disable-next-line no-new -- validation only
     new RegExp(pattern, "i");

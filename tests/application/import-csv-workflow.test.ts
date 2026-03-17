@@ -5,6 +5,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
 import { ImportCsvWorkflow } from "../../src/application/usecase/import-csv-workflow.js";
@@ -32,7 +33,12 @@ describe("ImportCsvWorkflow", () => {
     ruleRepo = new InMemoryCategoryRuleRepository();
     const importTransactions = new ImportTransactions(txnRepo);
     const applyCategoryRules = new ApplyCategoryRules(ruleRepo);
-    const learnCategoryRules = new LearnCategoryRules(ruleRepo, [], stubIdGenerator);
+    const learnCategoryRules = new LearnCategoryRules(
+      ruleRepo,
+      [],
+      stubIdGenerator,
+      DEFAULT_CATEGORY_REGISTRY,
+    );
     const unitOfWork = { runInTransaction: (fn: () => void): void => fn() };
     workflow = new ImportCsvWorkflow(
       importTransactions,
@@ -82,7 +88,15 @@ describe("ImportCsvWorkflow", () => {
   });
 
   it("calls onAutoMatched callback when rules match", async () => {
-    ruleRepo.save(createCategoryRule("id-txn", String.raw`\btxn\b`, "n01", "default"));
+    ruleRepo.save(
+      createCategoryRule(
+        "id-txn",
+        String.raw`\btxn\b`,
+        "n01",
+        "default",
+        DEFAULT_CATEGORY_REGISTRY,
+      ),
+    );
     const onAutoMatched = vi.fn();
     await workflow.execute({ onAutoMatched, transactions: [dto("t1")] });
     // dto label is "txn-t1" which matches \btxn\b

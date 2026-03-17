@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AddRule } from "../../src/application/usecase/add-rule.js";
 import { Command } from "commander";
+import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import { ListRules } from "../../src/application/usecase/list-rules.js";
 import { RemoveRule } from "../../src/application/usecase/remove-rule.js";
@@ -13,7 +14,13 @@ function makeTestRule(
   categoryId: string,
   source: "default" | "learned",
 ): ReturnType<typeof createCategoryRule> {
-  return createCategoryRule(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
+  return createCategoryRule(
+    `id-${pattern}`.slice(0, 32),
+    pattern,
+    categoryId,
+    source,
+    DEFAULT_CATEGORY_REGISTRY,
+  );
 }
 
 describe("createRulesCommand", () => {
@@ -32,7 +39,11 @@ describe("createRulesCommand", () => {
   beforeEach(() => {
     ruleRepo = new InMemoryCategoryRuleRepository();
     listRules = new ListRules(ruleRepo);
-    addRule = new AddRule(ruleRepo, { fromPattern: (pat): string => `id-${pat}`.slice(0, 32) });
+    addRule = new AddRule(
+      ruleRepo,
+      { fromPattern: (pat): string => `id-${pat}`.slice(0, 32) },
+      DEFAULT_CATEGORY_REGISTRY,
+    );
     removeRule = new RemoveRule(ruleRepo);
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});

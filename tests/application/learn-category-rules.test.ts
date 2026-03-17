@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
@@ -15,7 +16,13 @@ function makeRule(
   categoryId: string,
   source: "default" | "learned",
 ): ReturnType<typeof createCategoryRule> {
-  return createCategoryRule(stubIdGenerator.fromPattern(pattern), pattern, categoryId, source);
+  return createCategoryRule(
+    stubIdGenerator.fromPattern(pattern),
+    pattern,
+    categoryId,
+    source,
+    DEFAULT_CATEGORY_REGISTRY,
+  );
 }
 
 function txn(label: string, categoryId?: string, id = "t1"): TransactionDto {
@@ -35,7 +42,12 @@ describe("LearnCategoryRules", () => {
 
   beforeEach(() => {
     ruleRepo = new InMemoryCategoryRuleRepository();
-    useCase = new LearnCategoryRules(ruleRepo, FR_BANK_PREFIXES, stubIdGenerator);
+    useCase = new LearnCategoryRules(
+      ruleRepo,
+      FR_BANK_PREFIXES,
+      stubIdGenerator,
+      DEFAULT_CATEGORY_REGISTRY,
+    );
   });
 
   it("creates a learned rule from a categorized transaction", () => {
@@ -48,6 +60,21 @@ describe("LearnCategoryRules", () => {
 
   it("does not create a rule for uncategorized (skipped) transactions", () => {
     useCase.learn([txn("SOME MERCHANT")]);
+    expect(ruleRepo.findAll()).toHaveLength(0);
+  });
+
+  it("skips transactions with unknown category IDs", () => {
+    // Simulate a DTO with an invalid categoryId (e.g., from corrupted data)
+    useCase.learn([
+      {
+        amount: -10,
+        categoryId: "nonexistent",
+        date: "2026-03-15",
+        id: "t1",
+        label: "PRLV SEPA SPOTIFY",
+        source: "csv",
+      },
+    ]);
     expect(ruleRepo.findAll()).toHaveLength(0);
   });
 

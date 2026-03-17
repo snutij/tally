@@ -1,0 +1,89 @@
+import { describe, expect, it } from "vitest";
+import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
+import { DomainError } from "../../src/domain/error/index.js";
+import { RuleBook } from "../../src/domain/aggregate/rule-book.js";
+import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
+
+function rule(
+  pattern: string,
+  categoryId: string,
+  source: "default" | "learned",
+): ReturnType<typeof createCategoryRule> {
+  return createCategoryRule(
+    `id-${pattern}`.slice(0, 32),
+    pattern,
+    categoryId,
+    source,
+    DEFAULT_CATEGORY_REGISTRY,
+  );
+}
+
+describe("RuleBook", () => {
+  describe("match()", () => {
+    it("returns categoryId when a rule matches", () => {
+      const book = new RuleBook([rule(String.raw`\bspotify\b`, "w06", "default")]);
+      expect(book.match("PRLV SEPA SPOTIFY")).toBe("w06");
+    });
+
+    it("returns undefined when no rule matches", () => {
+      const book = new RuleBook([rule(String.raw`\bspotify\b`, "w06", "default")]);
+      expect(book.match("UNKNOWN MERCHANT")).toBeUndefined();
+    });
+
+    it("returns undefined for empty book", () => {
+      const book = new RuleBook([]);
+      expect(book.match("anything")).toBeUndefined();
+    });
+
+    it("learned rules take precedence over default rules", () => {
+      const book = new RuleBook([
+        rule(String.raw`\bcarrefour\b`, "n02", "default"),
+        rule(String.raw`\bcarrefour\b`, "w02", "learned"),
+      ]);
+      expect(book.match("CARTE CB CARREFOUR CITY")).toBe("w02");
+    });
+
+    it("matching is case-insensitive", () => {
+      const book = new RuleBook([rule(String.raw`\bcarrefour\b`, "n02", "default")]);
+      expect(book.match("carte cb Carrefour city")).toBe("n02");
+    });
+
+    it("skips rules with invalid regex without crashing", () => {
+      const book = new RuleBook([
+        // Bypass factory validation to inject invalid pattern
+        { categoryId: "n02" as never, id: "x", pattern: "[bad", source: "default" },
+        rule(String.raw`\bspotify\b`, "w06", "default"),
+      ]);
+      expect(book.match("PRLV SEPA SPOTIFY")).toBe("w06");
+    });
+  });
+
+  describe("addRule()", () => {
+    it("adds a new unique rule", () => {
+      const book = new RuleBook([]);
+      book.addRule(rule(String.raw`\bspotify\b`, "w06", "default"));
+      expect(book.allRules()).toHaveLength(1);
+    });
+
+    it("throws DomainError for duplicate pattern", () => {
+      const book = new RuleBook([rule(String.raw`\bspotify\b`, "w06", "default")]);
+      expect(() => book.addRule(rule(String.raw`\bspotify\b`, "w06", "learned"))).toThrow(
+        DomainError,
+      );
+      expect(() => book.addRule(rule(String.raw`\bspotify\b`, "n01", "learned"))).toThrow(
+        /already exists/,
+      );
+    });
+  });
+
+  describe("allRules()", () => {
+    it("returns all rules", () => {
+      const rules = [
+        rule(String.raw`\bspotify\b`, "w06", "default"),
+        rule(String.raw`\bnetflix\b`, "w06", "learned"),
+      ];
+      const book = new RuleBook(rules);
+      expect(book.allRules()).toHaveLength(2);
+    });
+  });
+});

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AddRule } from "../../src/application/usecase/add-rule.js";
+import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { DomainError } from "../../src/domain/error/index.js";
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
@@ -16,7 +17,13 @@ function makeRule(
   categoryId: string,
   source: "default" | "learned",
 ): ReturnType<typeof createCategoryRule> {
-  return createCategoryRule(stubIdGenerator.fromPattern(pattern), pattern, categoryId, source);
+  return createCategoryRule(
+    stubIdGenerator.fromPattern(pattern),
+    pattern,
+    categoryId,
+    source,
+    DEFAULT_CATEGORY_REGISTRY,
+  );
 }
 
 describe("ListRules", () => {
@@ -45,7 +52,7 @@ describe("AddRule", () => {
 
   beforeEach(() => {
     ruleRepo = new InMemoryCategoryRuleRepository();
-    useCase = new AddRule(ruleRepo, stubIdGenerator);
+    useCase = new AddRule(ruleRepo, stubIdGenerator, DEFAULT_CATEGORY_REGISTRY);
   });
 
   it("saves a learned rule and returns it with category name", () => {

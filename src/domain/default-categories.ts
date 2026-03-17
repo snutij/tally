@@ -1,6 +1,7 @@
 import type { Category } from "./entity/category.js";
 import { CategoryGroup } from "./value-object/category-group.js";
 import { CategoryId } from "./value-object/category-id.js";
+import { CategoryRegistry } from "./service/category-registry.js";
 
 export interface CategoryMapEntry {
   readonly group: CategoryGroup;
@@ -58,3 +59,5 @@ export const DEFAULT_CATEGORIES: Category[] = [
   cat("inc03", "Allowances & Benefits", INC),
   cat("inc04", "Refund", INC),
 ];
+
+export const DEFAULT_CATEGORY_REGISTRY = new CategoryRegistry(DEFAULT_CATEGORIES);

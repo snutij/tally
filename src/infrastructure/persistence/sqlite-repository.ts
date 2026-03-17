@@ -1,8 +1,8 @@
 import { type CategoryRule, createCategoryRule } from "../../domain/entity/category-rule.js";
+import { DEFAULT_CATEGORIES, DEFAULT_CATEGORY_REGISTRY } from "../../domain/default-categories.js";
 import { DEFAULT_LOCALE, getDefaultRulesForLocale } from "../config/category-rules/index.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRuleRepository } from "../../application/gateway/category-rule-repository.js";
-import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import Database from "better-sqlite3";
 import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
@@ -65,7 +65,13 @@ function migrate(db: Database.Database): void {
   const idGenerator = new Sha256IdGenerator();
   for (const entry of getDefaultRulesForLocale(DEFAULT_LOCALE)) {
     const id = idGenerator.fromPattern(entry.pattern);
-    const rule = createCategoryRule(id, entry.pattern, entry.categoryId, "default");
+    const rule = createCategoryRule(
+      id,
+      entry.pattern,
+      entry.categoryId,
+      "default",
+      DEFAULT_CATEGORY_REGISTRY,
+    );
     insertRule.run(rule.id, rule.pattern, rule.categoryId, rule.source);
   }
 }

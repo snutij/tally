@@ -11,6 +11,7 @@ import { Command } from "commander";
 import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
 import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector-impl.js";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
+import { DEFAULT_CATEGORY_REGISTRY } from "../domain/default-categories.js";
 import { DomainError } from "../application/error.js";
 import { ExitPromptError } from "@inquirer/core";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
@@ -51,6 +52,7 @@ const learnCategoryRules = new LearnCategoryRules(
   ruleRepo,
   getDefaultPrefixesForLocale(DEFAULT_LOCALE),
   idGenerator,
+  DEFAULT_CATEGORY_REGISTRY,
 );
 const importCsvWorkflow = new ImportCsvWorkflow(
   importTransactions,
@@ -60,9 +62,12 @@ const importCsvWorkflow = new ImportCsvWorkflow(
 );
 const listTransactions = new ListTransactions(txnRepo);
 const findUncategorizedTransactions = new FindUncategorizedTransactions(txnRepo);
-const saveCategorizedTransactions = new SaveCategorizedTransactions(txnRepo);
+const saveCategorizedTransactions = new SaveCategorizedTransactions(
+  txnRepo,
+  DEFAULT_CATEGORY_REGISTRY,
+);
 const listRules = new ListRules(ruleRepo);
-const addRule = new AddRule(ruleRepo, idGenerator);
+const addRule = new AddRule(ruleRepo, idGenerator, DEFAULT_CATEGORY_REGISTRY);
 const removeRule = new RemoveRule(ruleRepo);
 
 // --- CLI ---

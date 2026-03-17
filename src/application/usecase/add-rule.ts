@@ -1,17 +1,25 @@
 import { type CategoryRule, createCategoryRule } from "../../domain/entity/category-rule.js";
 import { type CategoryRuleDto, toCategoryRuleDto } from "../dto/category-rule-dto.js";
+import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import type { CategoryRuleRepository } from "../gateway/category-rule-repository.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { DomainError } from "../../domain/error/index.js";
 import type { IdGenerator } from "../gateway/id-generator.js";
+import { RuleBook } from "../../domain/aggregate/rule-book.js";
 
 export class AddRule {
   private readonly ruleRepo: CategoryRuleRepository;
   private readonly idGenerator: IdGenerator;
+  private readonly registry: CategoryRegistry;
 
-  constructor(ruleRepo: CategoryRuleRepository, idGenerator: IdGenerator) {
+  constructor(
+    ruleRepo: CategoryRuleRepository,
+    idGenerator: IdGenerator,
+    registry: CategoryRegistry,
+  ) {
     this.ruleRepo = ruleRepo;
     this.idGenerator = idGenerator;
+    this.registry = registry;
   }
 
   execute(pattern: string, categoryId: string): { categoryName: string; rule: CategoryRuleDto } {
@@ -19,18 +27,27 @@ export class AddRule {
       throw new DomainError("pattern: must not be empty");
     }
 
-    const category = DEFAULT_CATEGORIES.find((cat) => cat.id === categoryId);
-    if (!category) {
-      throw new DomainError(`Unknown category ID: "${categoryId}"`);
-    }
+    // Validate category ID (throws DomainError if unknown)
+    this.registry.assertValid(categoryId);
 
-    if (this.ruleRepo.findByPattern(pattern)) {
-      throw new DomainError(`A rule for pattern "${pattern}" already exists.`);
-    }
+    // Look up category name for the response
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- assertValid guarantees existence
+    const categoryName = DEFAULT_CATEGORIES.find((cat) => cat.id === categoryId)!.name;
 
     const id = this.idGenerator.fromPattern(pattern);
-    const rule: CategoryRule = createCategoryRule(id, pattern, categoryId, "learned");
+    const rule: CategoryRule = createCategoryRule(
+      id,
+      pattern,
+      categoryId,
+      "learned",
+      this.registry,
+    );
+
+    // Enforce uniqueness via RuleBook aggregate
+    const ruleBook = new RuleBook(this.ruleRepo.findAll());
+    ruleBook.addRule(rule); // throws DomainError if duplicate
+
     this.ruleRepo.save(rule);
-    return { categoryName: category.name, rule: toCategoryRuleDto(rule) };
+    return { categoryName, rule: toCategoryRuleDto(rule) };
   }
 }

@@ -1,4 +1,5 @@
 import { CategoryId } from "../../domain/value-object/category-id.js";
+import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import type { CategoryRuleRepository } from "../gateway/category-rule-repository.js";
 import type { IdGenerator } from "../gateway/id-generator.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
@@ -9,11 +10,18 @@ export class LearnCategoryRules {
   private readonly ruleRepo: CategoryRuleRepository;
   private readonly bankPrefixes: string[];
   private readonly idGenerator: IdGenerator;
+  private readonly registry: CategoryRegistry;
 
-  constructor(ruleRepo: CategoryRuleRepository, bankPrefixes: string[], idGenerator: IdGenerator) {
+  constructor(
+    ruleRepo: CategoryRuleRepository,
+    bankPrefixes: string[],
+    idGenerator: IdGenerator,
+    registry: CategoryRegistry,
+  ) {
     this.ruleRepo = ruleRepo;
     this.bankPrefixes = bankPrefixes;
     this.idGenerator = idGenerator;
+    this.registry = registry;
   }
 
   learn(transactions: TransactionDto[]): void {
@@ -25,6 +33,11 @@ export class LearnCategoryRules {
   }
 
   private learnOne(label: string, categoryId: string): void {
+    // Skip if category ID is not valid — don't propagate corrupted data into rules
+    if (!this.registry.has(categoryId)) {
+      return;
+    }
+
     const pattern = extractPattern(label, this.bankPrefixes);
     if (!pattern) {
       return;
@@ -39,7 +52,7 @@ export class LearnCategoryRules {
 
     // Otherwise upsert: create a new learned rule (replaces any existing default for this pattern)
     const id = this.idGenerator.fromPattern(pattern);
-    const rule = createCategoryRule(id, pattern, categoryId, "learned");
+    const rule = createCategoryRule(id, pattern, categoryId, "learned", this.registry);
     this.ruleRepo.save(rule);
   }
 }

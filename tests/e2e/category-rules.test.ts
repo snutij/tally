@@ -4,6 +4,7 @@ import { ApplyCategoryRules } from "../../src/application/usecase/apply-category
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
+import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
@@ -37,6 +38,7 @@ describe("e2e: auto-categorization rules", () => {
       ruleRepo,
       FR_BANK_PREFIXES,
       new Sha256IdGenerator(),
+      DEFAULT_CATEGORY_REGISTRY,
     );
   });
 
@@ -65,7 +67,9 @@ describe("e2e: auto-categorization rules", () => {
     }
 
     // Simulate user manually categorizing the first transaction
-    const manuallyCategorized = [toTransactionDto(firstTxn.categorize(CategoryId("n02")))];
+    const manuallyCategorized = [
+      toTransactionDto(firstTxn.categorize(CategoryId("n02"), DEFAULT_CATEGORY_REGISTRY)),
+    ];
     learnCategoryRules.learn(manuallyCategorized);
 
     // On second import pass, the same transaction label should now auto-match

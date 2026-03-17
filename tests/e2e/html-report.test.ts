@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
+import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
@@ -47,16 +48,16 @@ describe("e2e: HTML report output", () => {
     const parsed = parser.parse(CSV);
     const categorized = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return toTransactionDto(txn.categorize(CategoryId("n01")));
+        return toTransactionDto(txn.categorize(CategoryId("n01"), DEFAULT_CATEGORY_REGISTRY));
       }
       if (txn.label.includes("GROCERY")) {
-        return toTransactionDto(txn.categorize(CategoryId("n02")));
+        return toTransactionDto(txn.categorize(CategoryId("n02"), DEFAULT_CATEGORY_REGISTRY));
       }
       if (txn.label.includes("SALARY")) {
-        return toTransactionDto(txn.categorize(CategoryId("inc01")));
+        return toTransactionDto(txn.categorize(CategoryId("inc01"), DEFAULT_CATEGORY_REGISTRY));
       }
       if (txn.label.includes("RESTAURANT")) {
-        return toTransactionDto(txn.categorize(CategoryId("w02")));
+        return toTransactionDto(txn.categorize(CategoryId("w02"), DEFAULT_CATEGORY_REGISTRY));
       }
       return toTransactionDto(txn);
     });

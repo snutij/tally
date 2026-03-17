@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
@@ -10,7 +11,13 @@ function rule(
   categoryId: string,
   source: "default" | "learned",
 ): ReturnType<typeof createCategoryRule> {
-  return createCategoryRule(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
+  return createCategoryRule(
+    `id-${pattern}`.slice(0, 32),
+    pattern,
+    categoryId,
+    source,
+    DEFAULT_CATEGORY_REGISTRY,
+  );
 }
 
 function txn(label: string, id = "t1"): TransactionDto {

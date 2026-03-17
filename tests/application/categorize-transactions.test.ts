@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { DomainError } from "../../src/domain/error/index.js";
 import { FindUncategorizedTransactions } from "../../src/application/usecase/find-uncategorized-transactions.js";
@@ -68,7 +69,7 @@ describe("SaveCategorizedTransactions", () => {
 
   beforeEach(() => {
     txnRepo = new InMemoryTransactionRepository();
-    useCase = new SaveCategorizedTransactions(txnRepo);
+    useCase = new SaveCategorizedTransactions(txnRepo, DEFAULT_CATEGORY_REGISTRY);
   });
 
   it("persists categorized transactions", () => {

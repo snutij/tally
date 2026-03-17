@@ -1,4 +1,5 @@
 import type { CategoryId } from "../value-object/category-id.js";
+import type { CategoryRegistry } from "../service/category-registry.js";
 import type { DateOnly } from "../value-object/date-only.js";
 import type { Money } from "../value-object/money.js";
 import type { TransactionId } from "../value-object/transaction-id.js";
@@ -35,7 +36,8 @@ export class Transaction {
     return new Transaction(params);
   }
 
-  categorize(categoryId: CategoryId): Transaction {
+  categorize(categoryId: CategoryId, registry: CategoryRegistry): Transaction {
+    registry.assertValid(categoryId);
     return Transaction.create({
       amount: this.amount,
       categoryId,
