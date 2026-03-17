@@ -1,5 +1,24 @@
 import type { DefaultRuleEntry } from "../entity/category-rule.js";
 
+// Common French bank label prefixes to strip before extracting the merchant name.
+// Sorted longest-first so we match the most specific prefix at runtime.
+export const FR_BANK_PREFIXES: string[] = [
+  "PAIEMENT CB",
+  "ACHAT CB",
+  "PRLV SEPA",
+  "VIR SEPA",
+  "VIR RECU",
+  "VIR EMIS",
+  "RETRAIT DAB",
+  "CARTE CB",
+  "PRELEVEMENT",
+  "RETRAIT",
+  "CHEQUE",
+  "FRAIS CB",
+  "PRLV",
+  "VIR",
+].toSorted((prefixA, prefixB) => prefixB.length - prefixA.length);
+
 // Rules are tried in array order — put more specific patterns BEFORE generic ones.
 // e.g. "uber eats" before "uber", "amazon prime" before "amazon", "free mobile" before "free".
 export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [

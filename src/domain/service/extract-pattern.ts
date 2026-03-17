@@ -1,22 +1,3 @@
-// Common French bank label prefixes to strip before extracting the merchant name.
-// Sorted longest-first so we match the most specific prefix at runtime.
-const FRENCH_BANK_PREFIXES = [
-  "PAIEMENT CB",
-  "ACHAT CB",
-  "PRLV SEPA",
-  "VIR SEPA",
-  "VIR RECU",
-  "VIR EMIS",
-  "RETRAIT DAB",
-  "CARTE CB",
-  "PRELEVEMENT",
-  "RETRAIT",
-  "CHEQUE",
-  "FRAIS CB",
-  "PRLV",
-  "VIR",
-].toSorted((prefixA, prefixB) => prefixB.length - prefixA.length);
-
 // Regex patterns for trailing noise to strip
 const TRAILING_DATE = /\s+\d{2}\/\d{2}(?:\/\d{2,4})?\s*$/;
 const TRAILING_CARD_REF = /\s+CB\s*\*?\s*\d+\s*$/;
@@ -28,16 +9,16 @@ const TRAILING_PUNCT = /[*\-.,]+$/;
  * Returns `undefined` if no meaningful merchant name can be extracted.
  *
  * @example
- * extractPattern("CARTE CB CARREFOUR CITY PARIS 15/03") → "\\bcarrefour\\s+city\\b"
- * extractPattern("PRLV SEPA FREE MOBILE 123456")        → "\\bfree\\s+mobile\\b"
- * extractPattern("SPOTIFY")                              → "\\bspotify\\b"
- * extractPattern("VIR 15/03/2026 CB*1234")              → undefined
+ * extractPattern("CARTE CB CARREFOUR CITY PARIS 15/03", prefixes) → "\\bcarrefour\\s+city\\b"
+ * extractPattern("PRLV SEPA FREE MOBILE 123456", prefixes)         → "\\bfree\\s+mobile\\b"
+ * extractPattern("SPOTIFY", [])                                     → "\\bspotify\\b"
+ * extractPattern("VIR 15/03/2026 CB*1234", prefixes)               → undefined
  */
-export function extractPattern(rawLabel: string): string | undefined {
+export function extractPattern(rawLabel: string, bankPrefixes: string[]): string | undefined {
   let label = rawLabel.toUpperCase().trim();
 
   // 1. Strip the first matching bank prefix
-  for (const prefix of FRENCH_BANK_PREFIXES) {
+  for (const prefix of bankPrefixes) {
     if (label.startsWith(prefix)) {
       label = label.slice(prefix.length).trim();
       break;

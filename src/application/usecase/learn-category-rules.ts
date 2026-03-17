@@ -6,9 +6,11 @@ import { extractPattern } from "../../domain/service/extract-pattern.js";
 
 export class LearnCategoryRules {
   private readonly ruleRepo: CategoryRuleRepository;
+  private readonly bankPrefixes: string[];
 
-  constructor(ruleRepo: CategoryRuleRepository) {
+  constructor(ruleRepo: CategoryRuleRepository, bankPrefixes: string[]) {
     this.ruleRepo = ruleRepo;
+    this.bankPrefixes = bankPrefixes;
   }
 
   learn(transactions: Transaction[]): void {
@@ -20,7 +22,7 @@ export class LearnCategoryRules {
   }
 
   private learnOne(label: string, categoryId: CategoryId): void {
-    const pattern = extractPattern(label);
+    const pattern = extractPattern(label, this.bankPrefixes);
     if (!pattern) {
       return;
     }

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
+import { FR_BANK_PREFIXES } from "../../src/domain/default-category-rules/fr.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { Money } from "../../src/domain/value-object/money.js";
@@ -25,7 +26,7 @@ describe("LearnCategoryRules", () => {
 
   beforeEach(() => {
     ruleRepo = new InMemoryCategoryRuleRepository();
-    useCase = new LearnCategoryRules(ruleRepo);
+    useCase = new LearnCategoryRules(ruleRepo, FR_BANK_PREFIXES);
   });
 
   it("creates a learned rule from a categorized transaction", () => {

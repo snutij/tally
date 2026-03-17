@@ -1,3 +1,7 @@
+import {
+  DEFAULT_LOCALE,
+  getDefaultPrefixesForLocale,
+} from "../domain/default-category-rules/index.js";
 import { VALID_FORMATS, createRenderer } from "./renderer/create-renderer.js";
 import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { existsSync, mkdirSync } from "node:fs";
@@ -34,7 +38,10 @@ const importTransactions = new ImportTransactions(txnRepo);
 const generateReport = new GenerateReport(txnRepo);
 const seedMockData = new SeedMockData(txnRepo);
 const applyCategoryRules = new ApplyCategoryRules(ruleRepo);
-const learnCategoryRules = new LearnCategoryRules(ruleRepo);
+const learnCategoryRules = new LearnCategoryRules(
+  ruleRepo,
+  getDefaultPrefixesForLocale(DEFAULT_LOCALE),
+);
 const listTransactions = new ListTransactions(txnRepo);
 const categorizeTransactions = new CategorizeTransactions(txnRepo);
 const listRules = new ListRules(ruleRepo);
