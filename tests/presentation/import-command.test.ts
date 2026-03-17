@@ -46,6 +46,7 @@ describe("createImportCommand", () => {
   const mockDeps = {
     parserFactory: vi.fn().mockReturnValue(mockParser),
     renderer: mockRenderer,
+    unitOfWork: { runInTransaction: vi.fn((fn: () => void) => fn()) },
   };
 
   beforeEach(() => {

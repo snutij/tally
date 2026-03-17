@@ -7,6 +7,7 @@ import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
+import type { UnitOfWork } from "../../src/application/gateway/unit-of-work.js";
 import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
@@ -17,10 +18,11 @@ describe("SqliteRepository", () => {
   let close: () => void;
   let txnRepo: TransactionRepository;
   let ruleRepo: CategoryRuleRepository;
+  let unitOfWork: UnitOfWork;
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-test-"));
-    ({ close, txnRepo, ruleRepo } = openDatabase(join(tmpDir, "test.db")));
+    ({ close, txnRepo, ruleRepo, unitOfWork } = openDatabase(join(tmpDir, "test.db")));
   });
 
   afterEach(() => {
@@ -114,6 +116,25 @@ describe("SqliteRepository", () => {
 
     it("returns empty array for month with no transactions", () => {
       expect(txnRepo.findByMonth(Month.from("2026-03"))).toEqual([]);
+    });
+  });
+
+  describe("UnitOfWork", () => {
+    it("commits multiple operations atomically", () => {
+      unitOfWork.runInTransaction(() => {
+        txnRepo.saveAll([
+          Transaction.create({
+            amount: Money.fromEuros(-10),
+            date: DateOnly.from("2026-03-01"),
+            id: TransactionId("tx-uow"),
+            label: "UoW test",
+            source: "csv",
+          }),
+        ]);
+        ruleRepo.save(createCategoryRule(String.raw`\buow\b`, "w01", "learned"));
+      });
+      expect(txnRepo.findByMonth(Month.from("2026-03"))).toHaveLength(1);
+      expect(ruleRepo.findByPattern(String.raw`\buow\b`)).toBeDefined();
     });
   });
 });

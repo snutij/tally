@@ -32,7 +32,7 @@ if (!existsSync(dataDir)) {
 }
 
 // --- Composition root ---
-const { txnRepo, ruleRepo } = openDatabase(dbPath);
+const { txnRepo, ruleRepo, unitOfWork } = openDatabase(dbPath);
 
 const importTransactions = new ImportTransactions(txnRepo);
 const generateReport = new GenerateReport(txnRepo);
@@ -69,6 +69,7 @@ program.addCommand(
   createImportCommand(importTransactions, seedMockData, applyCategoryRules, learnCategoryRules, {
     parserFactory: (mapping) => new CsvTransactionParser(mapping),
     renderer,
+    unitOfWork,
   }),
 );
 program.addCommand(createReportCommand(generateReport, renderer));

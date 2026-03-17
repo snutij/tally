@@ -10,6 +10,7 @@ import type { Month } from "../../domain/value-object/month.js";
 import { Transaction } from "../../domain/entity/transaction.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
+import type { UnitOfWork } from "../../application/gateway/unit-of-work.js";
 
 function migrate(db: Database.Database): void {
   // Drop obsolete budget tables from previous schema
@@ -74,24 +75,21 @@ class SqliteTransactionRepository implements TransactionRepository {
   }
 
   saveAll(transactions: Transaction[]): void {
-    const runTx = this.db.transaction(() => {
-      const stmt = this.db.prepare(
-        `INSERT OR REPLACE INTO transactions (id, date, label, amount_cents, category_id, source)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO transactions (id, date, label, amount_cents, category_id, source)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    );
+    for (const txn of transactions) {
+      stmt.run(
+        txn.id,
+        txn.date.toString(),
+        txn.label,
+        txn.amount.cents,
+        // eslint-disable-next-line unicorn/no-null -- SQLite requires null for missing column values
+        txn.categoryId ?? null,
+        txn.source,
       );
-      for (const txn of transactions) {
-        stmt.run(
-          txn.id,
-          txn.date.toString(),
-          txn.label,
-          txn.amount.cents,
-          // eslint-disable-next-line unicorn/no-null -- SQLite requires null for missing column values
-          txn.categoryId ?? null,
-          txn.source,
-        );
-      }
-    });
-    runTx();
+    }
   }
 
   findByIds(ids: TransactionId[]): Transaction[] {
@@ -206,6 +204,7 @@ class SqliteCategoryRuleRepository implements CategoryRuleRepository {
 export function openDatabase(dbPath: string): {
   txnRepo: TransactionRepository;
   ruleRepo: CategoryRuleRepository;
+  unitOfWork: UnitOfWork;
   close(): void;
 } {
   const db = new Database(dbPath);
@@ -216,5 +215,6 @@ export function openDatabase(dbPath: string): {
     close: () => db.close(),
     ruleRepo: new SqliteCategoryRuleRepository(db),
     txnRepo: new SqliteTransactionRepository(db),
+    unitOfWork: { runInTransaction: (fn) => db.transaction(fn)() },
   };
 }

@@ -7,12 +7,14 @@ import { Month } from "../../domain/value-object/month.js";
 import type { Renderer } from "../renderer/renderer.js";
 import type { SeedMockData } from "../../application/usecase/seed-mock-data.js";
 import type { TransactionParser } from "../../application/gateway/transaction-parser.js";
+import type { UnitOfWork } from "../../application/gateway/unit-of-work.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
 import { collectColumnMapping } from "../prompt/column-mapping-prompt.js";
 
 interface ImportCommandDeps {
   parserFactory: (mapping: CsvColumnMapping) => TransactionParser;
   renderer: Renderer;
+  unitOfWork: UnitOfWork;
 }
 
 export function createImportCommand(
@@ -57,7 +59,10 @@ export function createImportCommand(
       const parsed = parser.parse(file);
 
       if (!opts.categorize) {
-        const result = importTransactions.save(parsed);
+        let result: { count: number } = { count: 0 };
+        deps.unitOfWork.runInTransaction(() => {
+          result = importTransactions.save(parsed);
+        });
         console.log(deps.renderer.render(result));
         return;
       }
@@ -77,11 +82,13 @@ export function createImportCommand(
 
       const { categorized, interrupted } = await categorizePrompt(unmatched);
 
-      // Learn rules from what the user just categorized manually
-      learnCategoryRules.learn(categorized);
-
       const toSave = [...alreadyCategorized, ...matched, ...categorized];
-      const result = importTransactions.save(toSave);
+      let result: { count: number } = { count: 0 };
+      deps.unitOfWork.runInTransaction(() => {
+        result = importTransactions.save(toSave);
+        // Learn rules from what the user just categorized manually
+        learnCategoryRules.learn(categorized);
+      });
 
       if (interrupted) {
         console.log(`\nInterrupted — saved ${result.count} of ${parsed.length} transactions.`);
