@@ -1,8 +1,8 @@
-import { Transaction, type TransactionSource } from "./entity/transaction.js";
-import { CategoryId } from "./value-object/category-id.js";
-import { DateOnly } from "./value-object/date-only.js";
-import { Money } from "./value-object/money.js";
-import { TransactionId } from "./value-object/transaction-id.js";
+import { Transaction, type TransactionSource } from "../../domain/entity/transaction.js";
+import { CategoryId } from "../../domain/value-object/category-id.js";
+import { DateOnly } from "../../domain/value-object/date-only.js";
+import { Money } from "../../domain/value-object/money.js";
+import { TransactionId } from "../../domain/value-object/transaction-id.js";
 
 type DateFn = (day: number) => DateOnly;
 

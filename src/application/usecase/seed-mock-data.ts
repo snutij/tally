@@ -1,6 +1,6 @@
 import type { Month } from "../../domain/value-object/month.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
-import { mockTransactions } from "../../domain/mock-dataset.js";
+import { mockTransactions } from "../../infrastructure/mock/mock-dataset.js";
 
 export class SeedMockData {
   private readonly txnRepo: TransactionRepository;

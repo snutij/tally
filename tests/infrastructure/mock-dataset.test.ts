@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
-import { mockTransactions } from "../../src/domain/mock-dataset.js";
+import { mockTransactions } from "../../src/infrastructure/mock/mock-dataset.js";
 
 describe("mockTransactions", () => {
   const txns = mockTransactions(2026, 3);
