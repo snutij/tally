@@ -32,8 +32,8 @@ function txn(overrides: { id?: string; categoryId?: string } = {}): Transaction 
 }
 
 describe("createImportCommand", () => {
+  const mockParser = { parse: vi.fn() };
   const mockImportTransactions = {
-    parse: vi.fn(),
     save: vi.fn(),
     splitByCategoryStatus: vi.fn(),
   };
@@ -44,7 +44,7 @@ describe("createImportCommand", () => {
   const mockLearnCategoryRules = { learn: vi.fn() };
   const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
   const mockDeps = {
-    parserFactory: vi.fn().mockReturnValue({ parse: vi.fn() }),
+    parserFactory: vi.fn().mockReturnValue(mockParser),
     renderer: mockRenderer,
   };
 
@@ -86,7 +86,7 @@ describe("createImportCommand", () => {
 
     it("with --no-categorize saves directly", async () => {
       const parsed = [txn()];
-      mockImportTransactions.parse.mockReturnValue(parsed);
+      mockParser.parse.mockReturnValue(parsed);
       mockImportTransactions.save.mockReturnValue({ count: 1 });
 
       const originalIsTTY = process.stdout.isTTY;
@@ -98,14 +98,14 @@ describe("createImportCommand", () => {
       }
 
       expect(collectColumnMapping).toHaveBeenCalledWith("file.csv");
-      expect(mockImportTransactions.parse).toHaveBeenCalled();
+      expect(mockParser.parse).toHaveBeenCalled();
       expect(mockImportTransactions.save).toHaveBeenCalledWith(parsed);
     });
 
     it("with TTY prompts for categorization", async () => {
       const base = txn();
       const parsed = [base];
-      mockImportTransactions.parse.mockReturnValue(parsed);
+      mockParser.parse.mockReturnValue(parsed);
       mockImportTransactions.splitByCategoryStatus.mockReturnValue({
         alreadyCategorized: [],
         uncategorized: parsed,
@@ -133,7 +133,7 @@ describe("createImportCommand", () => {
     it("handles interruption", async () => {
       const base = txn();
       const parsed = [base, txn({ id: "t2" })];
-      mockImportTransactions.parse.mockReturnValue(parsed);
+      mockParser.parse.mockReturnValue(parsed);
       mockImportTransactions.splitByCategoryStatus.mockReturnValue({
         alreadyCategorized: [],
         uncategorized: parsed,
@@ -159,7 +159,7 @@ describe("createImportCommand", () => {
     it("displays auto-categorization summary when rules match", async () => {
       const base = txn();
       const matched = base.categorize(CategoryId("n02"));
-      mockImportTransactions.parse.mockReturnValue([base]);
+      mockParser.parse.mockReturnValue([base]);
       mockImportTransactions.splitByCategoryStatus.mockReturnValue({
         alreadyCategorized: [],
         uncategorized: [base],
@@ -182,7 +182,7 @@ describe("createImportCommand", () => {
     it("skips already-categorized transactions and logs count", async () => {
       const t1 = txn({ categoryId: "n01", id: "t1" });
       const t2 = txn({ id: "t2" });
-      mockImportTransactions.parse.mockReturnValue([t1, t2]);
+      mockParser.parse.mockReturnValue([t1, t2]);
       mockImportTransactions.splitByCategoryStatus.mockReturnValue({
         alreadyCategorized: [t1],
         uncategorized: [t2],

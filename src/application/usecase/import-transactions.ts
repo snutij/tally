@@ -1,5 +1,4 @@
 import type { Transaction } from "../../domain/entity/transaction.js";
-import type { TransactionParser } from "../gateway/transaction-parser.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
 export class ImportTransactions {
@@ -7,11 +6,6 @@ export class ImportTransactions {
 
   constructor(txnRepo: TransactionRepository) {
     this.txnRepo = txnRepo;
-  }
-
-  // eslint-disable-next-line class-methods-use-this -- use case API: delegates to injected parser
-  parse(parser: TransactionParser, filePath: string): Transaction[] {
-    return parser.parse(filePath);
   }
 
   splitByCategoryStatus(transactions: Transaction[]): {

@@ -6,66 +6,39 @@ import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
-import type { TransactionParser } from "../../src/application/gateway/transaction-parser.js";
 
-class StubParser implements TransactionParser {
-  // eslint-disable-next-line class-methods-use-this -- implements TransactionParser interface
-  parse(_filePath: string): Transaction[] {
-    return [
-      Transaction.create({
-        amount: Money.fromEuros(-42.5),
-        date: DateOnly.from("2026-03-01"),
-        id: TransactionId("tx-1"),
-        label: "Test transaction",
-        source: "csv",
-      }),
-      Transaction.create({
-        amount: Money.fromEuros(-10),
-        date: DateOnly.from("2026-03-15"),
-        id: TransactionId("tx-2"),
-        label: "Another transaction",
-        source: "csv",
-      }),
-    ];
-  }
+function txn(id: string, categoryId?: string): Transaction {
+  return Transaction.create({
+    amount: Money.fromEuros(-42.5),
+    categoryId: categoryId ? CategoryId(categoryId) : undefined,
+    date: DateOnly.from("2026-03-01"),
+    id: TransactionId(id),
+    label: "Test transaction",
+    source: "csv",
+  });
 }
 
 describe("ImportTransactions", () => {
   let txnRepo: InMemoryTransactionRepository;
   let useCase: ImportTransactions;
-  let parser: StubParser;
 
   beforeEach(() => {
-    parser = new StubParser();
     txnRepo = new InMemoryTransactionRepository();
     useCase = new ImportTransactions(txnRepo);
   });
 
-  it("parses transactions via parser", () => {
-    const transactions = useCase.parse(parser, "dummy.csv");
-    expect(transactions).toHaveLength(2);
-  });
-
   it("saves transactions and returns count", () => {
-    const transactions = useCase.parse(parser, "dummy.csv");
-    const result = useCase.save(transactions);
+    const result = useCase.save([txn("tx-1"), txn("tx-2")]);
     expect(result.count).toBe(2);
     expect(txnRepo.saved).toHaveLength(2);
   });
 
   it("splits by category status", () => {
-    const categorized = Transaction.create({
-      amount: Money.fromEuros(-42.5),
-      categoryId: CategoryId("n01"),
-      date: DateOnly.from("2026-03-01"),
-      id: TransactionId("tx-1"),
-      label: "Test transaction",
-      source: "csv",
-    });
+    const categorized = txn("tx-1", "n01");
     txnRepo.saveAll([categorized]);
 
-    const parsed = useCase.parse(parser, "dummy.csv");
-    const { alreadyCategorized, uncategorized } = useCase.splitByCategoryStatus(parsed);
+    const transactions = [txn("tx-1"), txn("tx-2")];
+    const { alreadyCategorized, uncategorized } = useCase.splitByCategoryStatus(transactions);
 
     expect(alreadyCategorized).toHaveLength(1);
     expect(alreadyCategorized[0]?.categoryId).toBe("n01");

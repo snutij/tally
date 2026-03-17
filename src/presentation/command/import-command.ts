@@ -54,7 +54,7 @@ export function createImportCommand(
 
       const mapping = await collectColumnMapping(file);
       const parser = deps.parserFactory(mapping);
-      const parsed = importTransactions.parse(parser, file);
+      const parsed = parser.parse(file);
 
       if (!opts.categorize) {
         const result = importTransactions.save(parsed);

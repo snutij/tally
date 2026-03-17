@@ -45,7 +45,7 @@ describe("e2e: HTML report output", () => {
   });
 
   it("renders a full report as valid HTML (no budget init step)", () => {
-    const parsed = importTxns.parse(parser, CSV);
+    const parsed = parser.parse(CSV);
     const categorized = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
         return txn.categorize(CategoryId("n01"));

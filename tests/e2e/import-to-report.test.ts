@@ -44,7 +44,7 @@ describe("e2e: import → report (no budget step)", () => {
   });
 
   it("imported transactions appear in the monthly report without a budget step", () => {
-    const parsed = importTxns.parse(parser, CSV);
+    const parsed = parser.parse(CSV);
     expect(parsed).toHaveLength(4);
 
     const categorized = parsed.map((txn) => {
@@ -80,7 +80,7 @@ describe("e2e: import → report (no budget step)", () => {
   });
 
   it("group targets computed from actual income (50/30/20)", () => {
-    const parsed = importTxns.parse(parser, CSV);
+    const parsed = parser.parse(CSV);
     const withSalary = parsed.map((txn) =>
       txn.label.includes("SALARY") ? txn.categorize(CategoryId("inc01")) : txn,
     );
@@ -94,7 +94,7 @@ describe("e2e: import → report (no budget step)", () => {
   });
 
   it("uncategorized transactions show up in uncategorized total", () => {
-    const parsed = importTxns.parse(parser, CSV);
+    const parsed = parser.parse(CSV);
     importTxns.save(parsed);
 
     const report = generateReport.execute(month);
@@ -104,7 +104,7 @@ describe("e2e: import → report (no budget step)", () => {
   });
 
   it("re-import preserves previously categorized transactions", () => {
-    const parsed = importTxns.parse(parser, CSV);
+    const parsed = parser.parse(CSV);
     const partial = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
         return txn.categorize(CategoryId("n01"));
@@ -116,7 +116,7 @@ describe("e2e: import → report (no budget step)", () => {
     });
     importTxns.save(partial);
 
-    const reparsed = importTxns.parse(parser, CSV);
+    const reparsed = parser.parse(CSV);
     const { alreadyCategorized, uncategorized } = importTxns.splitByCategoryStatus(reparsed);
 
     expect(alreadyCategorized).toHaveLength(2);

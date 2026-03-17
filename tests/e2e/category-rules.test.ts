@@ -5,7 +5,6 @@ import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
 import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
-import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
@@ -24,15 +23,13 @@ const parser = new CsvTransactionParser(CSV_MAPPING);
 describe("e2e: auto-categorization rules", () => {
   let tmpDir: string;
   let close: () => void;
-  let importTxns: ImportTransactions;
   let applyCategoryRules: ApplyCategoryRules;
   let learnCategoryRules: LearnCategoryRules;
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-rules-e2e-"));
-    const { close: closeDb, txnRepo, ruleRepo } = openDatabase(join(tmpDir, "test.db"));
+    const { close: closeDb, ruleRepo } = openDatabase(join(tmpDir, "test.db"));
     close = closeDb;
-    importTxns = new ImportTransactions(txnRepo);
     applyCategoryRules = new ApplyCategoryRules(ruleRepo);
     learnCategoryRules = new LearnCategoryRules(ruleRepo, FR_BANK_PREFIXES);
   });
@@ -43,7 +40,7 @@ describe("e2e: auto-categorization rules", () => {
   });
 
   it("auto-categorizes transactions matching default rules, leaves others unmatched", () => {
-    const parsed = importTxns.parse(parser, CSV);
+    const parsed = parser.parse(CSV);
     expect(parsed.length).toBeGreaterThan(0);
 
     const { matched, unmatched } = applyCategoryRules.apply(parsed);
@@ -55,7 +52,7 @@ describe("e2e: auto-categorization rules", () => {
   });
 
   it("learned rules are applied on subsequent imports", () => {
-    const parsed = importTxns.parse(parser, CSV);
+    const parsed = parser.parse(CSV);
     const [firstTxn] = parsed;
     if (!firstTxn) {
       return;
