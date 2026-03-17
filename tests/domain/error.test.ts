@@ -1,10 +1,10 @@
-import { DomainError, InvalidCsvData, InvalidMonth } from "../../src/domain/error/index.js";
+import { DomainError, InvalidImportData, InvalidMonth } from "../../src/domain/error/index.js";
 import { describe, expect, it } from "vitest";
 
 describe("DomainError hierarchy", () => {
   const cases: [string, DomainError][] = [
     ["InvalidMonth", new InvalidMonth("bad")],
-    ["InvalidCsvData", new InvalidCsvData("broken")],
+    ["InvalidImportData", new InvalidImportData("broken")],
   ];
 
   it.each(cases)("%s is instanceof DomainError", (_name, error) => {

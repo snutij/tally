@@ -11,8 +11,8 @@ export class InvalidMonth extends DomainError {
   }
 }
 
-export class InvalidCsvData extends DomainError {
+export class InvalidImportData extends DomainError {
   constructor(detail: string) {
-    super(`Invalid CSV data: ${detail}`);
+    super(`Invalid import data: ${detail}`);
   }
 }

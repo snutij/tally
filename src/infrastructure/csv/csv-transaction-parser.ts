@@ -1,6 +1,6 @@
 import type { CsvColumnMapping } from "./csv-column-mapping.js";
 import { DateOnly } from "../../domain/value-object/date-only.js";
-import { InvalidCsvData } from "../../domain/error/index.js";
+import { InvalidImportData } from "../../domain/error/index.js";
 import { Money } from "../../domain/value-object/money.js";
 import { Transaction } from "../../domain/entity/transaction.js";
 import type { TransactionParser } from "../../application/gateway/transaction-parser.js";
@@ -18,23 +18,23 @@ function parseDateWithFormat(dateStr: string, format: string): DateOnly {
     const sep = format === "DD/MM/YYYY" ? "/" : "-";
     const parts = dateStr.split(sep);
     if (parts.length !== 3) {
-      throw new InvalidCsvData(`expected ${format} date, got "${dateStr}"`);
+      throw new InvalidImportData(`expected ${format} date, got "${dateStr}"`);
     }
     [day, month, year] = parts as [string, string, string];
   } else if (format === "MM/DD/YYYY") {
     const parts = dateStr.split("/");
     if (parts.length !== 3) {
-      throw new InvalidCsvData(`expected MM/DD/YYYY date, got "${dateStr}"`);
+      throw new InvalidImportData(`expected MM/DD/YYYY date, got "${dateStr}"`);
     }
     [month, day, year] = parts as [string, string, string];
   } else if (format === "YYYY-MM-DD") {
     const parts = dateStr.split("-");
     if (parts.length !== 3) {
-      throw new InvalidCsvData(`expected YYYY-MM-DD date, got "${dateStr}"`);
+      throw new InvalidImportData(`expected YYYY-MM-DD date, got "${dateStr}"`);
     }
     [year, month, day] = parts as [string, string, string];
   } else {
-    throw new InvalidCsvData(`unsupported date format: "${format}"`);
+    throw new InvalidImportData(`unsupported date format: "${format}"`);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- checked by length above
@@ -51,7 +51,7 @@ function parseAmountCents(str: string, decimalSeparator: "," | "."): number {
 
   const value = Number.parseFloat(cleaned);
   if (Number.isNaN(value)) {
-    throw new InvalidCsvData(`expected numeric amount, got "${str}"`);
+    throw new InvalidImportData(`expected numeric amount, got "${str}"`);
   }
   return Math.round(value * 100);
 }
