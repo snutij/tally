@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORIES, buildCategoryMap } from "../../domain/default-categories.js";
 import {
   DEFAULT_SPENDING_TARGETS,
   type SpendingTargets,
@@ -6,6 +7,8 @@ import type { Month } from "../../domain/value-object/month.js";
 import type { MonthlyReport } from "../../domain/read-model/monthly-report.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
 import { computeMonthlyReport } from "../../domain/service/compute-monthly-report.js";
+
+const DEFAULT_CATEGORY_MAP = buildCategoryMap(DEFAULT_CATEGORIES);
 
 export class GenerateReport {
   private readonly txnRepo: TransactionRepository;
@@ -16,6 +19,6 @@ export class GenerateReport {
 
   execute(month: Month, targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): MonthlyReport {
     const transactions = this.txnRepo.findByMonth(month);
-    return computeMonthlyReport(month, targets, transactions);
+    return computeMonthlyReport(month, targets, transactions, DEFAULT_CATEGORY_MAP);
   }
 }

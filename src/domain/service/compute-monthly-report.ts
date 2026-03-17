@@ -1,6 +1,6 @@
 import type { GroupSummary, MonthlyReport, ReportKpis } from "../read-model/monthly-report.js";
 import { CategoryGroup } from "../value-object/category-group.js";
-import { DEFAULT_CATEGORIES } from "../default-categories.js";
+import type { CategoryMapEntry } from "../default-categories.js";
 import { Money } from "../value-object/money.js";
 import type { Month } from "../value-object/month.js";
 import type { SpendingTargets } from "../config/spending-targets.js";
@@ -21,11 +21,6 @@ function pct(numerator: number, denominator: number): number {
   return Math.round((numerator / denominator) * 10_000) / 100;
 }
 
-// Build category→group map from DEFAULT_CATEGORIES (domain knowledge, not budget-derived)
-const CATEGORY_GROUP_MAP: ReadonlyMap<string, CategoryGroup> = new Map(
-  DEFAULT_CATEGORIES.map((cat) => [cat.id, cat.group]),
-);
-
 interface Actuals {
   actualByCategory: Map<string, Money>;
   actualByGroup: Map<CategoryGroup, Money>;
@@ -33,7 +28,10 @@ interface Actuals {
   uncategorizedCount: number;
 }
 
-function accumulateActuals(transactions: Transaction[]): Actuals {
+function accumulateActuals(
+  transactions: Transaction[],
+  categoryMap: ReadonlyMap<string, CategoryMapEntry>,
+): Actuals {
   const actualByGroup = new Map<CategoryGroup, Money>();
   for (const group of Object.values(CategoryGroup)) {
     actualByGroup.set(group, Money.zero());
@@ -44,7 +42,7 @@ function accumulateActuals(transactions: Transaction[]): Actuals {
   let uncategorizedCount = 0;
 
   for (const txn of transactions) {
-    const group = txn.categoryId ? CATEGORY_GROUP_MAP.get(txn.categoryId) : undefined;
+    const group = txn.categoryId ? categoryMap.get(txn.categoryId)?.group : undefined;
     const absAmount = Money.fromCents(Math.abs(txn.amount.cents));
     if (group !== undefined && txn.categoryId) {
       actualByGroup.set(group, mapGet(actualByGroup, group).add(absAmount));
@@ -62,6 +60,7 @@ function accumulateActuals(transactions: Transaction[]): Actuals {
 function computeKpis(ctx: {
   actualByCategory: Map<string, Money>;
   actualByGroup: Map<CategoryGroup, Money>;
+  categoryMap: ReadonlyMap<string, CategoryMapEntry>;
   month: Month;
   totalIncomeActual: Money;
   totalExpenseActual: Money;
@@ -71,6 +70,7 @@ function computeKpis(ctx: {
   const {
     actualByCategory,
     actualByGroup,
+    categoryMap,
     month,
     totalIncomeActual,
     totalExpenseActual,
@@ -97,11 +97,11 @@ function computeKpis(ctx: {
 
   const topSpendingCategories = [...actualByCategory.entries()]
     .flatMap(([categoryId, actual]) => {
-      const category = DEFAULT_CATEGORIES.find((cat) => cat.id === categoryId);
-      if (!category || category.group === CategoryGroup.INCOME) {
+      const entry = categoryMap.get(categoryId);
+      if (!entry || entry.group === CategoryGroup.INCOME) {
         return [];
       }
-      return [{ actual, categoryId, categoryName: category.name, group: category.group }];
+      return [{ actual, categoryId, categoryName: entry.name, group: entry.group }];
     })
     .toSorted((ca, cb) => cb.actual.cents - ca.actual.cents)
     .slice(0, 5);
@@ -139,9 +139,12 @@ export function computeMonthlyReport(
   month: Month,
   targets: SpendingTargets,
   transactions: Transaction[],
+  categoryMap: ReadonlyMap<string, CategoryMapEntry>,
 ): MonthlyReport {
-  const { actualByCategory, actualByGroup, uncategorized, uncategorizedCount } =
-    accumulateActuals(transactions);
+  const { actualByCategory, actualByGroup, uncategorized, uncategorizedCount } = accumulateActuals(
+    transactions,
+    categoryMap,
+  );
 
   const totalIncomeActual = mapGet(actualByGroup, CategoryGroup.INCOME);
 
@@ -204,6 +207,7 @@ export function computeMonthlyReport(
   const kpis = computeKpis({
     actualByCategory,
     actualByGroup,
+    categoryMap,
     month,
     totalExpenseActual,
     totalIncomeActual,

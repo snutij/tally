@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORIES, buildCategoryMap } from "../../src/domain/default-categories.js";
 import { describe, expect, it } from "vitest";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
@@ -10,6 +11,7 @@ import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-r
 // DEFAULT_SPENDING_TARGETS = 50/30/20
 const targets = DEFAULT_SPENDING_TARGETS;
 const month = Month.from("2026-03");
+const categoryMap = buildCategoryMap(DEFAULT_CATEGORIES);
 
 function txn(id: string, amount: number, categoryId?: string, date = "2026-03-01"): Transaction {
   return Transaction.create({
@@ -29,7 +31,7 @@ describe("MonthlyReport", () => {
       txn("2", -150, "w02"), // Eating out → WANTS
     ];
 
-    const report = computeMonthlyReport(month, targets, transactions);
+    const report = computeMonthlyReport(month, targets, transactions, categoryMap);
 
     const needs = report.groups.find((grp) => grp.group === CategoryGroup.NEEDS);
     expect(needs?.actual.cents).toBe(80_000);
@@ -48,7 +50,7 @@ describe("MonthlyReport", () => {
       txn("1", 3000, "inc01"), // Salary → INCOME
     ];
 
-    const report = computeMonthlyReport(month, targets, transactions);
+    const report = computeMonthlyReport(month, targets, transactions, categoryMap);
 
     expect(report.totalIncomeActual.cents).toBe(300_000);
 
@@ -65,7 +67,7 @@ describe("MonthlyReport", () => {
   });
 
   it("budgetedPercent equals the target percentage for expense groups", () => {
-    const report = computeMonthlyReport(month, targets, []);
+    const report = computeMonthlyReport(month, targets, [], categoryMap);
 
     const needs = report.groups.find((grp) => grp.group === CategoryGroup.NEEDS);
     expect(needs?.budgetedPercent).toBe(50);
@@ -81,7 +83,7 @@ describe("MonthlyReport", () => {
   });
 
   it("targets are zero when no income", () => {
-    const report = computeMonthlyReport(month, targets, [txn("1", -100, "n01")]);
+    const report = computeMonthlyReport(month, targets, [txn("1", -100, "n01")], categoryMap);
 
     const needs = report.groups.find((grp) => grp.group === CategoryGroup.NEEDS);
     expect(needs?.budgeted.cents).toBe(0); // 0 income × 50%
@@ -94,7 +96,7 @@ describe("MonthlyReport", () => {
       txn("2", -800, "n01"), // known category
     ];
 
-    const report = computeMonthlyReport(month, targets, transactions);
+    const report = computeMonthlyReport(month, targets, transactions, categoryMap);
 
     expect(report.uncategorized.cents).toBe(7500);
     expect(report.totalExpenseActual.cents).toBe(80_000);
@@ -104,14 +106,14 @@ describe("MonthlyReport", () => {
   it("transactions with unknown categoryIds are treated as uncategorized", () => {
     const transactions = [txn("1", -50, "custom-not-in-defaults")];
 
-    const report = computeMonthlyReport(month, targets, transactions);
+    const report = computeMonthlyReport(month, targets, transactions, categoryMap);
 
     expect(report.uncategorized.cents).toBe(5000);
     expect(report.totalExpenseActual.cents).toBe(0);
   });
 
   it("handles empty transactions", () => {
-    const report = computeMonthlyReport(month, targets, []);
+    const report = computeMonthlyReport(month, targets, [], categoryMap);
 
     expect(report.totalExpenseActual.cents).toBe(0);
     expect(report.uncategorized.cents).toBe(0);
@@ -126,7 +128,7 @@ describe("MonthlyReport", () => {
       txn("2", -800, "n01"), // Rent → NEEDS
     ];
 
-    const report = computeMonthlyReport(month, targets, transactions);
+    const report = computeMonthlyReport(month, targets, transactions, categoryMap);
 
     expect(report.totalIncomeActual.cents).toBe(250_000);
     expect(report.totalExpenseActual.cents).toBe(80_000);
@@ -134,19 +136,19 @@ describe("MonthlyReport", () => {
   });
 
   it("has no categories field (only group-level summary)", () => {
-    const report = computeMonthlyReport(month, targets, []);
+    const report = computeMonthlyReport(month, targets, [], categoryMap);
     expect("categories" in report).toBe(false);
   });
 
   describe("KPIs", () => {
     it("computes savings rate", () => {
       const transactions = [txn("1", 3000, "inc01"), txn("2", -800, "n01")];
-      const report = computeMonthlyReport(month, targets, transactions);
+      const report = computeMonthlyReport(month, targets, transactions, categoryMap);
       expect(report.kpis.savingsRate).toBeCloseTo(73.33, 1);
     });
 
     it("savings rate is null when income is zero", () => {
-      const report = computeMonthlyReport(month, targets, []);
+      const report = computeMonthlyReport(month, targets, [], categoryMap);
       expect(report.kpis.savingsRate).toBeNull();
     });
 
@@ -156,7 +158,7 @@ describe("MonthlyReport", () => {
         txn("2", -900, "n01"), // 30% of income on needs
         txn("3", -600, "w02"), // 20% of income on wants
       ];
-      const report = computeMonthlyReport(month, targets, transactions);
+      const report = computeMonthlyReport(month, targets, transactions, categoryMap);
       expect(report.kpis.fiftyThirtyTwenty.needs).toBeCloseTo(30, 0);
       expect(report.kpis.fiftyThirtyTwenty.wants).toBeCloseTo(20, 0);
     });
@@ -167,7 +169,7 @@ describe("MonthlyReport", () => {
         txn("2", -800, "n01"), // Rent
         txn("3", -150, "w02"), // Eating out
       ];
-      const report = computeMonthlyReport(month, targets, transactions);
+      const report = computeMonthlyReport(month, targets, transactions, categoryMap);
 
       const top = report.kpis.topSpendingCategories;
       expect(top.length).toBeGreaterThan(0);
@@ -182,18 +184,18 @@ describe("MonthlyReport", () => {
         txn("2", -800, "n01"), // categorized
         txn("3", -200, "w02"), // categorized
       ];
-      const report = computeMonthlyReport(month, targets, transactions);
+      const report = computeMonthlyReport(month, targets, transactions, categoryMap);
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- non-null asserted in test
       expect(report.kpis.uncategorizedRatio!).toBeCloseTo(33.33, 1);
     });
 
     it("uncategorized ratio is null when no transactions", () => {
-      const report = computeMonthlyReport(month, targets, []);
+      const report = computeMonthlyReport(month, targets, [], categoryMap);
       expect(report.kpis.uncategorizedRatio).toBeNull();
     });
 
     it("has no adherenceRate or categoryVariance KPIs", () => {
-      const report = computeMonthlyReport(month, targets, []);
+      const report = computeMonthlyReport(month, targets, [], categoryMap);
       expect("adherenceRate" in report.kpis).toBe(false);
       expect("categoryVariance" in report.kpis).toBe(false);
     });

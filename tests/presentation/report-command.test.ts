@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORIES, buildCategoryMap } from "../../src/domain/default-categories.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
@@ -5,6 +6,8 @@ import type { GenerateReport } from "../../src/application/usecase/generate-repo
 import { Month } from "../../src/domain/value-object/month.js";
 import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-report.js";
 import { createReportCommand } from "../../src/presentation/command/report-command.js";
+
+const categoryMap = buildCategoryMap(DEFAULT_CATEGORIES);
 
 describe("createReportCommand", () => {
   const mockGenerateReport = { execute: vi.fn() };
@@ -23,7 +26,12 @@ describe("createReportCommand", () => {
   }
 
   it("calls execute with default targets when no flags", async () => {
-    const report = computeMonthlyReport(Month.from("2026-03"), DEFAULT_SPENDING_TARGETS, []);
+    const report = computeMonthlyReport(
+      Month.from("2026-03"),
+      DEFAULT_SPENDING_TARGETS,
+      [],
+      categoryMap,
+    );
     mockGenerateReport.execute.mockReturnValue(report);
 
     await run("2026-03");
@@ -36,7 +44,12 @@ describe("createReportCommand", () => {
   });
 
   it("passes custom targets when all three flags provided", async () => {
-    const report = computeMonthlyReport(Month.from("2026-03"), DEFAULT_SPENDING_TARGETS, []);
+    const report = computeMonthlyReport(
+      Month.from("2026-03"),
+      DEFAULT_SPENDING_TARGETS,
+      [],
+      categoryMap,
+    );
     mockGenerateReport.execute.mockReturnValue(report);
 
     await run("2026-03", "--needs", "60", "--wants", "20", "--invest", "20");

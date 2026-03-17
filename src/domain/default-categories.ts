@@ -2,6 +2,15 @@ import type { Category } from "./entity/category.js";
 import { CategoryGroup } from "./value-object/category-group.js";
 import { CategoryId } from "./value-object/category-id.js";
 
+export interface CategoryMapEntry {
+  readonly group: CategoryGroup;
+  readonly name: string;
+}
+
+export function buildCategoryMap(categories: Category[]): ReadonlyMap<string, CategoryMapEntry> {
+  return new Map(categories.map((entry) => [entry.id, { group: entry.group, name: entry.name }]));
+}
+
 function cat(id: string, name: string, group: CategoryGroup): Category {
   return { group, id: CategoryId(id), name };
 }
