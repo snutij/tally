@@ -1,7 +1,7 @@
-import { type CategoryRule, createCategoryRule } from "../../domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES, DEFAULT_CATEGORY_REGISTRY } from "../../domain/default-categories.js";
 import { DEFAULT_LOCALE, getDefaultRulesForLocale } from "../config/category-rules/index.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
+import { CategoryRule } from "../../domain/entity/category-rule.js";
 import type { CategoryRuleRepository } from "../../application/gateway/category-rule-repository.js";
 import Database from "better-sqlite3";
 import { DateOnly } from "../../domain/value-object/date-only.js";
@@ -65,7 +65,7 @@ function migrate(db: Database.Database): void {
   const idGenerator = new Sha256IdGenerator();
   for (const entry of getDefaultRulesForLocale(DEFAULT_LOCALE)) {
     const id = idGenerator.fromPattern(entry.pattern);
-    const rule = createCategoryRule(
+    const rule = CategoryRule.create(
       id,
       entry.pattern,
       entry.categoryId,
@@ -180,12 +180,15 @@ class SqliteCategoryRuleRepository implements CategoryRuleRepository {
     const rows = this.db
       .prepare(`SELECT id, pattern, category_id, source FROM category_rules`)
       .all() as { id: string; pattern: string; category_id: string; source: string }[];
-    return rows.map((row) => ({
-      categoryId: CategoryId(row.category_id),
-      id: row.id,
-      pattern: row.pattern,
-      source: row.source as CategoryRule["source"],
-    }));
+    return rows.map((row) =>
+      CategoryRule.create(
+        row.id,
+        row.pattern,
+        row.category_id,
+        row.source as CategoryRule["source"],
+        DEFAULT_CATEGORY_REGISTRY,
+      ),
+    );
   }
 
   findByPattern(pattern: string): CategoryRule | undefined {
@@ -197,12 +200,13 @@ class SqliteCategoryRuleRepository implements CategoryRuleRepository {
     if (!row) {
       return undefined;
     }
-    return {
-      categoryId: CategoryId(row.category_id),
-      id: row.id,
-      pattern: row.pattern,
-      source: row.source as CategoryRule["source"],
-    };
+    return CategoryRule.create(
+      row.id,
+      row.pattern,
+      row.category_id,
+      row.source as CategoryRule["source"],
+      DEFAULT_CATEGORY_REGISTRY,
+    );
   }
 
   removeByPattern(pattern: string): void {

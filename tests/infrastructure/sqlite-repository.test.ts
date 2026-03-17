@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
+import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import type { CategoryRuleRepository } from "../../src/application/gateway/category-rule-repository.js";
 import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
@@ -9,14 +10,13 @@ import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 import type { UnitOfWork } from "../../src/application/gateway/unit-of-work.js";
-import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
 function makeTestRule(
   pattern: string,
   categoryId: string,
   source: "default" | "learned",
-): ReturnType<typeof createCategoryRule> {
-  return createCategoryRule(
+): CategoryRule {
+  return CategoryRule.create(
     `id-${pattern}`.slice(0, 32),
     pattern,
     categoryId,

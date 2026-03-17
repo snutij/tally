@@ -5,6 +5,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
@@ -15,7 +16,6 @@ import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
-import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
 const stubIdGenerator: IdGenerator = { fromPattern: (pat) => `id-${pat.slice(0, 28)}` };
 
@@ -89,7 +89,7 @@ describe("ImportCsvWorkflow", () => {
 
   it("calls onAutoMatched callback when rules match", async () => {
     ruleRepo.save(
-      createCategoryRule(
+      CategoryRule.create(
         "id-txn",
         String.raw`\btxn\b`,
         "n01",

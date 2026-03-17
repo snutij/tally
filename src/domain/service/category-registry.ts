@@ -1,4 +1,4 @@
-import type { Category } from "../entity/category.js";
+import type { Category } from "../value-object/category.js";
 import { DomainError } from "../error/index.js";
 
 export class CategoryRegistry {

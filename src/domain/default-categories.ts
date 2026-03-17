@@ -1,4 +1,4 @@
-import type { Category } from "./entity/category.js";
+import type { Category } from "./value-object/category.js";
 import { CategoryGroup } from "./value-object/category-group.js";
 import { CategoryId } from "./value-object/category-id.js";
 import { CategoryRegistry } from "./service/category-registry.js";

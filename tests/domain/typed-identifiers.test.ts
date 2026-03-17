@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import { CategoryRuleId } from "../../src/domain/value-object/category-rule-id.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
 describe("CategoryId", () => {
@@ -28,6 +29,22 @@ describe("CategoryId", () => {
 
   it("type: CategoryId extends string", () => {
     expectTypeOf<CategoryId>().toExtend<string>();
+  });
+});
+
+describe("CategoryRuleId", () => {
+  it("factory produces a string-compatible value at runtime", () => {
+    const id = CategoryRuleId("rule-abc");
+    expect(id).toBe("rule-abc");
+    expect(typeof id).toBe("string");
+  });
+
+  it("type: CategoryRuleId is not assignable to CategoryId", () => {
+    expectTypeOf<CategoryRuleId>().not.toMatchTypeOf<CategoryId>();
+  });
+
+  it("type: CategoryRuleId extends string", () => {
+    expectTypeOf<CategoryRuleId>().toExtend<string>();
   });
 });
 

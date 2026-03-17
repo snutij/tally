@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
-import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
 const stubIdGenerator: IdGenerator = {
   fromPattern: (pattern: string) => `id-${pattern}`.slice(0, 32).padEnd(32, "-"),
@@ -15,8 +15,8 @@ function makeRule(
   pattern: string,
   categoryId: string,
   source: "default" | "learned",
-): ReturnType<typeof createCategoryRule> {
-  return createCategoryRule(
+): CategoryRule {
+  return CategoryRule.create(
     stubIdGenerator.fromPattern(pattern),
     pattern,
     categoryId,

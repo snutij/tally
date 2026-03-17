@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AddRule } from "../../src/application/usecase/add-rule.js";
+import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { DomainError } from "../../src/domain/error/index.js";
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import { ListRules } from "../../src/application/usecase/list-rules.js";
 import { RemoveRule } from "../../src/application/usecase/remove-rule.js";
-import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
 const stubIdGenerator: IdGenerator = {
   fromPattern: (pattern: string) => `id-${pattern}`.slice(0, 32).padEnd(32, "-"),
@@ -16,8 +16,8 @@ function makeRule(
   pattern: string,
   categoryId: string,
   source: "default" | "learned",
-): ReturnType<typeof createCategoryRule> {
-  return createCategoryRule(
+): CategoryRule {
+  return CategoryRule.create(
     stubIdGenerator.fromPattern(pattern),
     pattern,
     categoryId,

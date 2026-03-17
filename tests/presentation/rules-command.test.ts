@@ -1,20 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AddRule } from "../../src/application/usecase/add-rule.js";
+import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { Command } from "commander";
 import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
 import { ListRules } from "../../src/application/usecase/list-rules.js";
 import { RemoveRule } from "../../src/application/usecase/remove-rule.js";
 import type { Renderer } from "../../src/presentation/renderer/renderer.js";
-import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 import { createRulesCommand } from "../../src/presentation/command/rules-command.js";
 
 function makeTestRule(
   pattern: string,
   categoryId: string,
   source: "default" | "learned",
-): ReturnType<typeof createCategoryRule> {
-  return createCategoryRule(
+): CategoryRule {
+  return CategoryRule.create(
     `id-${pattern}`.slice(0, 32),
     pattern,
     categoryId,

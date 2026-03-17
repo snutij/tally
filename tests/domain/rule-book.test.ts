@@ -1,15 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
 import { DomainError } from "../../src/domain/error/index.js";
 import { RuleBook } from "../../src/domain/aggregate/rule-book.js";
-import { createCategoryRule } from "../../src/domain/entity/category-rule.js";
 
-function rule(
-  pattern: string,
-  categoryId: string,
-  source: "default" | "learned",
-): ReturnType<typeof createCategoryRule> {
-  return createCategoryRule(
+function rule(pattern: string, categoryId: string, source: "default" | "learned"): CategoryRule {
+  return CategoryRule.create(
     `id-${pattern}`.slice(0, 32),
     pattern,
     categoryId,
@@ -51,7 +47,12 @@ describe("RuleBook", () => {
     it("skips rules with invalid regex without crashing", () => {
       const book = new RuleBook([
         // Bypass factory validation to inject invalid pattern
-        { categoryId: "n02" as never, id: "x", pattern: "[bad", source: "default" },
+        {
+          categoryId: "n02" as never,
+          id: "x",
+          pattern: "[bad",
+          source: "default",
+        } as unknown as CategoryRule,
         rule(String.raw`\bspotify\b`, "w06", "default"),
       ]);
       expect(book.match("PRLV SEPA SPOTIFY")).toBe("w06");

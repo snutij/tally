@@ -1,6 +1,7 @@
 import type { CategoryId } from "../value-object/category-id.js";
 import type { CategoryRegistry } from "../service/category-registry.js";
 import type { DateOnly } from "../value-object/date-only.js";
+import { DomainError } from "../error/index.js";
 import type { Money } from "../value-object/money.js";
 import type { TransactionId } from "../value-object/transaction-id.js";
 
@@ -33,6 +34,9 @@ export class Transaction {
   }
 
   static create(params: TransactionParams): Transaction {
+    if (!params.label.trim()) {
+      throw new DomainError("Transaction label must not be empty");
+    }
     return new Transaction(params);
   }
 

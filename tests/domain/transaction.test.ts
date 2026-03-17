@@ -31,6 +31,14 @@ describe("Transaction", () => {
       expect(txn.categoryId).toBeUndefined();
     });
 
+    it("throws DomainError for empty label", () => {
+      expect(() => Transaction.create({ ...BASE_PARAMS, label: "" })).toThrow(DomainError);
+    });
+
+    it("throws DomainError for blank label", () => {
+      expect(() => Transaction.create({ ...BASE_PARAMS, label: "   " })).toThrow(DomainError);
+    });
+
     it("creates a pre-categorized transaction when categoryId is provided", () => {
       const txn = Transaction.create({ ...BASE_PARAMS, categoryId: CategoryId("n01") });
       expect(txn.categoryId).toBe("n01");

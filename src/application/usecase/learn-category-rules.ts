@@ -1,9 +1,9 @@
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
+import { CategoryRule } from "../../domain/entity/category-rule.js";
 import type { CategoryRuleRepository } from "../gateway/category-rule-repository.js";
 import type { IdGenerator } from "../gateway/id-generator.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
-import { createCategoryRule } from "../../domain/entity/category-rule.js";
 import { extractPattern } from "../../domain/service/extract-pattern.js";
 
 export class LearnCategoryRules {
@@ -52,7 +52,7 @@ export class LearnCategoryRules {
 
     // Otherwise upsert: create a new learned rule (replaces any existing default for this pattern)
     const id = this.idGenerator.fromPattern(pattern);
-    const rule = createCategoryRule(id, pattern, categoryId, "learned", this.registry);
+    const rule = CategoryRule.create(id, pattern, categoryId, "learned", this.registry);
     this.ruleRepo.save(rule);
   }
 }

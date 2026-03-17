@@ -1,6 +1,6 @@
-import { type CategoryRule, createCategoryRule } from "../../domain/entity/category-rule.js";
 import { type CategoryRuleDto, toCategoryRuleDto } from "../dto/category-rule-dto.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
+import { CategoryRule } from "../../domain/entity/category-rule.js";
 import type { CategoryRuleRepository } from "../gateway/category-rule-repository.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import { DomainError } from "../../domain/error/index.js";
@@ -35,13 +35,7 @@ export class AddRule {
     const categoryName = DEFAULT_CATEGORIES.find((cat) => cat.id === categoryId)!.name;
 
     const id = this.idGenerator.fromPattern(pattern);
-    const rule: CategoryRule = createCategoryRule(
-      id,
-      pattern,
-      categoryId,
-      "learned",
-      this.registry,
-    );
+    const rule = CategoryRule.create(id, pattern, categoryId, "learned", this.registry);
 
     // Enforce uniqueness via RuleBook aggregate
     const ruleBook = new RuleBook(this.ruleRepo.findAll());
