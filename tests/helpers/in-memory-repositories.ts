@@ -1,10 +1,10 @@
 import type { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import type { Month } from "../../src/domain/value-object/month.js";
 import { RuleBook } from "../../src/domain/aggregate/rule-book.js";
-import type { RuleBookRepository } from "../../src/application/port/rule-book-repository.js";
+import type { RuleBookRepository } from "../../src/application/gateway/rule-book-repository.js";
 import type { Transaction } from "../../src/domain/entity/transaction.js";
 import type { TransactionId } from "../../src/domain/value-object/transaction-id.js";
-import type { TransactionRepository } from "../../src/application/port/transaction-repository.js";
+import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 
 export class InMemoryRuleBookRepository implements RuleBookRepository {
   private rules: CategoryRule[] = [];

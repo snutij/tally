@@ -4,7 +4,7 @@ import { CategoryId } from "../../domain/value-object/category-id.js";
 import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
-import type { TransactionRepository } from "../port/transaction-repository.js";
+import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
 function dtoToTransaction(dto: TransactionDto): Transaction {
   return Transaction.create({

@@ -4,7 +4,7 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DomainError } from "../../src/domain/error/index.js";
-import type { IdGenerator } from "../../src/application/port/id-generator.js";
+import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
 import { InMemoryRuleBookRepository } from "../helpers/in-memory-repositories.js";
 import { ListRules } from "../../src/application/usecase/list-rules.js";
 import { RemoveRule } from "../../src/application/usecase/remove-rule.js";

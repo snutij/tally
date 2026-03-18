@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
-// Scan source directories for "Gateway" naming violations.
-// Repository = persistence abstraction for aggregates (application/port/)
-// Gateway = external system adapters — these MUST NOT appear in port or persistence layers.
+// Scan source directories for naming violations.
+// Repository = persistence abstraction for aggregates (application/gateway/)
+// Gateway interfaces MUST NOT appear in the persistence layer.
 
-const PORT_DIR = resolve(import.meta.dirname, "../../src/application/port");
+const GATEWAY_DIR = resolve(import.meta.dirname, "../../src/application/gateway");
 const PERSISTENCE_DIR = resolve(import.meta.dirname, "../../src/infrastructure/persistence");
 
 function tsFilesIn(dir: string): string[] {
@@ -14,21 +14,21 @@ function tsFilesIn(dir: string): string[] {
 }
 
 describe("Architecture: naming conventions", () => {
-  describe("application/port file names", () => {
-    it("no port file is named with 'gateway'", () => {
-      const violations = tsFilesIn(PORT_DIR).filter((file) =>
-        file.toLowerCase().includes("gateway"),
+  describe("application/gateway file names", () => {
+    it("no gateway file is named with 'port'", () => {
+      const violations = tsFilesIn(GATEWAY_DIR).filter((file) =>
+        file.toLowerCase().includes("port"),
       );
       expect(violations).toEqual([]);
     });
   });
 
-  describe("application/port interface names", () => {
-    it("no exported interface, type, or class in port layer uses 'Gateway' naming", () => {
+  describe("application/gateway interface names", () => {
+    it("no exported interface, type, or class in gateway layer uses 'Port' naming", () => {
       const violations: string[] = [];
-      for (const file of tsFilesIn(PORT_DIR)) {
-        const content = readFileSync(resolve(PORT_DIR, file), "utf8");
-        const matches = content.match(/\bexport\s+(?:interface|type|class)\s+\w*Gateway\w*/g);
+      for (const file of tsFilesIn(GATEWAY_DIR)) {
+        const content = readFileSync(resolve(GATEWAY_DIR, file), "utf8");
+        const matches = content.match(/\bexport\s+(?:interface|type|class)\s+\w*Port\w*/g);
         if (matches) {
           violations.push(`${file}: ${matches.join(", ")}`);
         }

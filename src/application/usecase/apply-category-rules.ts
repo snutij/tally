@@ -1,4 +1,4 @@
-import type { RuleBookRepository } from "../port/rule-book-repository.js";
+import type { RuleBookRepository } from "../gateway/rule-book-repository.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
 
 export class ApplyCategoryRules {

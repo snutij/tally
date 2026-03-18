@@ -3,7 +3,7 @@ import { DateOnly } from "../../domain/value-object/date-only.js";
 import { InvalidImportData } from "../../domain/error/index.js";
 import { Money } from "../../domain/value-object/money.js";
 import { Transaction } from "../../domain/entity/transaction.js";
-import type { TransactionParser } from "../../application/port/transaction-parser.js";
+import type { TransactionParser } from "../../application/gateway/transaction-parser.js";
 import { decodeFileContent } from "./encoding.js";
 import { deterministicTransactionId } from "./transaction-id.js";
 import { parse } from "csv-parse/sync";

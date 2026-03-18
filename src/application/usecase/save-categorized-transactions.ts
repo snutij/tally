@@ -2,7 +2,7 @@ import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { DomainError } from "../../domain/error/index.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
-import type { TransactionRepository } from "../port/transaction-repository.js";
+import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
 interface CategoryAssignment {
   categoryId: string;

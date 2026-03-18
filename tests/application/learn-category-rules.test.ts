@@ -3,7 +3,7 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
-import type { IdGenerator } from "../../src/application/port/id-generator.js";
+import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
 import { InMemoryRuleBookRepository } from "../helpers/in-memory-repositories.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";

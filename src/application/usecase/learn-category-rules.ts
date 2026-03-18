@@ -1,8 +1,8 @@
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { CategoryRule } from "../../domain/entity/category-rule.js";
-import type { IdGenerator } from "../port/id-generator.js";
-import type { RuleBookRepository } from "../port/rule-book-repository.js";
+import type { IdGenerator } from "../gateway/id-generator.js";
+import type { RuleBookRepository } from "../gateway/rule-book-repository.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
 import { extractPattern } from "../../domain/service/extract-pattern.js";
 

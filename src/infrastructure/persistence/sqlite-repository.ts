@@ -4,15 +4,15 @@ import type { CategoryRegistry } from "../../domain/service/category-registry.js
 import { CategoryRule } from "../../domain/entity/category-rule.js";
 import Database from "better-sqlite3";
 import { DateOnly } from "../../domain/value-object/date-only.js";
-import type { IdGenerator } from "../../application/port/id-generator.js";
+import type { IdGenerator } from "../../application/gateway/id-generator.js";
 import { Money } from "../../domain/value-object/money.js";
 import type { Month } from "../../domain/value-object/month.js";
 import { RuleBook } from "../../domain/aggregate/rule-book.js";
-import type { RuleBookRepository } from "../../application/port/rule-book-repository.js";
+import type { RuleBookRepository } from "../../application/gateway/rule-book-repository.js";
 import { Transaction } from "../../domain/entity/transaction.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
-import type { TransactionRepository } from "../../application/port/transaction-repository.js";
-import type { UnitOfWork } from "../../application/port/unit-of-work.js";
+import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
+import type { UnitOfWork } from "../../application/gateway/unit-of-work.js";
 
 interface TransactionRow {
   id: string;

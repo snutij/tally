@@ -1,4 +1,4 @@
-import type { MockDataGenerator } from "../../application/port/mock-data-generator.js";
+import type { MockDataGenerator } from "../../application/gateway/mock-data-generator.js";
 import type { Transaction } from "../../domain/entity/transaction.js";
 import { mockTransactions } from "./mock-dataset.js";
 

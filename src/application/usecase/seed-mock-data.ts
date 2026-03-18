@@ -1,6 +1,6 @@
-import type { MockDataGenerator } from "../port/mock-data-generator.js";
+import type { MockDataGenerator } from "../gateway/mock-data-generator.js";
 import { Month } from "../../domain/value-object/month.js";
-import type { TransactionRepository } from "../port/transaction-repository.js";
+import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
 export class SeedMockData {
   private readonly txnRepository: TransactionRepository;

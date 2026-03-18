@@ -5,7 +5,7 @@ import {
 import { type MonthlyReportDto, toMonthlyReportDto } from "../dto/report-dto.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { Month } from "../../domain/value-object/month.js";
-import type { TransactionRepository } from "../port/transaction-repository.js";
+import type { TransactionRepository } from "../gateway/transaction-repository.js";
 import { computeMonthlyReport } from "../../domain/service/compute-monthly-report.js";
 
 export class GenerateReport {

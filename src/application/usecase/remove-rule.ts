@@ -1,5 +1,5 @@
 import { DomainError } from "../../domain/error/index.js";
-import type { RuleBookRepository } from "../port/rule-book-repository.js";
+import type { RuleBookRepository } from "../gateway/rule-book-repository.js";
 
 export class RemoveRule {
   private readonly ruleBookRepository: RuleBookRepository;

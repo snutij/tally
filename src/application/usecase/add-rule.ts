@@ -2,8 +2,8 @@ import { type CategoryRuleDto, toCategoryRuleDto } from "../dto/category-rule-dt
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { CategoryRule } from "../../domain/entity/category-rule.js";
 import { DomainError } from "../../domain/error/index.js";
-import type { IdGenerator } from "../port/id-generator.js";
-import type { RuleBookRepository } from "../port/rule-book-repository.js";
+import type { IdGenerator } from "../gateway/id-generator.js";
+import type { RuleBookRepository } from "../gateway/rule-book-repository.js";
 
 export class AddRule {
   private readonly ruleBookRepository: RuleBookRepository;

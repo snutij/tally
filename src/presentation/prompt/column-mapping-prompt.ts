@@ -1,5 +1,5 @@
 import type { ColumnField, CsvMappingConfig } from "../../application/dto/csv-mapping-config.js";
-import type { CsvFormatDetector } from "../../application/port/csv-format-detector.js";
+import type { CsvFormatDetector } from "../../application/gateway/csv-format-detector.js";
 import { parse } from "csv-parse/sync";
 import select from "@inquirer/select";
 

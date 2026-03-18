@@ -1,5 +1,5 @@
 import type { TransactionDto } from "../dto/transaction-dto.js";
-import type { UnitOfWork } from "../port/unit-of-work.js";
+import type { UnitOfWork } from "../gateway/unit-of-work.js";
 
 // Structural interfaces — concrete use cases satisfy these without explicit `implements`
 
