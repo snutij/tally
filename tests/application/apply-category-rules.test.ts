@@ -2,8 +2,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
+import type { DomainEventPublisher } from "../../src/application/gateway/domain-event-publisher.js";
 import { InMemoryRuleBookRepository } from "../helpers/in-memory-repositories.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
+
+const noopPublisher: DomainEventPublisher = { publish: () => {} };
 
 function rule(pattern: string, categoryId: string, source: "default" | "learned"): CategoryRule {
   return CategoryRule.create(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
@@ -26,7 +29,7 @@ describe("ApplyCategoryRules", () => {
 
   beforeEach(() => {
     ruleBookRepo = new InMemoryRuleBookRepository();
-    useCase = new ApplyCategoryRules(ruleBookRepo);
+    useCase = new ApplyCategoryRules(ruleBookRepo, noopPublisher);
   });
 
   it("auto-categorizes a matching transaction", () => {

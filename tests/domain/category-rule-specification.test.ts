@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
-import { CategoryRuleSpecification } from "../../src/domain/value-object/category-rule-specification.js";
+import { CategoryRuleSpecification } from "../../src/domain/specification/category-rule-specification.js";
 
 function rule(pattern: string, categoryId = "n02"): CategoryRule {
   return CategoryRule.create("rule-id", pattern, categoryId, "default");
@@ -40,6 +40,41 @@ describe("CategoryRuleSpecification", () => {
       const spotify = CategoryRule.create("my-rule-id", String.raw`\bspotify\b`, "w06", "default");
       const spec = new CategoryRuleSpecification(spotify);
       expect(spec.ruleId).toBe("my-rule-id");
+    });
+  });
+
+  describe("composition algebra", () => {
+    const carrefour = new CategoryRuleSpecification(rule(String.raw`\bcarrefour\b`));
+    const city = new CategoryRuleSpecification(rule(String.raw`\bcity\b`));
+
+    it("and() requires both specs to be satisfied", () => {
+      const spec = carrefour.and(city);
+      expect(spec.isSatisfiedBy("CARTE CB CARREFOUR CITY")).toBe(true);
+      expect(spec.isSatisfiedBy("CARTE CB CARREFOUR PARIS")).toBe(false);
+    });
+
+    it("or() requires either spec to be satisfied", () => {
+      const spec = carrefour.or(city);
+      expect(spec.isSatisfiedBy("CARTE CB CARREFOUR")).toBe(true);
+      expect(spec.isSatisfiedBy("CARTE CB CITY")).toBe(true);
+      expect(spec.isSatisfiedBy("CARTE CB LECLERC")).toBe(false);
+    });
+
+    it("not() negates the spec", () => {
+      const notCarrefour = carrefour.not();
+      expect(notCarrefour.isSatisfiedBy("CARTE CB LECLERC")).toBe(true);
+      expect(notCarrefour.isSatisfiedBy("CARTE CB CARREFOUR")).toBe(false);
+    });
+
+    it("deep composition: (A AND B) OR (NOT C)", () => {
+      const spotify = new CategoryRuleSpecification(rule(String.raw`\bspotify\b`));
+      const spec = carrefour.and(city).or(spotify.not());
+      // carrefour+city match
+      expect(spec.isSatisfiedBy("CARTE CB CARREFOUR CITY")).toBe(true);
+      // no spotify → NOT spotify satisfied
+      expect(spec.isSatisfiedBy("CARTE CB LECLERC")).toBe(true);
+      // has spotify, not (carrefour+city) → false
+      expect(spec.isSatisfiedBy("PRLV SEPA SPOTIFY")).toBe(false);
     });
   });
 });

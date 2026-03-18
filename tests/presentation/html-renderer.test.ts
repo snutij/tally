@@ -31,7 +31,7 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReportDto)", () => {
     const report = toMonthlyReportDto(
-      computeMonthlyReport(Month.from("2026-03"), targets, txns, registry),
+      computeMonthlyReport(Month.from("2026-03"), targets, txns, registry.categoryToGroupMap()),
     );
     const html = renderer.render(report);
 
@@ -86,7 +86,7 @@ describe("HtmlRenderer", () => {
   describe("render(MonthlyReport) — no transactions", () => {
     it("omits insights section when there are no expense transactions", () => {
       const report = toMonthlyReportDto(
-        computeMonthlyReport(Month.from("2026-03"), targets, [], registry),
+        computeMonthlyReport(Month.from("2026-03"), targets, [], registry.categoryToGroupMap()),
       );
       const html = renderer.render(report);
       const [, body] = html.split("<body>");
@@ -102,7 +102,7 @@ describe("HtmlRenderer", () => {
           Month.from("2026-03"),
           targets,
           [makeTxn("1", -200, "2026-03-05")],
-          registry,
+          registry.categoryToGroupMap(),
         ),
       );
       const html = renderer.render(report);
@@ -117,7 +117,7 @@ describe("HtmlRenderer", () => {
           Month.from("2026-03"),
           targets,
           [makeTxn("1", 100, "2026-03-05", "n01")],
-          registry,
+          registry.categoryToGroupMap(),
         ),
       );
       const html = renderer.render(report);
@@ -134,7 +134,7 @@ describe("HtmlRenderer", () => {
           Month.from("2026-03"),
           targets,
           [makeTxn("3", -100, "2026-03-05")],
-          registry,
+          registry.categoryToGroupMap(),
         ),
       );
       const html = renderer.render(report);
@@ -144,7 +144,7 @@ describe("HtmlRenderer", () => {
 
     it("omits uncategorized section when zero", () => {
       const report = toMonthlyReportDto(
-        computeMonthlyReport(Month.from("2026-03"), targets, txns, registry),
+        computeMonthlyReport(Month.from("2026-03"), targets, txns, registry.categoryToGroupMap()),
       );
       const html = renderer.render(report);
       expect(html).not.toContain('class="uncategorized"');

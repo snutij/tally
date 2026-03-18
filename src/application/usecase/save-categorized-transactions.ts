@@ -1,7 +1,7 @@
-import { EventDispatcher, TransactionCategorized } from "../../domain/event/index.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { DomainError } from "../../domain/error/index.js";
+import type { DomainEventPublisher } from "../gateway/domain-event-publisher.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
@@ -13,16 +13,16 @@ interface CategoryAssignment {
 export class SaveCategorizedTransactions {
   private readonly txnRepository: TransactionRepository;
   private readonly registry: CategoryRegistry;
-  private readonly eventDispatcher: EventDispatcher;
+  private readonly eventPublisher: DomainEventPublisher;
 
   constructor(
     txnRepository: TransactionRepository,
     registry: CategoryRegistry,
-    eventDispatcher = new EventDispatcher(),
+    eventPublisher: DomainEventPublisher,
   ) {
     this.txnRepository = txnRepository;
     this.registry = registry;
-    this.eventDispatcher = eventDispatcher;
+    this.eventPublisher = eventPublisher;
   }
 
   execute(assignments: CategoryAssignment[]): { categorizedCount: number } {
@@ -48,8 +48,8 @@ export class SaveCategorizedTransactions {
 
     this.txnRepository.saveAll(categorized);
     for (const txn of categorized) {
-      if (txn.categoryId) {
-        this.eventDispatcher.dispatch(TransactionCategorized(txn.id, txn.categoryId));
+      for (const event of txn.pullDomainEvents()) {
+        this.eventPublisher.publish(event);
       }
     }
     return { categorizedCount: categorized.length };

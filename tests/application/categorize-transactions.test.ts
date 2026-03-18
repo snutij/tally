@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import type { DomainEventPublisher } from "../../src/application/gateway/domain-event-publisher.js";
+
+const noopPublisher: DomainEventPublisher = { publish: () => {} };
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
@@ -70,7 +73,11 @@ describe("SaveCategorizedTransactions", () => {
 
   beforeEach(() => {
     txnGateway = new InMemoryTransactionRepository();
-    useCase = new SaveCategorizedTransactions(txnGateway, new CategoryRegistry(DEFAULT_CATEGORIES));
+    useCase = new SaveCategorizedTransactions(
+      txnGateway,
+      new CategoryRegistry(DEFAULT_CATEGORIES),
+      noopPublisher,
+    );
   });
 
   it("persists categorized transactions", () => {

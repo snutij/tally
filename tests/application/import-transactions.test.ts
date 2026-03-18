@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import type { DomainEventPublisher } from "../../src/application/gateway/domain-event-publisher.js";
+
+const noopPublisher: DomainEventPublisher = { publish: () => {} };
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
@@ -25,7 +28,7 @@ describe("ImportTransactions", () => {
 
   beforeEach(() => {
     txnGateway = new InMemoryTransactionRepository();
-    useCase = new ImportTransactions(txnGateway);
+    useCase = new ImportTransactions(txnGateway, noopPublisher);
   });
 
   it("saves transactions and returns count", () => {

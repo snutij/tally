@@ -9,7 +9,7 @@ export interface CategoryRuleLearned extends DomainEvent {
   readonly categoryId: CategoryId;
 }
 
-export function CategoryRuleLearned(
+export function createCategoryRuleLearned(
   ruleId: CategoryRuleId,
   pattern: string,
   categoryId: CategoryId,

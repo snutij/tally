@@ -12,9 +12,9 @@ import { ApplyCategoryRules } from "../../src/application/usecase/apply-category
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
-import { EventDispatcher } from "../../src/domain/event/event-dispatcher.js";
 import { ImportCsvWorkflow } from "../../src/application/usecase/import-csv-workflow.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
+import { InProcessEventDispatcher } from "../../src/infrastructure/event/in-process-event-dispatcher.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
 
@@ -28,7 +28,7 @@ function dto(id: string, categoryId?: string, label = `txn-${id}`): TransactionD
 describe("Event emission in import workflow", () => {
   let txnGateway: InMemoryTransactionRepository;
   let ruleGateway: InMemoryRuleBookRepository;
-  let eventDispatcher: EventDispatcher;
+  let eventDispatcher: InProcessEventDispatcher;
   let workflow: ImportCsvWorkflow;
   let importTransactions: ImportTransactions;
   let applyCategoryRules: ApplyCategoryRules;
@@ -37,7 +37,7 @@ describe("Event emission in import workflow", () => {
   beforeEach(() => {
     txnGateway = new InMemoryTransactionRepository();
     ruleGateway = new InMemoryRuleBookRepository();
-    eventDispatcher = new EventDispatcher();
+    eventDispatcher = new InProcessEventDispatcher();
     importTransactions = new ImportTransactions(txnGateway, eventDispatcher);
     applyCategoryRules = new ApplyCategoryRules(ruleGateway, eventDispatcher);
     learnCategoryRules = new LearnCategoryRules(
@@ -81,10 +81,6 @@ describe("Event emission in import workflow", () => {
   it("emits CategoryRuleLearned after learning from manual categorization", async () => {
     const handler = vi.fn();
     eventDispatcher.on<CategoryRuleLearnedEvent>("CategoryRuleLearned", handler);
-    const promptFn = vi.fn().mockResolvedValue({
-      categorized: [dto("t1", "w06", "PRLV SEPA SPOTIFY PREMIUM")],
-      interrupted: false,
-    });
     // Use real bank prefixes to ensure pattern extraction works
     learnCategoryRules = new LearnCategoryRules(
       ruleGateway,
@@ -96,7 +92,13 @@ describe("Event emission in import workflow", () => {
     workflow = new ImportCsvWorkflow(importTransactions, applyCategoryRules, learnCategoryRules, {
       runInTransaction: (fn: () => void): void => fn(),
     });
-    await workflow.execute({ promptFn, transactions: [dto("t1")] });
+    await workflow.execute({
+      promptFn: vi.fn().mockResolvedValue({
+        categorized: [dto("t1", "w06", "PRLV SEPA SPOTIFY PREMIUM")],
+        interrupted: false,
+      }),
+      transactions: [dto("t1")],
+    });
     expect(handler).toHaveBeenCalledOnce();
     const event = handler.mock.calls[0]?.[0] as CategoryRuleLearnedEvent;
     expect(event.categoryId).toBe("w06");

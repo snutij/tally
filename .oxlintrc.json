@@ -13,14 +13,7 @@
     "new-cap": [
       "error",
       {
-        "capIsNewExceptions": [
-          "CategoryId",
-          "CategoryRuleId",
-          "CategoryRuleLearned",
-          "TransactionCategorized",
-          "TransactionId",
-          "TransactionImported"
-        ]
+        "capIsNewExceptions": ["CategoryId", "CategoryRuleId", "TransactionId"]
       }
     ],
     "no-await-in-loop": "off",

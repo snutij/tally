@@ -10,7 +10,7 @@ export interface TransactionCategorized extends DomainEvent {
   readonly ruleId: CategoryRuleId | undefined;
 }
 
-export function TransactionCategorized(
+export function createTransactionCategorized(
   transactionId: TransactionId,
   categoryId: CategoryId,
   ruleId: CategoryRuleId | undefined,

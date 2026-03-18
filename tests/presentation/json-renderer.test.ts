@@ -30,7 +30,7 @@ describe("JsonRenderer", () => {
 
   it("serializes a MonthlyReportDto", () => {
     const report = toMonthlyReportDto(
-      computeMonthlyReport(Month.from("2026-03"), targets, [], registry),
+      computeMonthlyReport(Month.from("2026-03"), targets, [], registry.categoryToGroupMap()),
     );
     const parsed = JSON.parse(renderer.render(report));
     expect(parsed.month).toBe("2026-03");
@@ -45,7 +45,7 @@ describe("JsonRenderer", () => {
         Month.from("2026-03"),
         targets,
         [makeTxn("1", 3000, "2026-03-01", "inc01")],
-        registry,
+        registry.categoryToGroupMap(),
       ),
     );
     const parsed = JSON.parse(renderer.render(report));
@@ -61,7 +61,7 @@ describe("JsonRenderer", () => {
         Month.from("2026-03"),
         targets,
         [makeTxn("1", 3000, "2026-03-01", "inc01"), makeTxn("2", -800, "2026-03-02", "n01")],
-        registry,
+        registry.categoryToGroupMap(),
       ),
     );
     const parsed = JSON.parse(renderer.render(report));

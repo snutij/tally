@@ -1,52 +1,52 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DomainEvent } from "../../src/domain/event/domain-event.js";
-import { EventDispatcher } from "../../src/domain/event/event-dispatcher.js";
+import { InProcessEventDispatcher } from "../../src/infrastructure/event/in-process-event-dispatcher.js";
 
 function makeEvent(eventType: string): DomainEvent {
   return { eventType, occurredAt: new Date() };
 }
 
-describe("EventDispatcher", () => {
-  it("calls registered handler when event is dispatched", () => {
-    const dispatcher = new EventDispatcher();
+describe("InProcessEventDispatcher", () => {
+  it("calls registered handler when event is published", () => {
+    const dispatcher = new InProcessEventDispatcher();
     const handler = vi.fn();
     dispatcher.on("Foo", handler);
     const event = makeEvent("Foo");
-    dispatcher.dispatch(event);
+    dispatcher.publish(event);
     expect(handler).toHaveBeenCalledOnce();
     expect(handler).toHaveBeenCalledWith(event);
   });
 
   it("calls multiple handlers in registration order", () => {
-    const dispatcher = new EventDispatcher();
+    const dispatcher = new InProcessEventDispatcher();
     const order: number[] = [];
     dispatcher.on("Foo", () => order.push(1));
     dispatcher.on("Foo", () => order.push(2));
-    dispatcher.dispatch(makeEvent("Foo"));
+    dispatcher.publish(makeEvent("Foo"));
     expect(order).toEqual([1, 2]);
   });
 
   it("does not call handler for different event type", () => {
-    const dispatcher = new EventDispatcher();
+    const dispatcher = new InProcessEventDispatcher();
     const handler = vi.fn();
     dispatcher.on("Foo", handler);
-    dispatcher.dispatch(makeEvent("Bar"));
+    dispatcher.publish(makeEvent("Bar"));
     expect(handler).not.toHaveBeenCalled();
   });
 
   it("completes without error when no handler is registered", () => {
-    const dispatcher = new EventDispatcher();
-    expect(() => dispatcher.dispatch(makeEvent("Unhandled"))).not.toThrow();
+    const dispatcher = new InProcessEventDispatcher();
+    expect(() => dispatcher.publish(makeEvent("Unhandled"))).not.toThrow();
   });
 
   it("passes the exact event object to the handler", () => {
-    const dispatcher = new EventDispatcher();
+    const dispatcher = new InProcessEventDispatcher();
     let received: DomainEvent | undefined;
     dispatcher.on("Foo", (event) => {
       received = event;
     });
-    const dispatched = makeEvent("Foo");
-    dispatcher.dispatch(dispatched);
-    expect(received).toBe(dispatched);
+    const published = makeEvent("Foo");
+    dispatcher.publish(published);
+    expect(received).toBe(published);
   });
 });

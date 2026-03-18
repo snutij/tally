@@ -1,15 +1,18 @@
-import { EventDispatcher, TransactionCategorized } from "../../domain/event/index.js";
+import { Transaction, type TransactionSource } from "../../domain/entity/transaction.js";
+import { DateOnly } from "../../domain/value-object/date-only.js";
+import type { DomainEventPublisher } from "../gateway/domain-event-publisher.js";
+import { Money } from "../../domain/value-object/money.js";
 import type { RuleBookRepository } from "../gateway/rule-book-repository.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
 
 export class ApplyCategoryRules {
   private readonly ruleBookRepository: RuleBookRepository;
-  private readonly eventDispatcher: EventDispatcher;
+  private readonly eventPublisher: DomainEventPublisher;
 
-  constructor(ruleBookRepository: RuleBookRepository, eventDispatcher = new EventDispatcher()) {
+  constructor(ruleBookRepository: RuleBookRepository, eventPublisher: DomainEventPublisher) {
     this.ruleBookRepository = ruleBookRepository;
-    this.eventDispatcher = eventDispatcher;
+    this.eventPublisher = eventPublisher;
   }
 
   apply(transactions: TransactionDto[]): {
@@ -25,10 +28,20 @@ export class ApplyCategoryRules {
       if (match === undefined) {
         unmatched.push(txn);
       } else {
+        // Create a temporary entity to record the TransactionCategorized event
+        const entity = Transaction.create({
+          amount: Money.fromEuros(txn.amount),
+          categoryId: undefined,
+          date: DateOnly.from(txn.date),
+          id: TransactionId(txn.id),
+          label: txn.label,
+          source: txn.source as TransactionSource,
+        });
+        const categorized = entity.categorize(match.categoryId, match.ruleId);
+        for (const event of categorized.pullDomainEvents()) {
+          this.eventPublisher.publish(event);
+        }
         matched.push({ ...txn, categoryId: match.categoryId });
-        this.eventDispatcher.dispatch(
-          TransactionCategorized(TransactionId(txn.id), match.categoryId, match.ruleId),
-        );
       }
     }
 

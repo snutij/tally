@@ -10,7 +10,7 @@ export interface TransactionImported extends DomainEvent {
   readonly date: DateOnly;
 }
 
-export function TransactionImported(
+export function createTransactionImported(
   transactionId: TransactionId,
   label: string,
   amountCents: number,

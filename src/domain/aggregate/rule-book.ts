@@ -1,18 +1,15 @@
-import type { CategoryId } from "../value-object/category-id.js";
+import { AggregateRoot } from "./aggregate-root.js";
 import type { CategoryRule } from "../entity/category-rule.js";
-import type { CategoryRuleId } from "../value-object/category-rule-id.js";
-import { CategoryRuleSpecification } from "../value-object/category-rule-specification.js";
+import { CategoryRuleSpecification } from "../specification/category-rule-specification.js";
 import { DomainError } from "../error/index.js";
+import type { RuleMatch } from "../value-object/rule-match.js";
+import { createCategoryRuleLearned } from "../event/category-rule-learned.js";
 
-export interface RuleMatch {
-  categoryId: CategoryId;
-  ruleId: CategoryRuleId;
-}
-
-export class RuleBook {
+export class RuleBook extends AggregateRoot {
   private readonly rules: CategoryRule[];
 
   constructor(rules: CategoryRule[]) {
+    super();
     this.rules = [...rules];
   }
 
@@ -39,13 +36,14 @@ export class RuleBook {
 
   /**
    * Adds a rule to the book. Throws DomainError if a rule with the same
-   * pattern already exists.
+   * pattern already exists. Records a CategoryRuleLearned event on success.
    */
   addRule(rule: CategoryRule): void {
     if (this.rules.some((existing) => existing.pattern === rule.pattern)) {
       throw new DomainError(`A rule for pattern "${rule.pattern}" already exists.`);
     }
     this.rules.push(rule);
+    this.addDomainEvent(createCategoryRuleLearned(rule.id, rule.pattern, rule.categoryId));
   }
 
   /**

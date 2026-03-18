@@ -1,14 +1,14 @@
-import { EventDispatcher, TransactionImported } from "../../domain/event/index.js";
 import { Transaction, type TransactionSource } from "../../domain/entity/transaction.js";
 import { type TransactionDto, toTransactionDto } from "../dto/transaction-dto.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import { DateOnly } from "../../domain/value-object/date-only.js";
+import type { DomainEventPublisher } from "../gateway/domain-event-publisher.js";
 import { Money } from "../../domain/value-object/money.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
-function dtoToTransaction(dto: TransactionDto): Transaction {
-  return Transaction.create({
+function dtoToImportedTransaction(dto: TransactionDto): Transaction {
+  return Transaction.import({
     amount: Money.fromEuros(dto.amount),
     categoryId: dto.categoryId ? CategoryId(dto.categoryId) : undefined,
     date: DateOnly.from(dto.date),
@@ -20,11 +20,11 @@ function dtoToTransaction(dto: TransactionDto): Transaction {
 
 export class ImportTransactions {
   private readonly txnRepository: TransactionRepository;
-  private readonly eventDispatcher: EventDispatcher;
+  private readonly eventPublisher: DomainEventPublisher;
 
-  constructor(txnRepository: TransactionRepository, eventDispatcher = new EventDispatcher()) {
+  constructor(txnRepository: TransactionRepository, eventPublisher: DomainEventPublisher) {
     this.txnRepository = txnRepository;
-    this.eventDispatcher = eventDispatcher;
+    this.eventPublisher = eventPublisher;
   }
 
   splitByCategoryStatus(transactions: TransactionDto[]): {
@@ -52,12 +52,12 @@ export class ImportTransactions {
   }
 
   save(transactions: TransactionDto[]): { count: number } {
-    const domain = transactions.map((dto) => dtoToTransaction(dto));
+    const domain = transactions.map((dto) => dtoToImportedTransaction(dto));
     this.txnRepository.saveAll(domain);
     for (const txn of domain) {
-      this.eventDispatcher.dispatch(
-        TransactionImported(txn.id, txn.label, txn.amount.cents, txn.date),
-      );
+      for (const event of txn.pullDomainEvents()) {
+        this.eventPublisher.publish(event);
+      }
     }
     return { count: transactions.length };
   }

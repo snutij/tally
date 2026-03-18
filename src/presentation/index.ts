@@ -14,12 +14,12 @@ import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
 import { DEFAULT_CATEGORIES } from "../domain/default-categories.js";
 import { DomainError } from "../application/error.js";
-import { EventDispatcher } from "../domain/event/index.js";
 import { ExitPromptError } from "@inquirer/core";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
 import { ImportCsvWorkflow } from "../application/usecase/import-csv-workflow.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
+import { InProcessEventDispatcher } from "../infrastructure/event/in-process-event-dispatcher.js";
 import { LearnCategoryRules } from "../application/usecase/learn-category-rules.js";
 import { ListRules } from "../application/usecase/list-rules.js";
 import { ListTransactions } from "../application/usecase/list-transactions.js";
@@ -43,7 +43,7 @@ if (!existsSync(dataDir)) {
 
 // --- Composition root ---
 const idGenerator = new Sha256IdGenerator();
-const eventDispatcher = new EventDispatcher();
+const eventDispatcher = new InProcessEventDispatcher();
 const { categoryRepository, txnRepository, ruleBookRepository, unitOfWork } = openDatabase(
   dbPath,
   new CategoryRegistry(DEFAULT_CATEGORIES),

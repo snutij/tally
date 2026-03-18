@@ -1,7 +1,7 @@
-import { CategoryRuleLearned, EventDispatcher } from "../../domain/event/index.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { CategoryRule } from "../../domain/entity/category-rule.js";
+import type { DomainEventPublisher } from "../gateway/domain-event-publisher.js";
 import type { IdGenerator } from "../gateway/id-generator.js";
 import type { RuleBookRepository } from "../gateway/rule-book-repository.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
@@ -12,20 +12,20 @@ export class LearnCategoryRules {
   private readonly bankPrefixes: string[];
   private readonly idGenerator: IdGenerator;
   private readonly registry: CategoryRegistry;
-  private readonly eventDispatcher: EventDispatcher;
+  private readonly eventPublisher: DomainEventPublisher;
 
   constructor(
     ruleBookRepository: RuleBookRepository,
     bankPrefixes: string[],
     idGenerator: IdGenerator,
     registry: CategoryRegistry,
-    eventDispatcher = new EventDispatcher(),
+    eventPublisher: DomainEventPublisher,
   ) {
     this.ruleBookRepository = ruleBookRepository;
     this.bankPrefixes = bankPrefixes;
     this.idGenerator = idGenerator;
     this.registry = registry;
-    this.eventDispatcher = eventDispatcher;
+    this.eventPublisher = eventPublisher;
   }
 
   learn(transactions: TransactionDto[]): void {
@@ -56,10 +56,7 @@ export class LearnCategoryRules {
           }
           const id = this.idGenerator.fromPattern(pattern);
           const rule = CategoryRule.create(id, pattern, categoryId, "learned");
-          ruleBook.addRule(rule);
-          this.eventDispatcher.dispatch(
-            CategoryRuleLearned(rule.id, rule.pattern, rule.categoryId),
-          );
+          ruleBook.addRule(rule); // records CategoryRuleLearned event internally
           changed = true;
         }
       }
@@ -67,6 +64,9 @@ export class LearnCategoryRules {
 
     if (changed) {
       this.ruleBookRepository.save(ruleBook);
+      for (const event of ruleBook.pullDomainEvents()) {
+        this.eventPublisher.publish(event);
+      }
     }
   }
 }

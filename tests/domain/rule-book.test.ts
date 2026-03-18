@@ -71,6 +71,30 @@ describe("RuleBook", () => {
         /already exists/,
       );
     });
+
+    it("records a CategoryRuleLearned event on success", () => {
+      const book = new RuleBook([]);
+      const spotify = rule(String.raw`\bspotify\b`, "w06", "learned");
+      book.addRule(spotify);
+      const events = book.pullDomainEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0]?.eventType).toBe("CategoryRuleLearned");
+    });
+
+    it("does not record an event when duplicate pattern throws", () => {
+      const book = new RuleBook([rule(String.raw`\bspotify\b`, "w06", "default")]);
+      expect(() => book.addRule(rule(String.raw`\bspotify\b`, "w06", "learned"))).toThrow(
+        DomainError,
+      );
+      expect(book.pullDomainEvents()).toHaveLength(0);
+    });
+
+    it("pullDomainEvents clears the list after reading", () => {
+      const book = new RuleBook([]);
+      book.addRule(rule(String.raw`\bspotify\b`, "w06", "learned"));
+      book.pullDomainEvents(); // consume
+      expect(book.pullDomainEvents()).toHaveLength(0);
+    });
   });
 
   describe("removeByPattern()", () => {

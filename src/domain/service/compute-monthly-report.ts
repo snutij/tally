@@ -1,6 +1,6 @@
-import type { CategoryMapEntry, CategoryRegistry } from "./category-registry.js";
 import type { GroupSummary, MonthlyReport, ReportKpis } from "../read-model/monthly-report.js";
 import { CategoryGroup } from "../value-object/category-group.js";
+import type { CategoryMapEntry } from "./category-registry.js";
 import { Money } from "../value-object/money.js";
 import type { Month } from "../value-object/month.js";
 import type { SpendingTargets } from "../config/spending-targets.js";
@@ -139,9 +139,8 @@ export function computeMonthlyReport(
   month: Month,
   targets: SpendingTargets,
   transactions: Transaction[],
-  registry: CategoryRegistry,
+  categoryMap: ReadonlyMap<string, CategoryMapEntry>,
 ): MonthlyReport {
-  const categoryMap = registry.categoryToGroupMap();
   const { actualByCategory, actualByGroup, uncategorized, uncategorizedCount } = accumulateActuals(
     transactions,
     categoryMap,

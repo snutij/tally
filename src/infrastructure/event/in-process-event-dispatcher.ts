@@ -1,8 +1,9 @@
-import type { DomainEvent } from "./domain-event.js";
+import type { DomainEvent } from "../../domain/event/domain-event.js";
+import type { DomainEventPublisher } from "../../application/gateway/domain-event-publisher.js";
 
 type Handler<TEvent extends DomainEvent> = (event: TEvent) => void;
 
-export class EventDispatcher {
+export class InProcessEventDispatcher implements DomainEventPublisher {
   private readonly handlers = new Map<string, Handler<DomainEvent>[]>();
 
   on<TEvent extends DomainEvent>(eventType: string, handler: Handler<TEvent>): void {
@@ -11,7 +12,7 @@ export class EventDispatcher {
     this.handlers.set(eventType, list);
   }
 
-  dispatch(event: DomainEvent): void {
+  publish(event: DomainEvent): void {
     const list = this.handlers.get(event.eventType) ?? [];
     for (const handler of list) {
       handler(event);

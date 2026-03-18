@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
+import type { DomainEventPublisher } from "../../src/application/gateway/domain-event-publisher.js";
+
+const noopPublisher: DomainEventPublisher = { publish: () => {} };
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
@@ -38,12 +41,13 @@ describe("e2e: auto-categorization rules", () => {
       new Sha256IdGenerator(),
     );
     close = closeDb;
-    applyCategoryRules = new ApplyCategoryRules(ruleBookRepository);
+    applyCategoryRules = new ApplyCategoryRules(ruleBookRepository, noopPublisher);
     learnCategoryRules = new LearnCategoryRules(
       ruleBookRepository,
       FR_BANK_PREFIXES,
       new Sha256IdGenerator(),
       new CategoryRegistry(DEFAULT_CATEGORIES),
+      noopPublisher,
     );
   });
 

@@ -5,9 +5,12 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
+import type { DomainEventPublisher } from "../../src/application/gateway/domain-event-publisher.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
+
+const noopPublisher: DomainEventPublisher = { publish: () => {} };
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
@@ -42,7 +45,7 @@ describe("e2e: HTML report output", () => {
     );
     close = closeDb;
 
-    importTxns = new ImportTransactions(txnRepository);
+    importTxns = new ImportTransactions(txnRepository, noopPublisher);
     generateReport = new GenerateReport(txnRepository, registry);
   });
 

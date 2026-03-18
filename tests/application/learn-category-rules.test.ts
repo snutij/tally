@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
+import type { DomainEventPublisher } from "../../src/application/gateway/domain-event-publisher.js";
+
+const noopPublisher: DomainEventPublisher = { publish: () => {} };
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
@@ -42,6 +45,7 @@ describe("LearnCategoryRules", () => {
       FR_BANK_PREFIXES,
       stubIdGenerator,
       new CategoryRegistry(DEFAULT_CATEGORIES),
+      noopPublisher,
     );
   });
 

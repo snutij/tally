@@ -9,6 +9,7 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
+import type { DomainEventPublisher } from "../../src/application/gateway/domain-event-publisher.js";
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
 import { ImportCsvWorkflow } from "../../src/application/usecase/import-csv-workflow.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
@@ -17,6 +18,8 @@ import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
+
+const noopPublisher: DomainEventPublisher = { publish: () => {} };
 
 const stubIdGenerator: IdGenerator = { fromPattern: (pat) => `id-${pat.slice(0, 28)}` };
 
@@ -32,13 +35,14 @@ describe("ImportCsvWorkflow", () => {
   beforeEach(() => {
     txnGateway = new InMemoryTransactionRepository();
     ruleGateway = new InMemoryRuleBookRepository();
-    const importTransactions = new ImportTransactions(txnGateway);
-    const applyCategoryRules = new ApplyCategoryRules(ruleGateway);
+    const importTransactions = new ImportTransactions(txnGateway, noopPublisher);
+    const applyCategoryRules = new ApplyCategoryRules(ruleGateway, noopPublisher);
     const learnCategoryRules = new LearnCategoryRules(
       ruleGateway,
       [],
       stubIdGenerator,
       new CategoryRegistry(DEFAULT_CATEGORIES),
+      noopPublisher,
     );
     const unitOfWork = { runInTransaction: (fn: () => void): void => fn() };
     workflow = new ImportCsvWorkflow(
