@@ -7,11 +7,12 @@ import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { existsSync, mkdirSync } from "node:fs";
 import { AddRule } from "../application/usecase/add-rule.js";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
+import { CategoryRegistry } from "../domain/service/category-registry.js";
 import { Command } from "commander";
 import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
 import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector-impl.js";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
-import { DEFAULT_CATEGORY_REGISTRY } from "../domain/default-categories.js";
+import { DEFAULT_CATEGORIES } from "../domain/default-categories.js";
 import { DomainError } from "../application/error.js";
 import { ExitPromptError } from "@inquirer/core";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
@@ -26,12 +27,13 @@ import { RemoveRule } from "../application/usecase/remove-rule.js";
 import { SaveCategorizedTransactions } from "../application/usecase/save-categorized-transactions.js";
 import { SeedMockData } from "../application/usecase/seed-mock-data.js";
 import { Sha256IdGenerator } from "../infrastructure/id/sha256-id-generator.js";
+import { buildCategoryChoices } from "../application/category-choices.js";
 import { createDbCommand } from "./command/db-command.js";
 import { createImportCommand } from "./command/import-command.js";
 import { createReportCommand } from "./command/report-command.js";
 import { createRulesCommand } from "./command/rules-command.js";
 import { createTransactionsCommand } from "./command/transactions-command.js";
-import { openDatabase } from "../infrastructure/persistence/sqlite-repository.js";
+import { openDatabase } from "../infrastructure/persistence/sqlite-gateway.js";
 
 // --- Data directory (XDG convention) ---
 if (!existsSync(dataDir)) {
@@ -39,20 +41,22 @@ if (!existsSync(dataDir)) {
 }
 
 // --- Composition root ---
-const { txnRepo, ruleRepo, unitOfWork } = openDatabase(dbPath);
+const categoryRegistry = new CategoryRegistry(DEFAULT_CATEGORIES);
+const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories());
+const { txnGateway, ruleGateway, unitOfWork } = openDatabase(dbPath, categoryRegistry);
 
 const idGenerator = new Sha256IdGenerator();
 const mockDataGenerator = new MockDataGeneratorImpl();
 const csvFormatDetector = new CsvFormatDetectorImpl();
-const importTransactions = new ImportTransactions(txnRepo);
-const generateReport = new GenerateReport(txnRepo);
-const seedMockData = new SeedMockData(txnRepo, mockDataGenerator);
-const applyCategoryRules = new ApplyCategoryRules(ruleRepo);
+const importTransactions = new ImportTransactions(txnGateway);
+const generateReport = new GenerateReport(txnGateway, categoryRegistry);
+const seedMockData = new SeedMockData(txnGateway, mockDataGenerator);
+const applyCategoryRules = new ApplyCategoryRules(ruleGateway);
 const learnCategoryRules = new LearnCategoryRules(
-  ruleRepo,
+  ruleGateway,
   getDefaultPrefixesForLocale(DEFAULT_LOCALE),
   idGenerator,
-  DEFAULT_CATEGORY_REGISTRY,
+  categoryRegistry,
 );
 const importCsvWorkflow = new ImportCsvWorkflow(
   importTransactions,
@@ -60,15 +64,12 @@ const importCsvWorkflow = new ImportCsvWorkflow(
   learnCategoryRules,
   unitOfWork,
 );
-const listTransactions = new ListTransactions(txnRepo);
-const findUncategorizedTransactions = new FindUncategorizedTransactions(txnRepo);
-const saveCategorizedTransactions = new SaveCategorizedTransactions(
-  txnRepo,
-  DEFAULT_CATEGORY_REGISTRY,
-);
-const listRules = new ListRules(ruleRepo);
-const addRule = new AddRule(ruleRepo, idGenerator, DEFAULT_CATEGORY_REGISTRY);
-const removeRule = new RemoveRule(ruleRepo);
+const listTransactions = new ListTransactions(txnGateway);
+const findUncategorizedTransactions = new FindUncategorizedTransactions(txnGateway);
+const saveCategorizedTransactions = new SaveCategorizedTransactions(txnGateway, categoryRegistry);
+const listRules = new ListRules(ruleGateway, categoryRegistry);
+const addRule = new AddRule(ruleGateway, idGenerator, categoryRegistry);
+const removeRule = new RemoveRule(ruleGateway);
 
 // --- CLI ---
 const program = new Command();
@@ -89,6 +90,7 @@ const renderer = {
 
 program.addCommand(
   createImportCommand(importTransactions, seedMockData, importCsvWorkflow, {
+    choiceGroups: categoryChoiceGroups,
     csvFormatDetector,
     parserFactory: (params) => new CsvTransactionParser(new CsvColumnMapping(params)),
     renderer,
@@ -101,6 +103,7 @@ program.addCommand(
     findUncategorizedTransactions,
     saveCategorizedTransactions,
     renderer,
+    categoryChoiceGroups,
   ),
 );
 program.addCommand(createRulesCommand(listRules, addRule, removeRule, renderer));

@@ -1,5 +1,5 @@
+import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import type { CategoryRule } from "../../domain/entity/category-rule.js";
-import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 
 export interface CategoryRuleDto {
   readonly categoryId: string;
@@ -9,11 +9,10 @@ export interface CategoryRuleDto {
   readonly source: string;
 }
 
-export function toCategoryRuleDto(rule: CategoryRule): CategoryRuleDto {
-  const category = DEFAULT_CATEGORIES.find((cat) => cat.id === rule.categoryId);
+export function toCategoryRuleDto(rule: CategoryRule, registry: CategoryRegistry): CategoryRuleDto {
   return {
     categoryId: rule.categoryId,
-    categoryName: category?.name ?? rule.categoryId,
+    categoryName: registry.nameOf(rule.categoryId) ?? rule.categoryId,
     id: rule.id,
     pattern: rule.pattern,
     source: rule.source,

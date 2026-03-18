@@ -1,3 +1,4 @@
+import type { CategoryChoiceGroup } from "../../application/category-choices.js";
 import { Command } from "commander";
 import type { CsvFormatDetector } from "../../application/gateway/csv-format-detector.js";
 import type { CsvMappingConfig } from "../../application/dto/csv-mapping-config.js";
@@ -11,6 +12,7 @@ import { collectColumnMapping } from "../prompt/column-mapping-prompt.js";
 import { toTransactionDto } from "../../application/dto/transaction-dto.js";
 
 interface ImportCommandDeps {
+  choiceGroups: CategoryChoiceGroup[];
   csvFormatDetector: CsvFormatDetector;
   parserFactory: (mapping: CsvMappingConfig) => TransactionParser;
   renderer: Renderer;
@@ -69,7 +71,7 @@ export function createImportCommand(
         onAutoMatched: (matchedCount, totalUncategorized) => {
           console.log(`Auto-categorized ${matchedCount} of ${totalUncategorized} transactions.`);
         },
-        promptFn: categorizePrompt,
+        promptFn: (txns) => categorizePrompt(txns, deps.choiceGroups),
         transactions: parsed,
       });
 

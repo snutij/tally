@@ -1,3 +1,4 @@
+import type { CategoryChoiceGroup } from "../../application/category-choices.js";
 import { Command } from "commander";
 import type { FindUncategorizedTransactions } from "../../application/usecase/find-uncategorized-transactions.js";
 import type { ListTransactions } from "../../application/usecase/list-transactions.js";
@@ -10,6 +11,7 @@ export function createTransactionsCommand(
   findUncategorizedTransactions: FindUncategorizedTransactions,
   saveCategorizedTransactions: SaveCategorizedTransactions,
   renderer: Renderer,
+  choiceGroups: CategoryChoiceGroup[],
 ): Command {
   const cmd = new Command("transactions").description("List and manage transactions");
 
@@ -38,7 +40,7 @@ export function createTransactionsCommand(
         return;
       }
 
-      const { categorized, interrupted } = await categorizePrompt(uncategorized);
+      const { categorized, interrupted } = await categorizePrompt(uncategorized, choiceGroups);
 
       const assignments = categorized
         .filter((txn) => txn.categoryId !== null)

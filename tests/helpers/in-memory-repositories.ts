@@ -1,11 +1,11 @@
 import type { CategoryRule } from "../../src/domain/entity/category-rule.js";
-import type { CategoryRuleRepository } from "../../src/application/gateway/category-rule-repository.js";
+import type { CategoryRuleGateway } from "../../src/application/gateway/category-rule-gateway.js";
 import type { Month } from "../../src/domain/value-object/month.js";
 import type { Transaction } from "../../src/domain/entity/transaction.js";
+import type { TransactionGateway } from "../../src/application/gateway/transaction-gateway.js";
 import type { TransactionId } from "../../src/domain/value-object/transaction-id.js";
-import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 
-export class InMemoryCategoryRuleRepository implements CategoryRuleRepository {
+export class InMemoryCategoryRuleGateway implements CategoryRuleGateway {
   private readonly store = new Map<string, CategoryRule>();
 
   save(rule: CategoryRule): void {
@@ -25,7 +25,7 @@ export class InMemoryCategoryRuleRepository implements CategoryRuleRepository {
   }
 }
 
-export class InMemoryTransactionRepository implements TransactionRepository {
+export class InMemoryTransactionGateway implements TransactionGateway {
   readonly saved: Transaction[] = [];
 
   saveAll(transactions: Transaction[]): void {

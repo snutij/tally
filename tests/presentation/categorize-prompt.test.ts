@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
-import { buildCategoryChoices } from "../../src/presentation/prompt/categorize-prompt.js";
+import { buildCategoryChoices } from "../../src/application/category-choices.js";
 
 vi.mock("@inquirer/select", () => ({ default: vi.fn() }));
 vi.mock("@inquirer/core", () => ({
@@ -21,36 +21,29 @@ function txn(overrides: { amount?: number; id?: string } = {}): TransactionDto {
 
 describe("buildCategoryChoices", () => {
   it("includes all default categories as selectable choices", () => {
-    const choices = buildCategoryChoices();
-    const selectableValues = choices
-      .filter((ch): ch is { value: string; name: string } => "value" in ch)
-      .map((ch) => ch.value);
+    const groups = buildCategoryChoices(DEFAULT_CATEGORIES);
+    const allIds = groups.flatMap((group) => group.categories.map((cat) => cat.id));
 
     for (const cat of DEFAULT_CATEGORIES) {
-      expect(selectableValues).toContain(cat.id);
+      expect(allIds).toContain(cat.id);
     }
   });
 
-  it("includes skip option and income category", () => {
-    const choices = buildCategoryChoices();
-    const selectableValues = choices
-      .filter((ch): ch is { value: string; name: string } => "value" in ch)
-      .map((ch) => ch.value);
+  it("includes income category in income group", () => {
+    const groups = buildCategoryChoices(DEFAULT_CATEGORIES);
+    const incomeGroup = groups.find((group) => group.groupKey === "INCOME");
 
-    expect(selectableValues).toContain("__skip__");
-    expect(selectableValues).toContain("inc01");
+    expect(incomeGroup?.categories.map((cat) => cat.id)).toContain("inc01");
   });
 
-  it("has group separators", () => {
-    const choices = buildCategoryChoices();
-    const separators = choices
-      .filter((ch): ch is { type: "separator"; separator: string } => "type" in ch)
-      .map((ch) => ch.separator);
+  it("has labels for all groups", () => {
+    const groups = buildCategoryChoices(DEFAULT_CATEGORIES);
+    const labels = groups.map((group) => group.label);
 
-    expect(separators).toContain("— Needs —");
-    expect(separators).toContain("— Wants —");
-    expect(separators).toContain("— Investments —");
-    expect(separators).toContain("— Income —");
+    expect(labels).toContain("— Needs —");
+    expect(labels).toContain("— Wants —");
+    expect(labels).toContain("— Investments —");
+    expect(labels).toContain("— Income —");
   });
 });
 
@@ -68,7 +61,7 @@ describe("categorizePrompt", () => {
     selectMock.mockResolvedValueOnce("n02");
     const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
 
-    const result = await categorizePrompt([txn()]);
+    const result = await categorizePrompt([txn()], buildCategoryChoices(DEFAULT_CATEGORIES));
 
     expect(result.interrupted).toBe(false);
     expect(result.categorized).toHaveLength(1);
@@ -79,7 +72,7 @@ describe("categorizePrompt", () => {
     selectMock.mockResolvedValueOnce("__skip__");
     const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
 
-    const result = await categorizePrompt([txn()]);
+    const result = await categorizePrompt([txn()], []);
 
     expect(result.categorized[0]?.categoryId).toBeUndefined();
   });
@@ -88,7 +81,7 @@ describe("categorizePrompt", () => {
     selectMock.mockResolvedValueOnce("inc01");
     const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
 
-    const result = await categorizePrompt([txn()]);
+    const result = await categorizePrompt([txn()], []);
 
     expect(result.categorized[0]?.categoryId).toBe("inc01");
   });
@@ -97,7 +90,7 @@ describe("categorizePrompt", () => {
     selectMock.mockResolvedValueOnce("inc01");
     const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
 
-    await categorizePrompt([txn({ amount: 100 })]);
+    await categorizePrompt([txn({ amount: 100 })], []);
 
     expect(selectMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -109,7 +102,7 @@ describe("categorizePrompt", () => {
   it("re-throws non-ExitPromptError", async () => {
     selectMock.mockRejectedValueOnce(new Error("boom"));
     const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
-    await expect(categorizePrompt([txn()])).rejects.toThrow("boom");
+    await expect(categorizePrompt([txn()], [])).rejects.toThrow("boom");
   });
 
   it("returns partial results on Ctrl+C (ExitPromptError)", async () => {
@@ -119,7 +112,7 @@ describe("categorizePrompt", () => {
 
     const { categorizePrompt } = await import("../../src/presentation/prompt/categorize-prompt.js");
 
-    const result = await categorizePrompt([txn({ id: "t1" }), txn({ id: "t2" })]);
+    const result = await categorizePrompt([txn({ id: "t1" }), txn({ id: "t2" })], []);
 
     expect(result.interrupted).toBe(true);
     expect(result.categorized).toHaveLength(1);

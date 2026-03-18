@@ -14,6 +14,7 @@ vi.mock("../../src/presentation/prompt/categorize-prompt.js", () => ({
 vi.mock("../../src/presentation/prompt/column-mapping-prompt.js", () => ({
   collectColumnMapping: vi.fn(),
 }));
+import { categorizePrompt } from "../../src/presentation/prompt/categorize-prompt.js";
 import { collectColumnMapping } from "../../src/presentation/prompt/column-mapping-prompt.js";
 import { createImportCommand } from "../../src/presentation/command/import-command.js";
 
@@ -36,6 +37,7 @@ describe("createImportCommand", () => {
   const mockCsvFormatDetector = {};
   const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
   const mockDeps = {
+    choiceGroups: [],
     csvFormatDetector: mockCsvFormatDetector,
     parserFactory: vi.fn().mockReturnValue(mockParser),
     renderer: mockRenderer,
@@ -95,7 +97,13 @@ describe("createImportCommand", () => {
 
     it("with TTY prompts for categorization via workflow", async () => {
       mockParser.parse.mockReturnValue([parsedTxn()]);
-      mockImportCsvWorkflow.execute.mockResolvedValue({ interrupted: false, savedCount: 1 });
+      vi.mocked(categorizePrompt).mockResolvedValue({ categorized: [], interrupted: false });
+      mockImportCsvWorkflow.execute.mockImplementation(
+        async (input: { promptFn?: (txns: never[]) => unknown }) => {
+          await input.promptFn?.([]);
+          return { interrupted: false, savedCount: 1 };
+        },
+      );
 
       const originalIsTTY = process.stdout.isTTY;
       process.stdout.isTTY = true;
@@ -108,6 +116,7 @@ describe("createImportCommand", () => {
       expect(mockImportCsvWorkflow.execute).toHaveBeenCalledWith(
         expect.objectContaining({ transactions: expect.any(Array) }),
       );
+      expect(categorizePrompt).toHaveBeenCalledWith([], []);
     });
 
     it("handles interruption", async () => {

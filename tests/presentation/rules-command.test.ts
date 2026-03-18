@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AddRule } from "../../src/application/usecase/add-rule.js";
+import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { Command } from "commander";
-import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
-import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
+import { InMemoryCategoryRuleGateway } from "../helpers/in-memory-repositories.js";
 import { ListRules } from "../../src/application/usecase/list-rules.js";
 import { RemoveRule } from "../../src/application/usecase/remove-rule.js";
 import type { Renderer } from "../../src/presentation/renderer/renderer.js";
@@ -19,12 +20,12 @@ function makeTestRule(
     pattern,
     categoryId,
     source,
-    DEFAULT_CATEGORY_REGISTRY,
+    new CategoryRegistry(DEFAULT_CATEGORIES),
   );
 }
 
 describe("createRulesCommand", () => {
-  let ruleRepo: InMemoryCategoryRuleRepository;
+  let ruleGateway: InMemoryCategoryRuleGateway;
   let listRules: ListRules;
   let addRule: AddRule;
   let removeRule: RemoveRule;
@@ -37,14 +38,14 @@ describe("createRulesCommand", () => {
   }
 
   beforeEach(() => {
-    ruleRepo = new InMemoryCategoryRuleRepository();
-    listRules = new ListRules(ruleRepo);
+    ruleGateway = new InMemoryCategoryRuleGateway();
+    listRules = new ListRules(ruleGateway, new CategoryRegistry(DEFAULT_CATEGORIES));
     addRule = new AddRule(
-      ruleRepo,
+      ruleGateway,
       { fromPattern: (pat): string => `id-${pat}`.slice(0, 32) },
-      DEFAULT_CATEGORY_REGISTRY,
+      new CategoryRegistry(DEFAULT_CATEGORIES),
     );
-    removeRule = new RemoveRule(ruleRepo);
+    removeRule = new RemoveRule(ruleGateway);
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
     process.exitCode = 0;
@@ -52,7 +53,7 @@ describe("createRulesCommand", () => {
 
   describe("list", () => {
     it("renders all rules via the renderer", async () => {
-      ruleRepo.save(makeTestRule(String.raw`\bspotify\b`, "w06", "default"));
+      ruleGateway.save(makeTestRule(String.raw`\bspotify\b`, "w06", "default"));
       await run("list");
       expect(mockRenderer.render).toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ pattern: "\\bspotify\\b" })]),
@@ -68,7 +69,7 @@ describe("createRulesCommand", () => {
   describe("add", () => {
     it("saves a new learned rule", async () => {
       await run("add", String.raw`\bmonoprix\b`, "n02");
-      const rule = ruleRepo.findByPattern(String.raw`\bmonoprix\b`);
+      const rule = ruleGateway.findByPattern(String.raw`\bmonoprix\b`);
       expect(rule).toBeDefined();
       expect(rule?.source).toBe("learned");
     });
@@ -91,7 +92,7 @@ describe("createRulesCommand", () => {
     });
 
     it("rejects a duplicate pattern", async () => {
-      ruleRepo.save(makeTestRule(String.raw`\bmonoprix\b`, "n02", "default"));
+      ruleGateway.save(makeTestRule(String.raw`\bmonoprix\b`, "n02", "default"));
       await run("add", String.raw`\bmonoprix\b`, "w01");
       expect(console.error).toHaveBeenCalledWith(expect.stringContaining("already exists"));
       expect(process.exitCode).toBe(1);
@@ -107,9 +108,9 @@ describe("createRulesCommand", () => {
 
   describe("remove", () => {
     it("removes an existing rule", async () => {
-      ruleRepo.save(makeTestRule(String.raw`\bspotify\b`, "w06", "default"));
+      ruleGateway.save(makeTestRule(String.raw`\bspotify\b`, "w06", "default"));
       await run("remove", String.raw`\bspotify\b`);
-      expect(ruleRepo.findByPattern(String.raw`\bspotify\b`)).toBeUndefined();
+      expect(ruleGateway.findByPattern(String.raw`\bspotify\b`)).toBeUndefined();
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Rule removed"));
     });
 

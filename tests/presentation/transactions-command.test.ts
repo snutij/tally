@@ -37,6 +37,7 @@ describe("createTransactionsCommand", () => {
       mockFindUncategorized as never,
       mockSaveCategorized as never,
       mockRenderer,
+      [],
     );
     const program = new Command().addCommand(cmd);
     return program.parseAsync(["node", "tally", "transactions", ...args]);
@@ -74,7 +75,7 @@ describe("createTransactionsCommand", () => {
 
     await run("categorize", "2026-03");
 
-    expect(categorizePrompt).toHaveBeenCalledWith([tx]);
+    expect(categorizePrompt).toHaveBeenCalledWith([tx], []);
     expect(mockSaveCategorized.execute).toHaveBeenCalledWith([{ categoryId: "n01", id: tx.id }]);
   });
 

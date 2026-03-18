@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
-import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
+import { InMemoryTransactionGateway } from "../helpers/in-memory-repositories.js";
 import { ListTransactions } from "../../src/application/usecase/list-transactions.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
@@ -17,22 +17,22 @@ function txn(id: string, date: string): Transaction {
 }
 
 describe("ListTransactions", () => {
-  let txnRepo: InMemoryTransactionRepository;
+  let txnGateway: InMemoryTransactionGateway;
   let useCase: ListTransactions;
 
   beforeEach(() => {
-    txnRepo = new InMemoryTransactionRepository();
-    useCase = new ListTransactions(txnRepo);
+    txnGateway = new InMemoryTransactionGateway();
+    useCase = new ListTransactions(txnGateway);
   });
 
   it("returns transactions for the given month", () => {
-    txnRepo.saveAll([txn("t1", "2026-03-01"), txn("t2", "2026-03-15")]);
+    txnGateway.saveAll([txn("t1", "2026-03-01"), txn("t2", "2026-03-15")]);
     const result = useCase.execute("2026-03");
     expect(result).toHaveLength(2);
   });
 
   it("excludes transactions from other months", () => {
-    txnRepo.saveAll([txn("t1", "2026-03-01"), txn("t2", "2026-04-01")]);
+    txnGateway.saveAll([txn("t1", "2026-03-01"), txn("t2", "2026-04-01")]);
     const result = useCase.execute("2026-03");
     expect(result).toHaveLength(1);
     expect(result[0]?.id).toBe("t1");

@@ -1,16 +1,6 @@
 import type { Category } from "./value-object/category.js";
 import { CategoryGroup } from "./value-object/category-group.js";
 import { CategoryId } from "./value-object/category-id.js";
-import { CategoryRegistry } from "./service/category-registry.js";
-
-export interface CategoryMapEntry {
-  readonly group: CategoryGroup;
-  readonly name: string;
-}
-
-export function buildCategoryMap(categories: Category[]): ReadonlyMap<string, CategoryMapEntry> {
-  return new Map(categories.map((entry) => [entry.id, { group: entry.group, name: entry.name }]));
-}
 
 function cat(id: string, name: string, group: CategoryGroup): Category {
   return { group, id: CategoryId(id), name };
@@ -59,5 +49,3 @@ export const DEFAULT_CATEGORIES: Category[] = [
   cat("inc03", "Allowances & Benefits", INC),
   cat("inc04", "Refund", INC),
 ];
-
-export const DEFAULT_CATEGORY_REGISTRY = new CategoryRegistry(DEFAULT_CATEGORIES);

@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
+import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { MockDataGeneratorImpl } from "../../src/infrastructure/mock/mock-data-generator-impl.js";
 import { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import { join } from "node:path";
-import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
+import { openDatabase } from "../../src/infrastructure/persistence/sqlite-gateway.js";
 import { tmpdir } from "node:os";
 
 describe("SeedMockData", () => {
@@ -13,9 +15,12 @@ describe("SeedMockData", () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-mock-"));
-    const { close: closeDb, txnRepo } = openDatabase(join(tmpDir, "test.db"));
+    const { close: closeDb, txnGateway } = openDatabase(
+      join(tmpDir, "test.db"),
+      new CategoryRegistry(DEFAULT_CATEGORIES),
+    );
     close = closeDb;
-    seedMockData = new SeedMockData(txnRepo, new MockDataGeneratorImpl());
+    seedMockData = new SeedMockData(txnGateway, new MockDataGeneratorImpl());
   });
 
   afterEach(() => {

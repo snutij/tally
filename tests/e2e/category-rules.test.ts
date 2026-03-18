@@ -2,14 +2,15 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
-import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { join } from "node:path";
-import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
+import { openDatabase } from "../../src/infrastructure/persistence/sqlite-gateway.js";
 import { tmpdir } from "node:os";
 import { toTransactionDto } from "../../src/application/dto/transaction-dto.js";
 
@@ -31,14 +32,17 @@ describe("e2e: auto-categorization rules", () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-rules-e2e-"));
-    const { close: closeDb, ruleRepo } = openDatabase(join(tmpDir, "test.db"));
+    const { close: closeDb, ruleGateway } = openDatabase(
+      join(tmpDir, "test.db"),
+      new CategoryRegistry(DEFAULT_CATEGORIES),
+    );
     close = closeDb;
-    applyCategoryRules = new ApplyCategoryRules(ruleRepo);
+    applyCategoryRules = new ApplyCategoryRules(ruleGateway);
     learnCategoryRules = new LearnCategoryRules(
-      ruleRepo,
+      ruleGateway,
       FR_BANK_PREFIXES,
       new Sha256IdGenerator(),
-      DEFAULT_CATEGORY_REGISTRY,
+      new CategoryRegistry(DEFAULT_CATEGORIES),
     );
   });
 
@@ -68,7 +72,9 @@ describe("e2e: auto-categorization rules", () => {
 
     // Simulate user manually categorizing the first transaction
     const manuallyCategorized = [
-      toTransactionDto(firstTxn.categorize(CategoryId("n02"), DEFAULT_CATEGORY_REGISTRY)),
+      toTransactionDto(
+        firstTxn.categorize(CategoryId("n02"), new CategoryRegistry(DEFAULT_CATEGORIES)),
+      ),
     ];
     learnCategoryRules.learn(manuallyCategorized);
 

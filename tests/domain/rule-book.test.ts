@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
-import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DomainError } from "../../src/domain/error/index.js";
 import { RuleBook } from "../../src/domain/aggregate/rule-book.js";
 
@@ -10,7 +11,7 @@ function rule(pattern: string, categoryId: string, source: "default" | "learned"
     pattern,
     categoryId,
     source,
-    DEFAULT_CATEGORY_REGISTRY,
+    new CategoryRegistry(DEFAULT_CATEGORIES),
   );
 }
 

@@ -1,6 +1,7 @@
-import { DEFAULT_CATEGORIES, buildCategoryMap } from "../../src/domain/default-categories.js";
 import { describe, expect, it } from "vitest";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
+import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { JsonRenderer } from "../../src/presentation/renderer/json-renderer.js";
@@ -11,7 +12,7 @@ import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-r
 import { toMonthlyReportDto } from "../../src/application/dto/report-dto.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
-const categoryMap = buildCategoryMap(DEFAULT_CATEGORIES);
+const categoryMap = new CategoryRegistry(DEFAULT_CATEGORIES).categoryToGroupMap();
 
 function makeTxn(id: string, amount: number, date: string, categoryId?: string): Transaction {
   return Transaction.create({

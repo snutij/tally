@@ -3,8 +3,8 @@ import { type TransactionDto, toTransactionDto } from "../dto/transaction-dto.js
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
+import type { TransactionGateway } from "../gateway/transaction-gateway.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
-import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
 function dtoToTransaction(dto: TransactionDto): Transaction {
   return Transaction.create({
@@ -18,10 +18,10 @@ function dtoToTransaction(dto: TransactionDto): Transaction {
 }
 
 export class ImportTransactions {
-  private readonly txnRepo: TransactionRepository;
+  private readonly txnGateway: TransactionGateway;
 
-  constructor(txnRepo: TransactionRepository) {
-    this.txnRepo = txnRepo;
+  constructor(txnGateway: TransactionGateway) {
+    this.txnGateway = txnGateway;
   }
 
   splitByCategoryStatus(transactions: TransactionDto[]): {
@@ -29,7 +29,7 @@ export class ImportTransactions {
     uncategorized: TransactionDto[];
   } {
     const ids = transactions.map((dto) => TransactionId(dto.id));
-    const existing = this.txnRepo.findByIds(ids);
+    const existing = this.txnGateway.findByIds(ids);
     const categorizedIds = new Set(
       existing.filter((txn) => txn.isCategorized).map((txn) => txn.id),
     );
@@ -49,7 +49,7 @@ export class ImportTransactions {
   }
 
   save(transactions: TransactionDto[]): { count: number } {
-    this.txnRepo.saveAll(transactions.map((dto) => dtoToTransaction(dto)));
+    this.txnGateway.saveAll(transactions.map((dto) => dtoToTransaction(dto)));
     return { count: transactions.length };
   }
 }

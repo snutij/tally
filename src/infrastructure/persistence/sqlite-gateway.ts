@@ -1,16 +1,17 @@
-import { DEFAULT_CATEGORIES, DEFAULT_CATEGORY_REGISTRY } from "../../domain/default-categories.js";
 import { DEFAULT_LOCALE, getDefaultRulesForLocale } from "../config/category-rules/index.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
+import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { CategoryRule } from "../../domain/entity/category-rule.js";
-import type { CategoryRuleRepository } from "../../application/gateway/category-rule-repository.js";
+import type { CategoryRuleGateway } from "../../application/gateway/category-rule-gateway.js";
+import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import Database from "better-sqlite3";
 import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
 import type { Month } from "../../domain/value-object/month.js";
 import { Sha256IdGenerator } from "../id/sha256-id-generator.js";
 import { Transaction } from "../../domain/entity/transaction.js";
+import type { TransactionGateway } from "../../application/gateway/transaction-gateway.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
-import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
 import type { UnitOfWork } from "../../application/gateway/unit-of-work.js";
 
 interface TransactionRow {
@@ -73,7 +74,7 @@ function migrateSchema(db: Database.Database): void {
   }
 }
 
-function seedDefaults(db: Database.Database): void {
+function seedDefaults(db: Database.Database, registry: CategoryRegistry): void {
   const upsertCat = db.prepare(
     `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
   );
@@ -87,18 +88,12 @@ function seedDefaults(db: Database.Database): void {
   const idGenerator = new Sha256IdGenerator();
   for (const entry of getDefaultRulesForLocale(DEFAULT_LOCALE)) {
     const id = idGenerator.fromPattern(entry.pattern);
-    const rule = CategoryRule.create(
-      id,
-      entry.pattern,
-      entry.categoryId,
-      "default",
-      DEFAULT_CATEGORY_REGISTRY,
-    );
+    const rule = CategoryRule.create(id, entry.pattern, entry.categoryId, "default", registry);
     insertRule.run(rule.id, rule.pattern, rule.categoryId, rule.source);
   }
 }
 
-class SqliteTransactionRepository implements TransactionRepository {
+class SqliteTransactionGateway implements TransactionGateway {
   private db: Database.Database;
 
   constructor(db: Database.Database) {
@@ -151,11 +146,13 @@ class SqliteTransactionRepository implements TransactionRepository {
   }
 }
 
-class SqliteCategoryRuleRepository implements CategoryRuleRepository {
+class SqliteCategoryRuleGateway implements CategoryRuleGateway {
   private db: Database.Database;
+  private registry: CategoryRegistry;
 
-  constructor(db: Database.Database) {
+  constructor(db: Database.Database, registry: CategoryRegistry) {
     this.db = db;
+    this.registry = registry;
   }
 
   save(rule: CategoryRule): void {
@@ -176,7 +173,7 @@ class SqliteCategoryRuleRepository implements CategoryRuleRepository {
         row.pattern,
         row.category_id,
         row.source as CategoryRule["source"],
-        DEFAULT_CATEGORY_REGISTRY,
+        this.registry,
       ),
     );
   }
@@ -195,7 +192,7 @@ class SqliteCategoryRuleRepository implements CategoryRuleRepository {
       row.pattern,
       row.category_id,
       row.source as CategoryRule["source"],
-      DEFAULT_CATEGORY_REGISTRY,
+      this.registry,
     );
   }
 
@@ -204,9 +201,12 @@ class SqliteCategoryRuleRepository implements CategoryRuleRepository {
   }
 }
 
-export function openDatabase(dbPath: string): {
-  txnRepo: TransactionRepository;
-  ruleRepo: CategoryRuleRepository;
+export function openDatabase(
+  dbPath: string,
+  registry: CategoryRegistry,
+): {
+  txnGateway: TransactionGateway;
+  ruleGateway: CategoryRuleGateway;
   unitOfWork: UnitOfWork;
   close(): void;
 } {
@@ -214,11 +214,11 @@ export function openDatabase(dbPath: string): {
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   migrateSchema(db);
-  seedDefaults(db);
+  seedDefaults(db, registry);
   return {
     close: () => db.close(),
-    ruleRepo: new SqliteCategoryRuleRepository(db),
-    txnRepo: new SqliteTransactionRepository(db),
+    ruleGateway: new SqliteCategoryRuleGateway(db, registry),
+    txnGateway: new SqliteTransactionGateway(db),
     unitOfWork: { runInTransaction: (fn) => db.transaction(fn)() },
   };
 }

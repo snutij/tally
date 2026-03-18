@@ -1,12 +1,13 @@
 import {
-  InMemoryCategoryRuleRepository,
-  InMemoryTransactionRepository,
+  InMemoryCategoryRuleGateway,
+  InMemoryTransactionGateway,
 } from "../helpers/in-memory-repositories.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
-import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
 import { ImportCsvWorkflow } from "../../src/application/usecase/import-csv-workflow.js";
@@ -24,20 +25,20 @@ function dto(id: string, categoryId?: string): TransactionDto {
 }
 
 describe("ImportCsvWorkflow", () => {
-  let txnRepo: InMemoryTransactionRepository;
-  let ruleRepo: InMemoryCategoryRuleRepository;
+  let txnGateway: InMemoryTransactionGateway;
+  let ruleGateway: InMemoryCategoryRuleGateway;
   let workflow: ImportCsvWorkflow;
 
   beforeEach(() => {
-    txnRepo = new InMemoryTransactionRepository();
-    ruleRepo = new InMemoryCategoryRuleRepository();
-    const importTransactions = new ImportTransactions(txnRepo);
-    const applyCategoryRules = new ApplyCategoryRules(ruleRepo);
+    txnGateway = new InMemoryTransactionGateway();
+    ruleGateway = new InMemoryCategoryRuleGateway();
+    const importTransactions = new ImportTransactions(txnGateway);
+    const applyCategoryRules = new ApplyCategoryRules(ruleGateway);
     const learnCategoryRules = new LearnCategoryRules(
-      ruleRepo,
+      ruleGateway,
       [],
       stubIdGenerator,
-      DEFAULT_CATEGORY_REGISTRY,
+      new CategoryRegistry(DEFAULT_CATEGORIES),
     );
     const unitOfWork = { runInTransaction: (fn: () => void): void => fn() };
     workflow = new ImportCsvWorkflow(
@@ -55,7 +56,7 @@ describe("ImportCsvWorkflow", () => {
   });
 
   it("calls onAlreadyCategorized callback when applicable", async () => {
-    txnRepo.saveAll([
+    txnGateway.saveAll([
       Transaction.create({
         amount: Money.fromEuros(-10),
         categoryId: CategoryId("n01"),
@@ -88,13 +89,13 @@ describe("ImportCsvWorkflow", () => {
   });
 
   it("calls onAutoMatched callback when rules match", async () => {
-    ruleRepo.save(
+    ruleGateway.save(
       CategoryRule.create(
         "id-txn",
         String.raw`\btxn\b`,
         "n01",
         "default",
-        DEFAULT_CATEGORY_REGISTRY,
+        new CategoryRegistry(DEFAULT_CATEGORIES),
       ),
     );
     const onAutoMatched = vi.fn();

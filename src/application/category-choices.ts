@@ -1,5 +1,5 @@
+import type { Category } from "../domain/value-object/category.js";
 import { CategoryGroup } from "../domain/value-object/category-group.js";
-import { DEFAULT_CATEGORIES } from "../domain/default-categories.js";
 
 export interface CategoryChoiceGroup {
   readonly categories: readonly { readonly id: string; readonly name: string }[];
@@ -14,12 +14,14 @@ const GROUP_LABELS: Record<string, string> = {
   WANTS: "— Wants —",
 };
 
-export function getCategoryChoiceGroups(): CategoryChoiceGroup[] {
+export function buildCategoryChoices(categories: readonly Category[]): CategoryChoiceGroup[] {
   return Object.values(CategoryGroup).map((group) => ({
-    categories: DEFAULT_CATEGORIES.filter((cat) => cat.group === group).map((cat) => ({
-      id: cat.id,
-      name: cat.name,
-    })),
+    categories: categories
+      .filter((cat) => cat.group === group)
+      .map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+      })),
     groupKey: group,
     label: GROUP_LABELS[group] ?? group,
   }));

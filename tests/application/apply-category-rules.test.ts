@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
-import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
-import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
+import { InMemoryCategoryRuleGateway } from "../helpers/in-memory-repositories.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
 
 function rule(pattern: string, categoryId: string, source: "default" | "learned"): CategoryRule {
@@ -12,7 +13,7 @@ function rule(pattern: string, categoryId: string, source: "default" | "learned"
     pattern,
     categoryId,
     source,
-    DEFAULT_CATEGORY_REGISTRY,
+    new CategoryRegistry(DEFAULT_CATEGORIES),
   );
 }
 
@@ -28,16 +29,16 @@ function txn(label: string, id = "t1"): TransactionDto {
 }
 
 describe("ApplyCategoryRules", () => {
-  let ruleRepo: InMemoryCategoryRuleRepository;
+  let ruleGateway: InMemoryCategoryRuleGateway;
   let useCase: ApplyCategoryRules;
 
   beforeEach(() => {
-    ruleRepo = new InMemoryCategoryRuleRepository();
-    useCase = new ApplyCategoryRules(ruleRepo);
+    ruleGateway = new InMemoryCategoryRuleGateway();
+    useCase = new ApplyCategoryRules(ruleGateway);
   });
 
   it("auto-categorizes a matching transaction", () => {
-    ruleRepo.save(rule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleGateway.save(rule(String.raw`\bspotify\b`, "w06", "default"));
     const { matched, unmatched } = useCase.apply([txn("PRLV SEPA SPOTIFY")]);
     expect(matched).toHaveLength(1);
     expect(matched[0]?.categoryId).toBe("w06");
@@ -45,40 +46,40 @@ describe("ApplyCategoryRules", () => {
   });
 
   it("leaves non-matching transactions in unmatched", () => {
-    ruleRepo.save(rule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleGateway.save(rule(String.raw`\bspotify\b`, "w06", "default"));
     const { matched, unmatched } = useCase.apply([txn("SOME UNKNOWN MERCHANT")]);
     expect(matched).toHaveLength(0);
     expect(unmatched).toHaveLength(1);
   });
 
   it("learned rules take precedence over default rules", () => {
-    ruleRepo.save(rule(String.raw`\bcarrefour\b`, "n02", "default"));
-    ruleRepo.save(rule(String.raw`\bcarrefour\b`, "w02", "learned"));
+    ruleGateway.save(rule(String.raw`\bcarrefour\b`, "n02", "default"));
+    ruleGateway.save(rule(String.raw`\bcarrefour\b`, "w02", "learned"));
     const { matched } = useCase.apply([txn("CARREFOUR CITY PARIS")]);
     expect(matched[0]?.categoryId).toBe("w02");
   });
 
   it("skips rules with invalid regex without crashing", () => {
     // Manually inject an invalid pattern (bypassing factory validation)
-    ruleRepo["store"].set("[bad", {
+    ruleGateway["store"].set("[bad", {
       categoryId: CategoryId("n02"),
       id: "x",
       pattern: "[bad",
       source: "default",
     } as unknown as CategoryRule);
-    ruleRepo.save(rule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleGateway.save(rule(String.raw`\bspotify\b`, "w06", "default"));
     const { matched } = useCase.apply([txn("PRLV SEPA SPOTIFY")]);
     expect(matched[0]?.categoryId).toBe("w06");
   });
 
   it("matching is case-insensitive", () => {
-    ruleRepo.save(rule(String.raw`\bcarrefour\b`, "n02", "default"));
+    ruleGateway.save(rule(String.raw`\bcarrefour\b`, "n02", "default"));
     const { matched } = useCase.apply([txn("carte cb carrefour city")]);
     expect(matched[0]?.categoryId).toBe("n02");
   });
 
   it("matched transactions are DTOs with categoryId set", () => {
-    ruleRepo.save(rule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleGateway.save(rule(String.raw`\bspotify\b`, "w06", "default"));
     const { matched } = useCase.apply([txn("PRLV SEPA SPOTIFY")]);
     const [dto] = matched;
     expect(typeof dto?.categoryId).toBe("string");

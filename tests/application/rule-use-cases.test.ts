@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AddRule } from "../../src/application/usecase/add-rule.js";
+import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
-import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DomainError } from "../../src/domain/error/index.js";
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
-import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
+import { InMemoryCategoryRuleGateway } from "../helpers/in-memory-repositories.js";
 import { ListRules } from "../../src/application/usecase/list-rules.js";
 import { RemoveRule } from "../../src/application/usecase/remove-rule.js";
 
@@ -22,22 +23,22 @@ function makeRule(
     pattern,
     categoryId,
     source,
-    DEFAULT_CATEGORY_REGISTRY,
+    new CategoryRegistry(DEFAULT_CATEGORIES),
   );
 }
 
 describe("ListRules", () => {
-  let ruleRepo: InMemoryCategoryRuleRepository;
+  let ruleGateway: InMemoryCategoryRuleGateway;
   let useCase: ListRules;
 
   beforeEach(() => {
-    ruleRepo = new InMemoryCategoryRuleRepository();
-    useCase = new ListRules(ruleRepo);
+    ruleGateway = new InMemoryCategoryRuleGateway();
+    useCase = new ListRules(ruleGateway, new CategoryRegistry(DEFAULT_CATEGORIES));
   });
 
   it("returns all rules", () => {
-    ruleRepo.save(makeRule(String.raw`\bspotify\b`, "w06", "default"));
-    ruleRepo.save(makeRule(String.raw`\bmonoprix\b`, "n02", "learned"));
+    ruleGateway.save(makeRule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleGateway.save(makeRule(String.raw`\bmonoprix\b`, "n02", "learned"));
     expect(useCase.execute()).toHaveLength(2);
   });
 
@@ -47,12 +48,12 @@ describe("ListRules", () => {
 });
 
 describe("AddRule", () => {
-  let ruleRepo: InMemoryCategoryRuleRepository;
+  let ruleGateway: InMemoryCategoryRuleGateway;
   let useCase: AddRule;
 
   beforeEach(() => {
-    ruleRepo = new InMemoryCategoryRuleRepository();
-    useCase = new AddRule(ruleRepo, stubIdGenerator, DEFAULT_CATEGORY_REGISTRY);
+    ruleGateway = new InMemoryCategoryRuleGateway();
+    useCase = new AddRule(ruleGateway, stubIdGenerator, new CategoryRegistry(DEFAULT_CATEGORIES));
   });
 
   it("saves a learned rule and returns it with category name", () => {
@@ -64,7 +65,7 @@ describe("AddRule", () => {
 
   it("persists the rule in the repository", () => {
     useCase.execute(String.raw`\bmonoprix\b`, "n02");
-    expect(ruleRepo.findByPattern(String.raw`\bmonoprix\b`)).toBeDefined();
+    expect(ruleGateway.findByPattern(String.raw`\bmonoprix\b`)).toBeDefined();
   });
 
   it("throws DomainError for empty pattern", () => {
@@ -83,26 +84,26 @@ describe("AddRule", () => {
   });
 
   it("throws DomainError for duplicate pattern", () => {
-    ruleRepo.save(makeRule(String.raw`\bmonoprix\b`, "n02", "default"));
+    ruleGateway.save(makeRule(String.raw`\bmonoprix\b`, "n02", "default"));
     expect(() => useCase.execute(String.raw`\bmonoprix\b`, "n02")).toThrow(DomainError);
     expect(() => useCase.execute(String.raw`\bmonoprix\b`, "n02")).toThrow(/already exists/);
   });
 });
 
 describe("RemoveRule", () => {
-  let ruleRepo: InMemoryCategoryRuleRepository;
+  let ruleGateway: InMemoryCategoryRuleGateway;
   let useCase: RemoveRule;
 
   beforeEach(() => {
-    ruleRepo = new InMemoryCategoryRuleRepository();
-    useCase = new RemoveRule(ruleRepo);
+    ruleGateway = new InMemoryCategoryRuleGateway();
+    useCase = new RemoveRule(ruleGateway);
   });
 
   it("removes an existing rule and returns true", () => {
-    ruleRepo.save(makeRule(String.raw`\bspotify\b`, "w06", "default"));
+    ruleGateway.save(makeRule(String.raw`\bspotify\b`, "w06", "default"));
     const result = useCase.execute(String.raw`\bspotify\b`);
     expect(result).toBe(true);
-    expect(ruleRepo.findByPattern(String.raw`\bspotify\b`)).toBeUndefined();
+    expect(ruleGateway.findByPattern(String.raw`\bspotify\b`)).toBeUndefined();
   });
 
   it("returns false when pattern not found", () => {

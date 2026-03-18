@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
-import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
-import { InMemoryCategoryRuleRepository } from "../helpers/in-memory-repositories.js";
+import { InMemoryCategoryRuleGateway } from "../helpers/in-memory-repositories.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
 
@@ -21,7 +22,7 @@ function makeRule(
     pattern,
     categoryId,
     source,
-    DEFAULT_CATEGORY_REGISTRY,
+    new CategoryRegistry(DEFAULT_CATEGORIES),
   );
 }
 
@@ -37,22 +38,22 @@ function txn(label: string, categoryId?: string, id = "t1"): TransactionDto {
 }
 
 describe("LearnCategoryRules", () => {
-  let ruleRepo: InMemoryCategoryRuleRepository;
+  let ruleGateway: InMemoryCategoryRuleGateway;
   let useCase: LearnCategoryRules;
 
   beforeEach(() => {
-    ruleRepo = new InMemoryCategoryRuleRepository();
+    ruleGateway = new InMemoryCategoryRuleGateway();
     useCase = new LearnCategoryRules(
-      ruleRepo,
+      ruleGateway,
       FR_BANK_PREFIXES,
       stubIdGenerator,
-      DEFAULT_CATEGORY_REGISTRY,
+      new CategoryRegistry(DEFAULT_CATEGORIES),
     );
   });
 
   it("creates a learned rule from a categorized transaction", () => {
     useCase.learn([txn("PRLV SEPA SPOTIFY", "w06")]);
-    const rule = ruleRepo.findByPattern(String.raw`\bspotify\b`);
+    const rule = ruleGateway.findByPattern(String.raw`\bspotify\b`);
     expect(rule).toBeDefined();
     expect(rule?.categoryId).toBe("w06");
     expect(rule?.source).toBe("learned");
@@ -60,7 +61,7 @@ describe("LearnCategoryRules", () => {
 
   it("does not create a rule for uncategorized (skipped) transactions", () => {
     useCase.learn([txn("SOME MERCHANT")]);
-    expect(ruleRepo.findAll()).toHaveLength(0);
+    expect(ruleGateway.findAll()).toHaveLength(0);
   });
 
   it("skips transactions with unknown category IDs", () => {
@@ -75,27 +76,27 @@ describe("LearnCategoryRules", () => {
         source: "csv",
       },
     ]);
-    expect(ruleRepo.findAll()).toHaveLength(0);
+    expect(ruleGateway.findAll()).toHaveLength(0);
   });
 
   it("does not create a duplicate learned rule if same learned pattern+category already exists", () => {
-    ruleRepo.save(makeRule(String.raw`\bspotify\b`, "w06", "learned"));
+    ruleGateway.save(makeRule(String.raw`\bspotify\b`, "w06", "learned"));
     useCase.learn([txn("PRLV SEPA SPOTIFY", "w06")]);
     // Still just 1 rule — no duplicate
-    expect(ruleRepo.findAll()).toHaveLength(1);
+    expect(ruleGateway.findAll()).toHaveLength(1);
   });
 
   it("upserts a learned rule over an existing default rule for the same extracted pattern", () => {
-    ruleRepo.save(makeRule(String.raw`\bcarrefour\s+city\b`, "n02", "default"));
+    ruleGateway.save(makeRule(String.raw`\bcarrefour\s+city\b`, "n02", "default"));
     useCase.learn([txn("CARTE CB CARREFOUR CITY", "w02")]);
-    const rule = ruleRepo.findByPattern(String.raw`\bcarrefour\s+city\b`);
+    const rule = ruleGateway.findByPattern(String.raw`\bcarrefour\s+city\b`);
     expect(rule?.source).toBe("learned");
     expect(rule?.categoryId).toBe("w02");
   });
 
   it("does not create a rule when no meaningful pattern can be extracted", () => {
     useCase.learn([txn("VIR 15/03/2026", "n01")]);
-    expect(ruleRepo.findAll()).toHaveLength(0);
+    expect(ruleGateway.findAll()).toHaveLength(0);
   });
 
   it("creates multiple rules for multiple distinct transactions", () => {
@@ -103,6 +104,6 @@ describe("LearnCategoryRules", () => {
       txn("PRLV SEPA SPOTIFY", "w06", "t1"),
       txn("CARTE CB CARREFOUR CITY", "n02", "t2"),
     ]);
-    expect(ruleRepo.findAll()).toHaveLength(2);
+    expect(ruleGateway.findAll()).toHaveLength(2);
   });
 });

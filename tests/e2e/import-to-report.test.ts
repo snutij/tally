@@ -1,14 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
+import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
-import { DEFAULT_CATEGORY_REGISTRY } from "../../src/domain/default-categories.js";
+import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { join } from "node:path";
-import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
+import { openDatabase } from "../../src/infrastructure/persistence/sqlite-gateway.js";
 import { tmpdir } from "node:os";
 import { toTransactionDto } from "../../src/application/dto/transaction-dto.js";
 
@@ -31,11 +32,12 @@ describe("e2e: import → report (no budget step)", () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-e2e-"));
-    const { close: closeDb, txnRepo } = openDatabase(join(tmpDir, "test.db"));
+    const registry = new CategoryRegistry(DEFAULT_CATEGORIES);
+    const { close: closeDb, txnGateway } = openDatabase(join(tmpDir, "test.db"), registry);
     close = closeDb;
 
-    importTxns = new ImportTransactions(txnRepo);
-    generateReport = new GenerateReport(txnRepo);
+    importTxns = new ImportTransactions(txnGateway);
+    generateReport = new GenerateReport(txnGateway, registry);
   });
 
   afterEach(() => {
@@ -49,16 +51,24 @@ describe("e2e: import → report (no budget step)", () => {
 
     const categorized = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return toTransactionDto(txn.categorize(CategoryId("n01"), DEFAULT_CATEGORY_REGISTRY));
+        return toTransactionDto(
+          txn.categorize(CategoryId("n01"), new CategoryRegistry(DEFAULT_CATEGORIES)),
+        );
       }
       if (txn.label.includes("GROCERY")) {
-        return toTransactionDto(txn.categorize(CategoryId("n02"), DEFAULT_CATEGORY_REGISTRY));
+        return toTransactionDto(
+          txn.categorize(CategoryId("n02"), new CategoryRegistry(DEFAULT_CATEGORIES)),
+        );
       }
       if (txn.label.includes("SALARY")) {
-        return toTransactionDto(txn.categorize(CategoryId("inc01"), DEFAULT_CATEGORY_REGISTRY));
+        return toTransactionDto(
+          txn.categorize(CategoryId("inc01"), new CategoryRegistry(DEFAULT_CATEGORIES)),
+        );
       }
       if (txn.label.includes("RESTAURANT")) {
-        return toTransactionDto(txn.categorize(CategoryId("w02"), DEFAULT_CATEGORY_REGISTRY));
+        return toTransactionDto(
+          txn.categorize(CategoryId("w02"), new CategoryRegistry(DEFAULT_CATEGORIES)),
+        );
       }
       return toTransactionDto(txn);
     });
@@ -84,7 +94,7 @@ describe("e2e: import → report (no budget step)", () => {
     const withSalary = parsed.map((txn) =>
       toTransactionDto(
         txn.label.includes("SALARY")
-          ? txn.categorize(CategoryId("inc01"), DEFAULT_CATEGORY_REGISTRY)
+          ? txn.categorize(CategoryId("inc01"), new CategoryRegistry(DEFAULT_CATEGORIES))
           : txn,
       ),
     );
@@ -109,10 +119,14 @@ describe("e2e: import → report (no budget step)", () => {
     const parsed = parser.parse(CSV);
     const partial = parsed.map((txn) => {
       if (txn.label.includes("RENT")) {
-        return toTransactionDto(txn.categorize(CategoryId("n01"), DEFAULT_CATEGORY_REGISTRY));
+        return toTransactionDto(
+          txn.categorize(CategoryId("n01"), new CategoryRegistry(DEFAULT_CATEGORIES)),
+        );
       }
       if (txn.label.includes("SALARY")) {
-        return toTransactionDto(txn.categorize(CategoryId("inc01"), DEFAULT_CATEGORY_REGISTRY));
+        return toTransactionDto(
+          txn.categorize(CategoryId("inc01"), new CategoryRegistry(DEFAULT_CATEGORIES)),
+        );
       }
       return toTransactionDto(txn);
     });

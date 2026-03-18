@@ -1,21 +1,21 @@
-import type { CategoryRuleRepository } from "../gateway/category-rule-repository.js";
+import type { CategoryRuleGateway } from "../gateway/category-rule-gateway.js";
 import { DomainError } from "../../domain/error/index.js";
 
 export class RemoveRule {
-  private readonly ruleRepo: CategoryRuleRepository;
+  private readonly ruleGateway: CategoryRuleGateway;
 
-  constructor(ruleRepo: CategoryRuleRepository) {
-    this.ruleRepo = ruleRepo;
+  constructor(ruleGateway: CategoryRuleGateway) {
+    this.ruleGateway = ruleGateway;
   }
 
   execute(pattern: string): boolean {
     if (!pattern.trim()) {
       throw new DomainError("pattern: must not be empty");
     }
-    if (!this.ruleRepo.findByPattern(pattern)) {
+    if (!this.ruleGateway.findByPattern(pattern)) {
       return false;
     }
-    this.ruleRepo.removeByPattern(pattern);
+    this.ruleGateway.removeByPattern(pattern);
     return true;
   }
 }
