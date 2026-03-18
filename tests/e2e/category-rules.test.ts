@@ -5,7 +5,6 @@ import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
-import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules/fr.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
@@ -32,18 +31,20 @@ describe("e2e: auto-categorization rules", () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-rules-e2e-"));
-    const { close: closeDb, ruleBookRepository } = openDatabase(
-      join(tmpDir, "test.db"),
-      new CategoryRegistry(DEFAULT_CATEGORIES),
-      new Sha256IdGenerator(),
-    );
+    const idGenerator = new Sha256IdGenerator();
+    const {
+      close: closeDb,
+      ruleBookRepository,
+      categoryRepository,
+    } = openDatabase(join(tmpDir, "test.db"), idGenerator);
     close = closeDb;
+    const registry = new CategoryRegistry(categoryRepository.findAll());
     applyCategoryRules = new ApplyCategoryRules(ruleBookRepository);
     learnCategoryRules = new LearnCategoryRules(
       ruleBookRepository,
       FR_BANK_PREFIXES,
-      new Sha256IdGenerator(),
-      new CategoryRegistry(DEFAULT_CATEGORIES),
+      idGenerator,
+      registry,
     );
   });
 

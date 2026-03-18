@@ -4,7 +4,6 @@ import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
-import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
@@ -33,14 +32,14 @@ describe("e2e: import → report (no budget step)", () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-e2e-"));
-    const registry = new CategoryRegistry(DEFAULT_CATEGORIES);
-    const { close: closeDb, txnRepository } = openDatabase(
-      join(tmpDir, "test.db"),
-      registry,
-      new Sha256IdGenerator(),
-    );
+    const {
+      close: closeDb,
+      txnRepository,
+      categoryRepository,
+    } = openDatabase(join(tmpDir, "test.db"), new Sha256IdGenerator());
     close = closeDb;
 
+    const registry = new CategoryRegistry(categoryRepository.findAll());
     importTxns = new ImportTransactions(txnRepository);
     generateReport = new GenerateReport(txnRepository, registry);
   });

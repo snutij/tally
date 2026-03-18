@@ -1,3 +1,5 @@
+import type { Category } from "../../src/domain/value-object/category.js";
+import type { CategoryRepository } from "../../src/application/gateway/category-repository.js";
 import type { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import type { Month } from "../../src/domain/value-object/month.js";
 import { RuleBook } from "../../src/domain/aggregate/rule-book.js";
@@ -5,6 +7,18 @@ import type { RuleBookRepository } from "../../src/application/gateway/rule-book
 import type { Transaction } from "../../src/domain/entity/transaction.js";
 import type { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
+
+export class InMemoryCategoryRepository implements CategoryRepository {
+  private categories: Category[];
+
+  constructor(categories: Category[] = []) {
+    this.categories = categories;
+  }
+
+  findAll(): Category[] {
+    return [...this.categories];
+  }
+}
 
 export class InMemoryRuleBookRepository implements RuleBookRepository {
   private rules: CategoryRule[] = [];

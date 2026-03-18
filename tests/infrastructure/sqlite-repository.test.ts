@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
-import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
+import type { CategoryRepository } from "../../src/application/gateway/category-repository.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
@@ -16,7 +16,6 @@ import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
 
-const registry = new CategoryRegistry(DEFAULT_CATEGORIES);
 const idGenerator = new Sha256IdGenerator();
 
 function makeTestRule(
@@ -26,6 +25,39 @@ function makeTestRule(
 ): CategoryRule {
   return CategoryRule.create(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
 }
+
+describe("SqliteCategoryRepository", () => {
+  let tmpDir: string;
+  let close: () => void;
+  let categoryRepository: CategoryRepository;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), "tally-cat-test-"));
+    ({ close, categoryRepository } = openDatabase(join(tmpDir, "test.db"), idGenerator));
+  });
+
+  afterEach(() => {
+    close();
+    rmSync(tmpDir, { recursive: true });
+  });
+
+  it("returns all DEFAULT_CATEGORIES after seeding", () => {
+    const categories = categoryRepository.findAll();
+    expect(categories).toHaveLength(DEFAULT_CATEGORIES.length);
+    const ids = categories.map((cat) => cat.id);
+    for (const defaultCat of DEFAULT_CATEGORIES) {
+      expect(ids).toContain(defaultCat.id);
+    }
+  });
+
+  it("returns categories with correct id, name, and group", () => {
+    const categories = categoryRepository.findAll();
+    const [first] = DEFAULT_CATEGORIES;
+    const found = categories.find((cat) => cat.id === first?.id);
+    expect(found?.name).toBe(first?.name);
+    expect(found?.group).toBe(first?.group);
+  });
+});
 
 describe("SqliteRepository", () => {
   let tmpDir: string;
@@ -38,7 +70,6 @@ describe("SqliteRepository", () => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-test-"));
     ({ close, txnRepository, ruleBookRepository, unitOfWork } = openDatabase(
       join(tmpDir, "test.db"),
-      registry,
       idGenerator,
     ));
   });
@@ -104,7 +135,7 @@ describe("SqliteRepository", () => {
       ruleBookRepository.save(ruleBook);
       close();
 
-      const result2 = openDatabase(dbPath, registry, idGenerator);
+      const result2 = openDatabase(dbPath, idGenerator);
       const found = result2.ruleBookRepository.load().findByPattern(String.raw`\bcarrefour\b`);
       expect(found?.source).toBe("learned");
       expect(found?.categoryId).toBe("w02");

@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
-import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
-import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { MockDataGeneratorImpl } from "../../src/infrastructure/mock/mock-data-generator-impl.js";
 import { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
@@ -18,7 +16,6 @@ describe("SeedMockData", () => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-mock-"));
     const { close: closeDb, txnRepository } = openDatabase(
       join(tmpDir, "test.db"),
-      new CategoryRegistry(DEFAULT_CATEGORIES),
       new Sha256IdGenerator(),
     );
     close = closeDb;

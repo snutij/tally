@@ -12,7 +12,6 @@ import { Command } from "commander";
 import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
 import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector-impl.js";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
-import { DEFAULT_CATEGORIES } from "../domain/default-categories.js";
 import { DomainError } from "../application/error.js";
 import { ExitPromptError } from "@inquirer/core";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
@@ -42,13 +41,12 @@ if (!existsSync(dataDir)) {
 
 // --- Composition root ---
 const idGenerator = new Sha256IdGenerator();
-const categoryRegistry = new CategoryRegistry(DEFAULT_CATEGORIES);
-const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories());
-const { txnRepository, ruleBookRepository, unitOfWork } = openDatabase(
+const { txnRepository, ruleBookRepository, categoryRepository, unitOfWork } = openDatabase(
   dbPath,
-  categoryRegistry,
   idGenerator,
 );
+const categoryRegistry = new CategoryRegistry(categoryRepository.findAll());
+const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories());
 
 const mockDataGenerator = new MockDataGeneratorImpl();
 const csvFormatDetector = new CsvFormatDetectorImpl();
