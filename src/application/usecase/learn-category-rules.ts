@@ -1,3 +1,4 @@
+import { CategoryRuleLearned, EventDispatcher } from "../../domain/event/index.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { CategoryRule } from "../../domain/entity/category-rule.js";
@@ -11,17 +12,20 @@ export class LearnCategoryRules {
   private readonly bankPrefixes: string[];
   private readonly idGenerator: IdGenerator;
   private readonly registry: CategoryRegistry;
+  private readonly eventDispatcher: EventDispatcher;
 
   constructor(
     ruleBookRepository: RuleBookRepository,
     bankPrefixes: string[],
     idGenerator: IdGenerator,
     registry: CategoryRegistry,
+    eventDispatcher = new EventDispatcher(),
   ) {
     this.ruleBookRepository = ruleBookRepository;
     this.bankPrefixes = bankPrefixes;
     this.idGenerator = idGenerator;
     this.registry = registry;
+    this.eventDispatcher = eventDispatcher;
   }
 
   learn(transactions: TransactionDto[]): void {
@@ -53,6 +57,9 @@ export class LearnCategoryRules {
           const id = this.idGenerator.fromPattern(pattern);
           const rule = CategoryRule.create(id, pattern, categoryId, "learned");
           ruleBook.addRule(rule);
+          this.eventDispatcher.dispatch(
+            CategoryRuleLearned(rule.id, rule.pattern, rule.categoryId),
+          );
           changed = true;
         }
       }

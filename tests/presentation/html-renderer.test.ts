@@ -11,7 +11,7 @@ import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-r
 import { toMonthlyReportDto } from "../../src/application/dto/report-dto.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
-const categoryMap = new CategoryRegistry(DEFAULT_CATEGORIES).categoryToGroupMap();
+const registry = new CategoryRegistry(DEFAULT_CATEGORIES);
 
 function makeTxn(id: string, amount: number, date: string, categoryId?: string): Transaction {
   return Transaction.create({
@@ -31,7 +31,7 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReportDto)", () => {
     const report = toMonthlyReportDto(
-      computeMonthlyReport(Month.from("2026-03"), targets, txns, categoryMap),
+      computeMonthlyReport(Month.from("2026-03"), targets, txns, registry),
     );
     const html = renderer.render(report);
 
@@ -86,7 +86,7 @@ describe("HtmlRenderer", () => {
   describe("render(MonthlyReport) — no transactions", () => {
     it("omits insights section when there are no expense transactions", () => {
       const report = toMonthlyReportDto(
-        computeMonthlyReport(Month.from("2026-03"), targets, [], categoryMap),
+        computeMonthlyReport(Month.from("2026-03"), targets, [], registry),
       );
       const html = renderer.render(report);
       const [, body] = html.split("<body>");
@@ -102,7 +102,7 @@ describe("HtmlRenderer", () => {
           Month.from("2026-03"),
           targets,
           [makeTxn("1", -200, "2026-03-05")],
-          categoryMap,
+          registry,
         ),
       );
       const html = renderer.render(report);
@@ -117,7 +117,7 @@ describe("HtmlRenderer", () => {
           Month.from("2026-03"),
           targets,
           [makeTxn("1", 100, "2026-03-05", "n01")],
-          categoryMap,
+          registry,
         ),
       );
       const html = renderer.render(report);
@@ -134,7 +134,7 @@ describe("HtmlRenderer", () => {
           Month.from("2026-03"),
           targets,
           [makeTxn("3", -100, "2026-03-05")],
-          categoryMap,
+          registry,
         ),
       );
       const html = renderer.render(report);
@@ -144,7 +144,7 @@ describe("HtmlRenderer", () => {
 
     it("omits uncategorized section when zero", () => {
       const report = toMonthlyReportDto(
-        computeMonthlyReport(Month.from("2026-03"), targets, txns, categoryMap),
+        computeMonthlyReport(Month.from("2026-03"), targets, txns, registry),
       );
       const html = renderer.render(report);
       expect(html).not.toContain('class="uncategorized"');

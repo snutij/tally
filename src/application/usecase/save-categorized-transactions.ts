@@ -1,3 +1,4 @@
+import { EventDispatcher, TransactionCategorized } from "../../domain/event/index.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { DomainError } from "../../domain/error/index.js";
@@ -12,10 +13,16 @@ interface CategoryAssignment {
 export class SaveCategorizedTransactions {
   private readonly txnRepository: TransactionRepository;
   private readonly registry: CategoryRegistry;
+  private readonly eventDispatcher: EventDispatcher;
 
-  constructor(txnRepository: TransactionRepository, registry: CategoryRegistry) {
+  constructor(
+    txnRepository: TransactionRepository,
+    registry: CategoryRegistry,
+    eventDispatcher = new EventDispatcher(),
+  ) {
     this.txnRepository = txnRepository;
     this.registry = registry;
+    this.eventDispatcher = eventDispatcher;
   }
 
   execute(assignments: CategoryAssignment[]): { categorizedCount: number } {
@@ -40,6 +47,11 @@ export class SaveCategorizedTransactions {
     });
 
     this.txnRepository.saveAll(categorized);
+    for (const txn of categorized) {
+      if (txn.categoryId) {
+        this.eventDispatcher.dispatch(TransactionCategorized(txn.id, txn.categoryId));
+      }
+    }
     return { categorizedCount: categorized.length };
   }
 }

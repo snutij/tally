@@ -1,5 +1,13 @@
+import type { CategoryId } from "../value-object/category-id.js";
 import type { CategoryRule } from "../entity/category-rule.js";
+import type { CategoryRuleId } from "../value-object/category-rule-id.js";
+import { CategoryRuleSpecification } from "../value-object/category-rule-specification.js";
 import { DomainError } from "../error/index.js";
+
+export interface RuleMatch {
+  categoryId: CategoryId;
+  ruleId: CategoryRuleId;
+}
 
 export class RuleBook {
   private readonly rules: CategoryRule[];
@@ -9,10 +17,11 @@ export class RuleBook {
   }
 
   /**
-   * Returns the matching categoryId for the given label, with learned rules
-   * taking precedence over default rules. Returns undefined if no rule matches.
+   * Returns the matching categoryId and ruleId for the given label, with
+   * learned rules taking precedence over default rules.
+   * Returns undefined if no rule matches.
    */
-  match(label: string): string | undefined {
+  match(label: string): RuleMatch | undefined {
     // Learned rules take precedence: try them before defaults
     const sorted: CategoryRule[] = [
       ...this.rules.filter((rule) => rule.source === "learned"),
@@ -20,16 +29,9 @@ export class RuleBook {
     ];
 
     for (const rule of sorted) {
-      let regex: RegExp;
-      try {
-        regex = new RegExp(rule.pattern, "i");
-      } catch {
-        // invalid stored pattern — skip gracefully
-        // eslint-disable-next-line no-continue -- intentional skip of invalid patterns
-        continue;
-      }
-      if (regex.test(label)) {
-        return rule.categoryId;
+      const spec = new CategoryRuleSpecification(rule);
+      if (spec.isSatisfiedBy(label)) {
+        return { categoryId: spec.categoryId, ruleId: spec.ruleId };
       }
     }
     return undefined;

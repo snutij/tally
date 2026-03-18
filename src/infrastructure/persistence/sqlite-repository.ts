@@ -1,6 +1,9 @@
 import { DEFAULT_LOCALE, getDefaultRulesForLocale } from "../config/category-rules/index.js";
+import type { Category } from "../../domain/value-object/category.js";
+import type { CategoryGroup } from "../../domain/value-object/category-group.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
+import type { CategoryRepository } from "../../application/gateway/category-repository.js";
 import { CategoryRule } from "../../domain/entity/category-rule.js";
 import Database from "better-sqlite3";
 import { DateOnly } from "../../domain/value-object/date-only.js";
@@ -186,6 +189,37 @@ class SqliteRuleBookRepository implements RuleBookRepository {
   }
 }
 
+class SqliteCategoryRepository implements CategoryRepository {
+  private db: Database.Database;
+
+  constructor(db: Database.Database) {
+    this.db = db;
+  }
+
+  findAll(): Category[] {
+    const rows = this.db.prepare(`SELECT id, name, "group" FROM categories`).all() as {
+      id: string;
+      name: string;
+      group: string;
+    }[];
+    return rows.map((row) => ({
+      group: row.group as CategoryGroup,
+      id: CategoryId(row.id),
+      name: row.name,
+    }));
+  }
+
+  findById(id: string): Category | undefined {
+    const row = this.db.prepare(`SELECT id, name, "group" FROM categories WHERE id = ?`).get(id) as
+      | { id: string; name: string; group: string }
+      | undefined;
+    if (!row) {
+      return undefined;
+    }
+    return { group: row.group as CategoryGroup, id: CategoryId(row.id), name: row.name };
+  }
+}
+
 export function openDatabase(
   dbPath: string,
   registry: CategoryRegistry,
@@ -193,6 +227,7 @@ export function openDatabase(
 ): {
   txnRepository: TransactionRepository;
   ruleBookRepository: RuleBookRepository;
+  categoryRepository: CategoryRepository;
   unitOfWork: UnitOfWork;
   close(): void;
 } {
@@ -202,6 +237,7 @@ export function openDatabase(
   migrateSchema(db);
   seedDefaults(db, registry, idGenerator);
   return {
+    categoryRepository: new SqliteCategoryRepository(db),
     close: () => db.close(),
     ruleBookRepository: new SqliteRuleBookRepository(db),
     txnRepository: new SqliteTransactionRepository(db),

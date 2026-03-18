@@ -20,12 +20,7 @@ export class GenerateReport {
   execute(monthStr: string, targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): MonthlyReportDto {
     const month = Month.from(monthStr);
     const transactions = this.txnRepository.findByMonth(month);
-    const report = computeMonthlyReport(
-      month,
-      targets,
-      transactions,
-      this.registry.categoryToGroupMap(),
-    );
+    const report = computeMonthlyReport(month, targets, transactions, this.registry);
     return toMonthlyReportDto(report);
   }
 }

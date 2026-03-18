@@ -14,6 +14,7 @@ import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
 import { DEFAULT_CATEGORIES } from "../domain/default-categories.js";
 import { DomainError } from "../application/error.js";
+import { EventDispatcher } from "../domain/event/index.js";
 import { ExitPromptError } from "@inquirer/core";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
@@ -42,25 +43,27 @@ if (!existsSync(dataDir)) {
 
 // --- Composition root ---
 const idGenerator = new Sha256IdGenerator();
-const categoryRegistry = new CategoryRegistry(DEFAULT_CATEGORIES);
-const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories());
-const { txnRepository, ruleBookRepository, unitOfWork } = openDatabase(
+const eventDispatcher = new EventDispatcher();
+const { categoryRepository, txnRepository, ruleBookRepository, unitOfWork } = openDatabase(
   dbPath,
-  categoryRegistry,
+  new CategoryRegistry(DEFAULT_CATEGORIES),
   idGenerator,
 );
+const categoryRegistry = new CategoryRegistry(categoryRepository.findAll());
+const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories());
 
 const mockDataGenerator = new MockDataGeneratorImpl();
 const csvFormatDetector = new CsvFormatDetectorImpl();
-const importTransactions = new ImportTransactions(txnRepository);
+const importTransactions = new ImportTransactions(txnRepository, eventDispatcher);
 const generateReport = new GenerateReport(txnRepository, categoryRegistry);
 const seedMockData = new SeedMockData(txnRepository, mockDataGenerator);
-const applyCategoryRules = new ApplyCategoryRules(ruleBookRepository);
+const applyCategoryRules = new ApplyCategoryRules(ruleBookRepository, eventDispatcher);
 const learnCategoryRules = new LearnCategoryRules(
   ruleBookRepository,
   getDefaultPrefixesForLocale(DEFAULT_LOCALE),
   idGenerator,
   categoryRegistry,
+  eventDispatcher,
 );
 const importCsvWorkflow = new ImportCsvWorkflow(
   importTransactions,
@@ -73,6 +76,7 @@ const findUncategorizedTransactions = new FindUncategorizedTransactions(txnRepos
 const saveCategorizedTransactions = new SaveCategorizedTransactions(
   txnRepository,
   categoryRegistry,
+  eventDispatcher,
 );
 const listRules = new ListRules(ruleBookRepository, categoryRegistry);
 const addRule = new AddRule(ruleBookRepository, idGenerator, categoryRegistry);

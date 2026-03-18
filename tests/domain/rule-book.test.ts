@@ -9,9 +9,12 @@ function rule(pattern: string, categoryId: string, source: "default" | "learned"
 
 describe("RuleBook", () => {
   describe("match()", () => {
-    it("returns categoryId when a rule matches", () => {
-      const book = new RuleBook([rule(String.raw`\bspotify\b`, "w06", "default")]);
-      expect(book.match("PRLV SEPA SPOTIFY")).toBe("w06");
+    it("returns categoryId and ruleId when a rule matches", () => {
+      const spotify = rule(String.raw`\bspotify\b`, "w06", "default");
+      const book = new RuleBook([spotify]);
+      const result = book.match("PRLV SEPA SPOTIFY");
+      expect(result?.categoryId).toBe("w06");
+      expect(result?.ruleId).toBe(spotify.id);
     });
 
     it("returns undefined when no rule matches", () => {
@@ -29,12 +32,12 @@ describe("RuleBook", () => {
         rule(String.raw`\bcarrefour\b`, "n02", "default"),
         rule(String.raw`\bcarrefour\b`, "w02", "learned"),
       ]);
-      expect(book.match("CARTE CB CARREFOUR CITY")).toBe("w02");
+      expect(book.match("CARTE CB CARREFOUR CITY")?.categoryId).toBe("w02");
     });
 
     it("matching is case-insensitive", () => {
       const book = new RuleBook([rule(String.raw`\bcarrefour\b`, "n02", "default")]);
-      expect(book.match("carte cb Carrefour city")).toBe("n02");
+      expect(book.match("carte cb Carrefour city")?.categoryId).toBe("n02");
     });
 
     it("skips rules with invalid regex without crashing", () => {
@@ -48,7 +51,7 @@ describe("RuleBook", () => {
         } as unknown as CategoryRule,
         rule(String.raw`\bspotify\b`, "w06", "default"),
       ]);
-      expect(book.match("PRLV SEPA SPOTIFY")).toBe("w06");
+      expect(book.match("PRLV SEPA SPOTIFY")?.categoryId).toBe("w06");
     });
   });
 

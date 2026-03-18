@@ -1,11 +1,15 @@
+import { EventDispatcher, TransactionCategorized } from "../../domain/event/index.js";
 import type { RuleBookRepository } from "../gateway/rule-book-repository.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
+import { TransactionId } from "../../domain/value-object/transaction-id.js";
 
 export class ApplyCategoryRules {
   private readonly ruleBookRepository: RuleBookRepository;
+  private readonly eventDispatcher: EventDispatcher;
 
-  constructor(ruleBookRepository: RuleBookRepository) {
+  constructor(ruleBookRepository: RuleBookRepository, eventDispatcher = new EventDispatcher()) {
     this.ruleBookRepository = ruleBookRepository;
+    this.eventDispatcher = eventDispatcher;
   }
 
   apply(transactions: TransactionDto[]): {
@@ -17,11 +21,14 @@ export class ApplyCategoryRules {
     const unmatched: TransactionDto[] = [];
 
     for (const txn of transactions) {
-      const categoryId = ruleBook.match(txn.label);
-      if (categoryId === undefined) {
+      const match = ruleBook.match(txn.label);
+      if (match === undefined) {
         unmatched.push(txn);
       } else {
-        matched.push({ ...txn, categoryId });
+        matched.push({ ...txn, categoryId: match.categoryId });
+        this.eventDispatcher.dispatch(
+          TransactionCategorized(TransactionId(txn.id), match.categoryId, match.ruleId),
+        );
       }
     }
 

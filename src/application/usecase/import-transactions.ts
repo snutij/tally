@@ -1,3 +1,4 @@
+import { EventDispatcher, TransactionImported } from "../../domain/event/index.js";
 import { Transaction, type TransactionSource } from "../../domain/entity/transaction.js";
 import { type TransactionDto, toTransactionDto } from "../dto/transaction-dto.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
@@ -19,9 +20,11 @@ function dtoToTransaction(dto: TransactionDto): Transaction {
 
 export class ImportTransactions {
   private readonly txnRepository: TransactionRepository;
+  private readonly eventDispatcher: EventDispatcher;
 
-  constructor(txnRepository: TransactionRepository) {
+  constructor(txnRepository: TransactionRepository, eventDispatcher = new EventDispatcher()) {
     this.txnRepository = txnRepository;
+    this.eventDispatcher = eventDispatcher;
   }
 
   splitByCategoryStatus(transactions: TransactionDto[]): {
@@ -49,7 +52,13 @@ export class ImportTransactions {
   }
 
   save(transactions: TransactionDto[]): { count: number } {
-    this.txnRepository.saveAll(transactions.map((dto) => dtoToTransaction(dto)));
+    const domain = transactions.map((dto) => dtoToTransaction(dto));
+    this.txnRepository.saveAll(domain);
+    for (const txn of domain) {
+      this.eventDispatcher.dispatch(
+        TransactionImported(txn.id, txn.label, txn.amount.cents, txn.date),
+      );
+    }
     return { count: transactions.length };
   }
 }

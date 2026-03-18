@@ -12,7 +12,16 @@
   "rules": {
     "new-cap": [
       "error",
-      { "capIsNewExceptions": ["CategoryId", "CategoryRuleId", "TransactionId"] }
+      {
+        "capIsNewExceptions": [
+          "CategoryId",
+          "CategoryRuleId",
+          "CategoryRuleLearned",
+          "TransactionCategorized",
+          "TransactionId",
+          "TransactionImported"
+        ]
+      }
     ],
     "no-await-in-loop": "off",
     "no-console": "off",

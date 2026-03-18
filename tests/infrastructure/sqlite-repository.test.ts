@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
+import type { CategoryRepository } from "../../src/application/gateway/category-repository.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
@@ -33,10 +35,11 @@ describe("SqliteRepository", () => {
   let txnRepository: TransactionRepository;
   let ruleBookRepository: RuleBookRepository;
   let unitOfWork: UnitOfWork;
+  let categoryRepository: CategoryRepository;
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-test-"));
-    ({ close, txnRepository, ruleBookRepository, unitOfWork } = openDatabase(
+    ({ categoryRepository, close, txnRepository, ruleBookRepository, unitOfWork } = openDatabase(
       join(tmpDir, "test.db"),
       registry,
       idGenerator,
@@ -167,6 +170,36 @@ describe("SqliteRepository", () => {
       });
       expect(txnRepository.findByMonth(Month.from("2026-03"))).toHaveLength(1);
       expect(ruleBookRepository.load().findByPattern(String.raw`\buow\b`)).toBeDefined();
+    });
+  });
+
+  describe("CategoryRepository", () => {
+    it("seeds all DEFAULT_CATEGORIES on open", () => {
+      const categories = categoryRepository.findAll();
+      expect(categories.length).toBe(DEFAULT_CATEGORIES.length);
+    });
+
+    it("findById returns the correct category", () => {
+      const cat = categoryRepository.findById(CategoryId("n02"));
+      expect(cat).toBeDefined();
+      expect(cat?.name).toBe("Groceries");
+    });
+
+    it("findById returns undefined for unknown id", () => {
+      const cat = categoryRepository.findById(CategoryId("zzz"));
+      expect(cat).toBeUndefined();
+    });
+
+    it("seeding is idempotent on re-open", () => {
+      close();
+      const { categoryRepository: repo2, close: close2 } = openDatabase(
+        join(tmpDir, "test.db"),
+        registry,
+        idGenerator,
+      );
+      const categories = repo2.findAll();
+      expect(categories.length).toBe(DEFAULT_CATEGORIES.length);
+      close2();
     });
   });
 });

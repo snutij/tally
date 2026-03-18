@@ -12,7 +12,7 @@ import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-r
 import { toMonthlyReportDto } from "../../src/application/dto/report-dto.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
-const categoryMap = new CategoryRegistry(DEFAULT_CATEGORIES).categoryToGroupMap();
+const registry = new CategoryRegistry(DEFAULT_CATEGORIES);
 
 function makeTxn(id: string, amount: number, date: string, categoryId?: string): Transaction {
   return Transaction.create({
@@ -30,7 +30,7 @@ describe("JsonRenderer", () => {
 
   it("serializes a MonthlyReportDto", () => {
     const report = toMonthlyReportDto(
-      computeMonthlyReport(Month.from("2026-03"), targets, [], categoryMap),
+      computeMonthlyReport(Month.from("2026-03"), targets, [], registry),
     );
     const parsed = JSON.parse(renderer.render(report));
     expect(parsed.month).toBe("2026-03");
@@ -45,7 +45,7 @@ describe("JsonRenderer", () => {
         Month.from("2026-03"),
         targets,
         [makeTxn("1", 3000, "2026-03-01", "inc01")],
-        categoryMap,
+        registry,
       ),
     );
     const parsed = JSON.parse(renderer.render(report));
@@ -61,7 +61,7 @@ describe("JsonRenderer", () => {
         Month.from("2026-03"),
         targets,
         [makeTxn("1", 3000, "2026-03-01", "inc01"), makeTxn("2", -800, "2026-03-02", "n01")],
-        categoryMap,
+        registry,
       ),
     );
     const parsed = JSON.parse(renderer.render(report));
