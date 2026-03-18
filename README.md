@@ -1,53 +1,78 @@
 # tally
 
-Budget vs. actual tracking from your terminal. Import bank CSVs, allocate by category, see where the money goes.
+[![CI](https://github.com/snutij/tally/actions/workflows/ci.yml/badge.svg)](https://github.com/snutij/tally/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Usage
+Track where your money actually goes. Import bank CSVs, categorize transactions, and get a budget vs. actual breakdown — all from the terminal.
+
+No cloud, no subscriptions, no dashboards. Just a local SQLite database and a CLI.
+
+## Quick Start
 
 ```bash
 npm install
 npm link
 
-# Initialize a monthly budget (27 default categories, grouped: needs/wants/investments)
-tally budget init 2026-03
+# Import mock data to explore
+tally import mock
 
-# View it
-tally budget show 2026-03
+# Or import a real CSV
+tally import csv statement.csv
 
-# Import transactions from your bank
-tally import credit-mutuel statement.csv
-
-# See available bank adapters
-tally import list
-
-# Budget vs actual report
+# Budget vs actual for the current month
 tally report 2026-03
 ```
 
-Output is JSON — pipe to `jq` for slicing, or consume programmatically.
+## Commands
+
+### `tally report <month>`
+
+Generate a budget vs. actual spending report for a given month.
+
+```bash
+tally report 2026-03
+tally report 2026-03 --needs 50 --wants 30 --invest 20
+```
+
+Output is JSON — pipe to `jq` for slicing.
+
+### `tally import`
+
+```bash
+tally import csv <file>          # Import any CSV (interactive column mapping)
+tally import csv <file> --no-categorize  # Skip categorization prompt
+tally import mock [month]        # Seed pre-categorized mock data
+```
+
+### `tally transactions <month>`
+
+List transactions for a month, with optional interactive categorization.
+
+```bash
+tally transactions 2026-03
+```
+
+### `tally rules`
+
+Manage auto-categorization rules (pattern → category mappings).
+
+```bash
+tally rules list
+tally rules add
+tally rules remove
+```
+
+### `tally db`
+
+```bash
+tally db path    # Print the database file path
+tally db reset   # Delete the local database and start fresh
+```
 
 ## Data
 
 - SQLite database at `~/.local/share/tally/tally.db` (XDG convention, outside project tree)
 - Bank CSVs and DB files are gitignored — only synthetic test fixtures are committed
-
-## Tests
-
-```bash
-npm test           # run once
-npm run test:watch # watch mode
-```
-
-## Architecture
-
-Hexagonal (ports & adapters), four layers:
-
-- **Domain** — entities, value objects, and domain errors. No dependencies on frameworks or I/O.
-- **Application** — use cases that orchestrate domain logic. Depends only on domain and port interfaces (gateways).
-- **Infrastructure** — concrete adapters: SQLite persistence, bank CSV importers.
-- **Presentation** — CLI (Commander) that wires everything together in a composition root.
-
-Tests use in-memory implementations of the repository ports, so they run without a database.
 
 ## Disclaimer
 

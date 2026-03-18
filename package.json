@@ -2,9 +2,20 @@
   "name": "tally",
   "version": "0.1.0",
   "description": "Personal finance CLI — budget tracking & reporting",
-  "keywords": [],
+  "keywords": [
+    "budget",
+    "cli",
+    "finance",
+    "personal-finance",
+    "sqlite",
+    "terminal"
+  ],
   "license": "MIT",
-  "author": "",
+  "author": "Justin Rabiller",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/snutij/tally.git"
+  },
   "bin": {
     "tally": "./dist/index.mjs"
   },
@@ -37,5 +48,8 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
