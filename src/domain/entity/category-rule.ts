@@ -1,14 +1,8 @@
 import { CategoryId } from "../value-object/category-id.js";
-import type { CategoryRegistry } from "../service/category-registry.js";
 import { CategoryRuleId } from "../value-object/category-rule-id.js";
 import { DomainError } from "../error/index.js";
 
 export type CategoryRuleSource = "default" | "learned";
-
-export interface DefaultRuleEntry {
-  readonly pattern: string;
-  readonly categoryId: string;
-}
 
 export class CategoryRule {
   readonly id: CategoryRuleId;
@@ -28,14 +22,17 @@ export class CategoryRule {
     this.source = source;
   }
 
+  /**
+   * Factory for creating new rules (e.g. from user input or config).
+   * Validates structural invariants: non-empty pattern, valid regex.
+   * Category existence validation is the caller's responsibility.
+   */
   static create(
     id: string,
     pattern: string,
     categoryId: string,
     source: CategoryRuleSource,
-    registry: CategoryRegistry,
   ): CategoryRule {
-    registry.assertValid(categoryId);
     if (!pattern.trim()) {
       throw new DomainError("Pattern must not be empty");
     }
@@ -45,6 +42,19 @@ export class CategoryRule {
     } catch {
       throw new DomainError(`Invalid regex pattern: "${pattern}"`);
     }
+    return new CategoryRule(CategoryRuleId(id), pattern, CategoryId(categoryId), source);
+  }
+
+  /**
+   * Factory for reconstituting rules from persistent storage.
+   * Skips all validation — the database is trusted via FK constraints.
+   */
+  static reconstitute(
+    id: string,
+    pattern: string,
+    categoryId: string,
+    source: CategoryRuleSource,
+  ): CategoryRule {
     return new CategoryRule(CategoryRuleId(id), pattern, CategoryId(categoryId), source);
   }
 

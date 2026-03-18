@@ -1,4 +1,4 @@
-import type { IdGenerator } from "../../application/gateway/id-generator.js";
+import type { IdGenerator } from "../../application/port/id-generator.js";
 import { createHash } from "node:crypto";
 
 export class Sha256IdGenerator implements IdGenerator {

@@ -1,8 +1,26 @@
-import type { ApplyCategoryRules } from "./apply-category-rules.js";
-import type { ImportTransactions } from "./import-transactions.js";
-import type { LearnCategoryRules } from "./learn-category-rules.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
-import type { UnitOfWork } from "../gateway/unit-of-work.js";
+import type { UnitOfWork } from "../port/unit-of-work.js";
+
+// Structural interfaces — concrete use cases satisfy these without explicit `implements`
+
+interface TransactionImporter {
+  splitByCategoryStatus(transactions: TransactionDto[]): {
+    alreadyCategorized: TransactionDto[];
+    uncategorized: TransactionDto[];
+  };
+  save(transactions: TransactionDto[]): { count: number };
+}
+
+interface RuleMatcher {
+  apply(transactions: TransactionDto[]): {
+    matched: TransactionDto[];
+    unmatched: TransactionDto[];
+  };
+}
+
+interface RuleLearner {
+  learn(transactions: TransactionDto[]): void;
+}
 
 export interface CategorizeResult {
   categorized: TransactionDto[];
@@ -22,15 +40,15 @@ export interface ImportCsvResult {
 }
 
 export class ImportCsvWorkflow {
-  private readonly importTransactions: ImportTransactions;
-  private readonly applyCategoryRules: ApplyCategoryRules;
-  private readonly learnCategoryRules: LearnCategoryRules;
+  private readonly importTransactions: TransactionImporter;
+  private readonly applyCategoryRules: RuleMatcher;
+  private readonly learnCategoryRules: RuleLearner;
   private readonly unitOfWork: UnitOfWork;
 
   constructor(
-    importTransactions: ImportTransactions,
-    applyCategoryRules: ApplyCategoryRules,
-    learnCategoryRules: LearnCategoryRules,
+    importTransactions: TransactionImporter,
+    applyCategoryRules: RuleMatcher,
+    learnCategoryRules: RuleLearner,
     unitOfWork: UnitOfWork,
   ) {
     this.importTransactions = importTransactions;

@@ -1,5 +1,9 @@
 import { FR_BANK_PREFIXES, FR_DEFAULT_RULES } from "./fr.js";
-import type { DefaultRuleEntry } from "../../../domain/entity/category-rule.js";
+
+export interface DefaultRuleEntry {
+  readonly pattern: string;
+  readonly categoryId: string;
+}
 
 export const DEFAULT_LOCALE = "fr";
 

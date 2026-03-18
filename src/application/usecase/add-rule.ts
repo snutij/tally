@@ -1,22 +1,21 @@
 import { type CategoryRuleDto, toCategoryRuleDto } from "../dto/category-rule-dto.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { CategoryRule } from "../../domain/entity/category-rule.js";
-import type { CategoryRuleGateway } from "../gateway/category-rule-gateway.js";
 import { DomainError } from "../../domain/error/index.js";
-import type { IdGenerator } from "../gateway/id-generator.js";
-import { RuleBook } from "../../domain/aggregate/rule-book.js";
+import type { IdGenerator } from "../port/id-generator.js";
+import type { RuleBookRepository } from "../port/rule-book-repository.js";
 
 export class AddRule {
-  private readonly ruleGateway: CategoryRuleGateway;
+  private readonly ruleBookRepository: RuleBookRepository;
   private readonly idGenerator: IdGenerator;
   private readonly registry: CategoryRegistry;
 
   constructor(
-    ruleGateway: CategoryRuleGateway,
+    ruleBookRepository: RuleBookRepository,
     idGenerator: IdGenerator,
     registry: CategoryRegistry,
   ) {
-    this.ruleGateway = ruleGateway;
+    this.ruleBookRepository = ruleBookRepository;
     this.idGenerator = idGenerator;
     this.registry = registry;
   }
@@ -26,19 +25,18 @@ export class AddRule {
       throw new DomainError("pattern: must not be empty");
     }
 
-    // Validate category ID (throws DomainError if unknown)
+    // Validate category existence (application layer responsibility)
     this.registry.assertValid(categoryId);
 
     const categoryName = this.registry.nameOf(categoryId) ?? categoryId;
 
     const id = this.idGenerator.fromPattern(pattern);
-    const rule = CategoryRule.create(id, pattern, categoryId, "learned", this.registry);
+    const rule = CategoryRule.create(id, pattern, categoryId, "learned");
 
-    // Enforce uniqueness via RuleBook aggregate
-    const ruleBook = new RuleBook(this.ruleGateway.findAll());
+    const ruleBook = this.ruleBookRepository.load();
     ruleBook.addRule(rule); // throws DomainError if duplicate
+    this.ruleBookRepository.save(ruleBook);
 
-    this.ruleGateway.save(rule);
     return { categoryName, rule: toCategoryRuleDto(rule, this.registry) };
   }
 }

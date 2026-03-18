@@ -33,7 +33,7 @@ import { createImportCommand } from "./command/import-command.js";
 import { createReportCommand } from "./command/report-command.js";
 import { createRulesCommand } from "./command/rules-command.js";
 import { createTransactionsCommand } from "./command/transactions-command.js";
-import { openDatabase } from "../infrastructure/persistence/sqlite-gateway.js";
+import { openDatabase } from "../infrastructure/persistence/sqlite-repository.js";
 
 // --- Data directory (XDG convention) ---
 if (!existsSync(dataDir)) {
@@ -41,19 +41,23 @@ if (!existsSync(dataDir)) {
 }
 
 // --- Composition root ---
+const idGenerator = new Sha256IdGenerator();
 const categoryRegistry = new CategoryRegistry(DEFAULT_CATEGORIES);
 const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories());
-const { txnGateway, ruleGateway, unitOfWork } = openDatabase(dbPath, categoryRegistry);
+const { txnRepository, ruleBookRepository, unitOfWork } = openDatabase(
+  dbPath,
+  categoryRegistry,
+  idGenerator,
+);
 
-const idGenerator = new Sha256IdGenerator();
 const mockDataGenerator = new MockDataGeneratorImpl();
 const csvFormatDetector = new CsvFormatDetectorImpl();
-const importTransactions = new ImportTransactions(txnGateway);
-const generateReport = new GenerateReport(txnGateway, categoryRegistry);
-const seedMockData = new SeedMockData(txnGateway, mockDataGenerator);
-const applyCategoryRules = new ApplyCategoryRules(ruleGateway);
+const importTransactions = new ImportTransactions(txnRepository);
+const generateReport = new GenerateReport(txnRepository, categoryRegistry);
+const seedMockData = new SeedMockData(txnRepository, mockDataGenerator);
+const applyCategoryRules = new ApplyCategoryRules(ruleBookRepository);
 const learnCategoryRules = new LearnCategoryRules(
-  ruleGateway,
+  ruleBookRepository,
   getDefaultPrefixesForLocale(DEFAULT_LOCALE),
   idGenerator,
   categoryRegistry,
@@ -64,12 +68,15 @@ const importCsvWorkflow = new ImportCsvWorkflow(
   learnCategoryRules,
   unitOfWork,
 );
-const listTransactions = new ListTransactions(txnGateway);
-const findUncategorizedTransactions = new FindUncategorizedTransactions(txnGateway);
-const saveCategorizedTransactions = new SaveCategorizedTransactions(txnGateway, categoryRegistry);
-const listRules = new ListRules(ruleGateway, categoryRegistry);
-const addRule = new AddRule(ruleGateway, idGenerator, categoryRegistry);
-const removeRule = new RemoveRule(ruleGateway);
+const listTransactions = new ListTransactions(txnRepository);
+const findUncategorizedTransactions = new FindUncategorizedTransactions(txnRepository);
+const saveCategorizedTransactions = new SaveCategorizedTransactions(
+  txnRepository,
+  categoryRegistry,
+);
+const listRules = new ListRules(ruleBookRepository, categoryRegistry);
+const addRule = new AddRule(ruleBookRepository, idGenerator, categoryRegistry);
+const removeRule = new RemoveRule(ruleBookRepository);
 
 // --- CLI ---
 const program = new Command();

@@ -1,7 +1,7 @@
 import type {
   CsvFormatDetector,
   FormatDetectionResult,
-} from "../../application/gateway/csv-format-detector.js";
+} from "../../application/port/csv-format-detector.js";
 import { decodeFileContent } from "./encoding.js";
 import { detectDateFormat } from "./detect-date-format.js";
 import { detectDecimalSeparator } from "./detect-decimal-separator.js";

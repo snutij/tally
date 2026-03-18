@@ -4,7 +4,7 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
-import { InMemoryTransactionGateway } from "../helpers/in-memory-repositories.js";
+import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
@@ -21,11 +21,11 @@ function makeTxn(id: string, amount: number, date: string, categoryId?: string):
 }
 
 describe("GenerateReport", () => {
-  let txnGateway: InMemoryTransactionGateway;
+  let txnGateway: InMemoryTransactionRepository;
   let useCase: GenerateReport;
 
   beforeEach(() => {
-    txnGateway = new InMemoryTransactionGateway();
+    txnGateway = new InMemoryTransactionRepository();
     useCase = new GenerateReport(txnGateway, new CategoryRegistry(DEFAULT_CATEGORIES));
   });
 

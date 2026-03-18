@@ -10,7 +10,7 @@ import { FR_BANK_PREFIXES } from "../../src/infrastructure/config/category-rules
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { join } from "node:path";
-import { openDatabase } from "../../src/infrastructure/persistence/sqlite-gateway.js";
+import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
 import { toTransactionDto } from "../../src/application/dto/transaction-dto.js";
 
@@ -32,14 +32,15 @@ describe("e2e: auto-categorization rules", () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-rules-e2e-"));
-    const { close: closeDb, ruleGateway } = openDatabase(
+    const { close: closeDb, ruleBookRepository } = openDatabase(
       join(tmpDir, "test.db"),
       new CategoryRegistry(DEFAULT_CATEGORIES),
+      new Sha256IdGenerator(),
     );
     close = closeDb;
-    applyCategoryRules = new ApplyCategoryRules(ruleGateway);
+    applyCategoryRules = new ApplyCategoryRules(ruleBookRepository);
     learnCategoryRules = new LearnCategoryRules(
-      ruleGateway,
+      ruleBookRepository,
       FR_BANK_PREFIXES,
       new Sha256IdGenerator(),
       new CategoryRegistry(DEFAULT_CATEGORIES),
@@ -71,11 +72,7 @@ describe("e2e: auto-categorization rules", () => {
     }
 
     // Simulate user manually categorizing the first transaction
-    const manuallyCategorized = [
-      toTransactionDto(
-        firstTxn.categorize(CategoryId("n02"), new CategoryRegistry(DEFAULT_CATEGORIES)),
-      ),
-    ];
+    const manuallyCategorized = [toTransactionDto(firstTxn.categorize(CategoryId("n02")))];
     learnCategoryRules.learn(manuallyCategorized);
 
     // On second import pass, the same transaction label should now auto-match

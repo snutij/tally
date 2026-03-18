@@ -1,58 +1,65 @@
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { CategoryRule } from "../../domain/entity/category-rule.js";
-import type { CategoryRuleGateway } from "../gateway/category-rule-gateway.js";
-import type { IdGenerator } from "../gateway/id-generator.js";
+import type { IdGenerator } from "../port/id-generator.js";
+import type { RuleBookRepository } from "../port/rule-book-repository.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
 import { extractPattern } from "../../domain/service/extract-pattern.js";
 
 export class LearnCategoryRules {
-  private readonly ruleGateway: CategoryRuleGateway;
+  private readonly ruleBookRepository: RuleBookRepository;
   private readonly bankPrefixes: string[];
   private readonly idGenerator: IdGenerator;
   private readonly registry: CategoryRegistry;
 
   constructor(
-    ruleGateway: CategoryRuleGateway,
+    ruleBookRepository: RuleBookRepository,
     bankPrefixes: string[],
     idGenerator: IdGenerator,
     registry: CategoryRegistry,
   ) {
-    this.ruleGateway = ruleGateway;
+    this.ruleBookRepository = ruleBookRepository;
     this.bankPrefixes = bankPrefixes;
     this.idGenerator = idGenerator;
     this.registry = registry;
   }
 
   learn(transactions: TransactionDto[]): void {
-    for (const txn of transactions) {
-      if (txn.categoryId) {
-        this.learnOne(txn.label, txn.categoryId);
+    const relevant = transactions.filter(
+      (txn) => txn.categoryId !== undefined && this.registry.has(txn.categoryId),
+    );
+    if (relevant.length === 0) {
+      return;
+    }
+
+    const ruleBook = this.ruleBookRepository.load();
+    let changed = false;
+
+    for (const txn of relevant) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- filtered above
+      const categoryId = txn.categoryId!;
+      const pattern = extractPattern(txn.label, this.bankPrefixes);
+      if (pattern) {
+        const brandedCategoryId = CategoryId(categoryId);
+        const existing = ruleBook.findByPattern(pattern);
+        // Only upsert when the existing rule differs (avoid no-op writes)
+        const alreadyLearned =
+          existing?.source === "learned" && existing.categoryId === brandedCategoryId;
+        if (!alreadyLearned) {
+          // Upsert: remove old (if any), add new learned rule
+          if (existing) {
+            ruleBook.removeByPattern(pattern);
+          }
+          const id = this.idGenerator.fromPattern(pattern);
+          const rule = CategoryRule.create(id, pattern, categoryId, "learned");
+          ruleBook.addRule(rule);
+          changed = true;
+        }
       }
     }
-  }
 
-  private learnOne(label: string, categoryId: string): void {
-    // Skip if category ID is not valid — don't propagate corrupted data into rules
-    if (!this.registry.has(categoryId)) {
-      return;
+    if (changed) {
+      this.ruleBookRepository.save(ruleBook);
     }
-
-    const pattern = extractPattern(label, this.bankPrefixes);
-    if (!pattern) {
-      return;
-    }
-
-    const brandedCategoryId = CategoryId(categoryId);
-    const existing = this.ruleGateway.findByPattern(pattern);
-    // Skip only if the same learned rule already exists (no change needed)
-    if (existing?.source === "learned" && existing.categoryId === brandedCategoryId) {
-      return;
-    }
-
-    // Otherwise upsert: create a new learned rule (replaces any existing default for this pattern)
-    const id = this.idGenerator.fromPattern(pattern);
-    const rule = CategoryRule.create(id, pattern, categoryId, "learned", this.registry);
-    this.ruleGateway.save(rule);
   }
 }

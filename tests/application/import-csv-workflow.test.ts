@@ -1,6 +1,6 @@
 import {
-  InMemoryCategoryRuleGateway,
-  InMemoryTransactionGateway,
+  InMemoryRuleBookRepository,
+  InMemoryTransactionRepository,
 } from "../helpers/in-memory-repositories.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApplyCategoryRules } from "../../src/application/usecase/apply-category-rules.js";
@@ -9,7 +9,7 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
-import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
+import type { IdGenerator } from "../../src/application/port/id-generator.js";
 import { ImportCsvWorkflow } from "../../src/application/usecase/import-csv-workflow.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
@@ -25,13 +25,13 @@ function dto(id: string, categoryId?: string): TransactionDto {
 }
 
 describe("ImportCsvWorkflow", () => {
-  let txnGateway: InMemoryTransactionGateway;
-  let ruleGateway: InMemoryCategoryRuleGateway;
+  let txnGateway: InMemoryTransactionRepository;
+  let ruleGateway: InMemoryRuleBookRepository;
   let workflow: ImportCsvWorkflow;
 
   beforeEach(() => {
-    txnGateway = new InMemoryTransactionGateway();
-    ruleGateway = new InMemoryCategoryRuleGateway();
+    txnGateway = new InMemoryTransactionRepository();
+    ruleGateway = new InMemoryRuleBookRepository();
     const importTransactions = new ImportTransactions(txnGateway);
     const applyCategoryRules = new ApplyCategoryRules(ruleGateway);
     const learnCategoryRules = new LearnCategoryRules(
@@ -89,15 +89,7 @@ describe("ImportCsvWorkflow", () => {
   });
 
   it("calls onAutoMatched callback when rules match", async () => {
-    ruleGateway.save(
-      CategoryRule.create(
-        "id-txn",
-        String.raw`\btxn\b`,
-        "n01",
-        "default",
-        new CategoryRegistry(DEFAULT_CATEGORIES),
-      ),
-    );
+    ruleGateway.seed(CategoryRule.create("id-txn", String.raw`\btxn\b`, "n01", "default"));
     const onAutoMatched = vi.fn();
     await workflow.execute({ onAutoMatched, transactions: [dto("t1")] });
     // dto label is "txn-t1" which matches \btxn\b

@@ -4,7 +4,7 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { Command } from "commander";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
-import { InMemoryCategoryRuleGateway } from "../helpers/in-memory-repositories.js";
+import { InMemoryRuleBookRepository } from "../helpers/in-memory-repositories.js";
 import { ListRules } from "../../src/application/usecase/list-rules.js";
 import { RemoveRule } from "../../src/application/usecase/remove-rule.js";
 import type { Renderer } from "../../src/presentation/renderer/renderer.js";
@@ -15,17 +15,11 @@ function makeTestRule(
   categoryId: string,
   source: "default" | "learned",
 ): CategoryRule {
-  return CategoryRule.create(
-    `id-${pattern}`.slice(0, 32),
-    pattern,
-    categoryId,
-    source,
-    new CategoryRegistry(DEFAULT_CATEGORIES),
-  );
+  return CategoryRule.create(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
 }
 
 describe("createRulesCommand", () => {
-  let ruleGateway: InMemoryCategoryRuleGateway;
+  let ruleGateway: InMemoryRuleBookRepository;
   let listRules: ListRules;
   let addRule: AddRule;
   let removeRule: RemoveRule;
@@ -38,7 +32,7 @@ describe("createRulesCommand", () => {
   }
 
   beforeEach(() => {
-    ruleGateway = new InMemoryCategoryRuleGateway();
+    ruleGateway = new InMemoryRuleBookRepository();
     listRules = new ListRules(ruleGateway, new CategoryRegistry(DEFAULT_CATEGORIES));
     addRule = new AddRule(
       ruleGateway,
@@ -53,7 +47,7 @@ describe("createRulesCommand", () => {
 
   describe("list", () => {
     it("renders all rules via the renderer", async () => {
-      ruleGateway.save(makeTestRule(String.raw`\bspotify\b`, "w06", "default"));
+      ruleGateway.seed(makeTestRule(String.raw`\bspotify\b`, "w06", "default"));
       await run("list");
       expect(mockRenderer.render).toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ pattern: "\\bspotify\\b" })]),
@@ -92,7 +86,7 @@ describe("createRulesCommand", () => {
     });
 
     it("rejects a duplicate pattern", async () => {
-      ruleGateway.save(makeTestRule(String.raw`\bmonoprix\b`, "n02", "default"));
+      ruleGateway.seed(makeTestRule(String.raw`\bmonoprix\b`, "n02", "default"));
       await run("add", String.raw`\bmonoprix\b`, "w01");
       expect(console.error).toHaveBeenCalledWith(expect.stringContaining("already exists"));
       expect(process.exitCode).toBe(1);
@@ -108,7 +102,7 @@ describe("createRulesCommand", () => {
 
   describe("remove", () => {
     it("removes an existing rule", async () => {
-      ruleGateway.save(makeTestRule(String.raw`\bspotify\b`, "w06", "default"));
+      ruleGateway.seed(makeTestRule(String.raw`\bspotify\b`, "w06", "default"));
       await run("remove", String.raw`\bspotify\b`);
       expect(ruleGateway.findByPattern(String.raw`\bspotify\b`)).toBeUndefined();
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Rule removed"));

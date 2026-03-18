@@ -1,20 +1,20 @@
-import type { MockDataGenerator } from "../gateway/mock-data-generator.js";
+import type { MockDataGenerator } from "../port/mock-data-generator.js";
 import { Month } from "../../domain/value-object/month.js";
-import type { TransactionGateway } from "../gateway/transaction-gateway.js";
+import type { TransactionRepository } from "../port/transaction-repository.js";
 
 export class SeedMockData {
-  private readonly txnGateway: TransactionGateway;
+  private readonly txnRepository: TransactionRepository;
   private readonly mockDataGenerator: MockDataGenerator;
 
-  constructor(txnGateway: TransactionGateway, mockDataGenerator: MockDataGenerator) {
-    this.txnGateway = txnGateway;
+  constructor(txnRepository: TransactionRepository, mockDataGenerator: MockDataGenerator) {
+    this.txnRepository = txnRepository;
     this.mockDataGenerator = mockDataGenerator;
   }
 
   execute(monthStr: string): { transactionCount: number } {
     const month = Month.from(monthStr);
     const txns = this.mockDataGenerator.generate(month.year, month.month);
-    this.txnGateway.saveAll(txns);
+    this.txnRepository.saveAll(txns);
     return { transactionCount: txns.length };
   }
 }

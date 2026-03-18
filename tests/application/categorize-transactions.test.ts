@@ -5,7 +5,7 @@ import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { DomainError } from "../../src/domain/error/index.js";
 import { FindUncategorizedTransactions } from "../../src/application/usecase/find-uncategorized-transactions.js";
-import { InMemoryTransactionGateway } from "../helpers/in-memory-repositories.js";
+import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { SaveCategorizedTransactions } from "../../src/application/usecase/save-categorized-transactions.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
@@ -23,11 +23,11 @@ function txn(id: string, categoryId?: string): Transaction {
 }
 
 describe("FindUncategorizedTransactions", () => {
-  let txnGateway: InMemoryTransactionGateway;
+  let txnGateway: InMemoryTransactionRepository;
   let useCase: FindUncategorizedTransactions;
 
   beforeEach(() => {
-    txnGateway = new InMemoryTransactionGateway();
+    txnGateway = new InMemoryTransactionRepository();
     useCase = new FindUncategorizedTransactions(txnGateway);
   });
 
@@ -65,11 +65,11 @@ describe("FindUncategorizedTransactions", () => {
 });
 
 describe("SaveCategorizedTransactions", () => {
-  let txnGateway: InMemoryTransactionGateway;
+  let txnGateway: InMemoryTransactionRepository;
   let useCase: SaveCategorizedTransactions;
 
   beforeEach(() => {
-    txnGateway = new InMemoryTransactionGateway();
+    txnGateway = new InMemoryTransactionRepository();
     useCase = new SaveCategorizedTransactions(txnGateway, new CategoryRegistry(DEFAULT_CATEGORIES));
   });
 
@@ -92,5 +92,14 @@ describe("SaveCategorizedTransactions", () => {
       { categoryId: "w01", id: "t2" },
     ]);
     expect(categorizedCount).toBe(2);
+  });
+
+  it("skips assignment when categoryId is empty string", () => {
+    txnGateway.saveAll([txn("t1")]);
+    const { categorizedCount } = useCase.execute([{ categoryId: "", id: "t1" }]);
+    // Txn is saved without a category change (guard returns original txn)
+    expect(categorizedCount).toBe(1);
+    const saved = txnGateway.saved.find((savedTxn) => savedTxn.id === "t1");
+    expect(saved?.categoryId).toBeUndefined();
   });
 });

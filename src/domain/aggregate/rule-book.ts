@@ -46,6 +46,22 @@ export class RuleBook {
     this.rules.push(rule);
   }
 
+  /**
+   * Removes a rule by pattern. Throws DomainError if no rule with that
+   * pattern exists.
+   */
+  removeByPattern(pattern: string): void {
+    const idx = this.rules.findIndex((rule) => rule.pattern === pattern);
+    if (idx === -1) {
+      throw new DomainError(`No rule found for pattern "${pattern}".`);
+    }
+    this.rules.splice(idx, 1);
+  }
+
+  findByPattern(pattern: string): CategoryRule | undefined {
+    return this.rules.find((rule) => rule.pattern === pattern);
+  }
+
   allRules(): readonly CategoryRule[] {
     return this.rules;
   }

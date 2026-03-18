@@ -1,20 +1,20 @@
 import { type TransactionDto, toTransactionDto } from "../dto/transaction-dto.js";
 import { Month } from "../../domain/value-object/month.js";
-import type { TransactionGateway } from "../gateway/transaction-gateway.js";
+import type { TransactionRepository } from "../port/transaction-repository.js";
 
 export class FindUncategorizedTransactions {
-  private readonly txnGateway: TransactionGateway;
+  private readonly txnRepository: TransactionRepository;
 
-  constructor(txnGateway: TransactionGateway) {
-    this.txnGateway = txnGateway;
+  constructor(txnRepository: TransactionRepository) {
+    this.txnRepository = txnRepository;
   }
 
   execute(monthStr: string): { all: TransactionDto[]; uncategorized: TransactionDto[] } {
     const month = Month.from(monthStr);
-    const all = this.txnGateway.findByMonth(month);
+    const all = this.txnRepository.findByMonth(month);
     return {
       all: all.map((txn) => toTransactionDto(txn)),
-      uncategorized: all.filter((txn) => !txn.categoryId).map((txn) => toTransactionDto(txn)),
+      uncategorized: all.filter((txn) => !txn.isCategorized).map((txn) => toTransactionDto(txn)),
     };
   }
 }

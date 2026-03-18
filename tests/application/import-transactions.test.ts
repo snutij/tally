@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
-import { InMemoryTransactionGateway } from "../helpers/in-memory-repositories.js";
+import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
@@ -20,11 +20,11 @@ function dto(id: string, categoryId?: string): TransactionDto {
 }
 
 describe("ImportTransactions", () => {
-  let txnGateway: InMemoryTransactionGateway;
+  let txnGateway: InMemoryTransactionRepository;
   let useCase: ImportTransactions;
 
   beforeEach(() => {
-    txnGateway = new InMemoryTransactionGateway();
+    txnGateway = new InMemoryTransactionRepository();
     useCase = new ImportTransactions(txnGateway);
   });
 

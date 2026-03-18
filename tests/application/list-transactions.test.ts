@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
-import { InMemoryTransactionGateway } from "../helpers/in-memory-repositories.js";
+import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { ListTransactions } from "../../src/application/usecase/list-transactions.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
@@ -17,11 +17,11 @@ function txn(id: string, date: string): Transaction {
 }
 
 describe("ListTransactions", () => {
-  let txnGateway: InMemoryTransactionGateway;
+  let txnGateway: InMemoryTransactionRepository;
   let useCase: ListTransactions;
 
   beforeEach(() => {
-    txnGateway = new InMemoryTransactionGateway();
+    txnGateway = new InMemoryTransactionRepository();
     useCase = new ListTransactions(txnGateway);
   });
 

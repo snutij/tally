@@ -1,12 +1,12 @@
 import type { CategoryChoiceGroup } from "../../application/category-choices.js";
 import { Command } from "commander";
-import type { CsvFormatDetector } from "../../application/gateway/csv-format-detector.js";
+import type { CsvFormatDetector } from "../../application/port/csv-format-detector.js";
 import type { CsvMappingConfig } from "../../application/dto/csv-mapping-config.js";
 import type { ImportCsvWorkflow } from "../../application/usecase/import-csv-workflow.js";
 import type { ImportTransactions } from "../../application/usecase/import-transactions.js";
 import type { Renderer } from "../renderer/renderer.js";
 import type { SeedMockData } from "../../application/usecase/seed-mock-data.js";
-import type { TransactionParser } from "../../application/gateway/transaction-parser.js";
+import type { TransactionParser } from "../../application/port/transaction-parser.js";
 import { categorizePrompt } from "../prompt/categorize-prompt.js";
 import { collectColumnMapping } from "../prompt/column-mapping-prompt.js";
 import { toTransactionDto } from "../../application/dto/transaction-dto.js";
