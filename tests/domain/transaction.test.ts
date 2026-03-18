@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
-import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
-import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { DomainError } from "../../src/domain/error/index.js";
 import { Money } from "../../src/domain/value-object/money.js";
@@ -54,19 +52,13 @@ describe("Transaction", () => {
   describe("categorize()", () => {
     it("returns a new Transaction with the given categoryId", () => {
       const txn = Transaction.create(BASE_PARAMS);
-      const categorized = txn.categorize(
-        CategoryId("n02"),
-        new CategoryRegistry(DEFAULT_CATEGORIES),
-      );
+      const categorized = txn.categorize(CategoryId("n02"));
       expect(categorized.categoryId).toBe("n02");
     });
 
     it("preserves all other fields", () => {
       const txn = Transaction.create(BASE_PARAMS);
-      const categorized = txn.categorize(
-        CategoryId("n02"),
-        new CategoryRegistry(DEFAULT_CATEGORIES),
-      );
+      const categorized = txn.categorize(CategoryId("n02"));
       expect(categorized.id).toBe(txn.id);
       expect(categorized.label).toBe(txn.label);
       expect(categorized.amount.cents).toBe(txn.amount.cents);
@@ -76,32 +68,20 @@ describe("Transaction", () => {
 
     it("does not mutate the original", () => {
       const txn = Transaction.create(BASE_PARAMS);
-      txn.categorize(CategoryId("n02"), new CategoryRegistry(DEFAULT_CATEGORIES));
+      txn.categorize(CategoryId("n02"));
       expect(txn.categoryId).toBeUndefined();
     });
 
     it("re-categorization replaces the categoryId", () => {
       const txn = Transaction.create({ ...BASE_PARAMS, categoryId: CategoryId("n01") });
-      const recategorized = txn.categorize(
-        CategoryId("w02"),
-        new CategoryRegistry(DEFAULT_CATEGORIES),
-      );
+      const recategorized = txn.categorize(CategoryId("w02"));
       expect(recategorized.categoryId).toBe("w02");
       expect(txn.categoryId).toBe("n01"); // original unchanged
     });
 
     it("returns a Transaction instance", () => {
       const txn = Transaction.create(BASE_PARAMS);
-      expect(
-        txn.categorize(CategoryId("n01"), new CategoryRegistry(DEFAULT_CATEGORIES)),
-      ).toBeInstanceOf(Transaction);
-    });
-
-    it("throws DomainError for unknown category ID", () => {
-      const txn = Transaction.create(BASE_PARAMS);
-      expect(() =>
-        txn.categorize(CategoryId("nonexistent"), new CategoryRegistry(DEFAULT_CATEGORIES)),
-      ).toThrow(DomainError);
+      expect(txn.categorize(CategoryId("n01"))).toBeInstanceOf(Transaction);
     });
   });
 
@@ -118,9 +98,7 @@ describe("Transaction", () => {
 
     it("returns true after categorize()", () => {
       const txn = Transaction.create(BASE_PARAMS);
-      expect(
-        txn.categorize(CategoryId("n01"), new CategoryRegistry(DEFAULT_CATEGORIES)).isCategorized,
-      ).toBe(true);
+      expect(txn.categorize(CategoryId("n01")).isCategorized).toBe(true);
     });
   });
 

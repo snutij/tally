@@ -1,17 +1,20 @@
 import { type CategoryRuleDto, toCategoryRuleDto } from "../dto/category-rule-dto.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
-import type { CategoryRuleGateway } from "../gateway/category-rule-gateway.js";
+import type { RuleBookRepository } from "../gateway/rule-book-repository.js";
 
 export class ListRules {
-  private readonly ruleGateway: CategoryRuleGateway;
+  private readonly ruleBookRepository: RuleBookRepository;
   private readonly registry: CategoryRegistry;
 
-  constructor(ruleGateway: CategoryRuleGateway, registry: CategoryRegistry) {
-    this.ruleGateway = ruleGateway;
+  constructor(ruleBookRepository: RuleBookRepository, registry: CategoryRegistry) {
+    this.ruleBookRepository = ruleBookRepository;
     this.registry = registry;
   }
 
   execute(): CategoryRuleDto[] {
-    return this.ruleGateway.findAll().map((rule) => toCategoryRuleDto(rule, this.registry));
+    return this.ruleBookRepository
+      .load()
+      .allRules()
+      .map((rule) => toCategoryRuleDto(rule, this.registry));
   }
 }

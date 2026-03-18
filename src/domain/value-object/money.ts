@@ -1,3 +1,5 @@
+import { DomainError } from "../error/index.js";
+
 export class Money {
   readonly cents: number;
 
@@ -7,7 +9,7 @@ export class Money {
 
   static fromCents(cents: number): Money {
     if (!Number.isInteger(cents)) {
-      throw new TypeError("Money must be an integer number of cents");
+      throw new DomainError("Money must be an integer number of cents");
     }
     return new Money(cents);
   }

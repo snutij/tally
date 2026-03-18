@@ -1,18 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
-import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DomainError } from "../../src/domain/error/index.js";
 import { RuleBook } from "../../src/domain/aggregate/rule-book.js";
 
 function rule(pattern: string, categoryId: string, source: "default" | "learned"): CategoryRule {
-  return CategoryRule.create(
-    `id-${pattern}`.slice(0, 32),
-    pattern,
-    categoryId,
-    source,
-    new CategoryRegistry(DEFAULT_CATEGORIES),
-  );
+  return CategoryRule.create(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
 }
 
 describe("RuleBook", () => {
@@ -75,6 +67,20 @@ describe("RuleBook", () => {
       expect(() => book.addRule(rule(String.raw`\bspotify\b`, "n01", "learned"))).toThrow(
         /already exists/,
       );
+    });
+  });
+
+  describe("removeByPattern()", () => {
+    it("removes a rule with the given pattern", () => {
+      const book = new RuleBook([rule(String.raw`\bspotify\b`, "w06", "default")]);
+      book.removeByPattern(String.raw`\bspotify\b`);
+      expect(book.allRules()).toHaveLength(0);
+    });
+
+    it("throws DomainError when pattern not found", () => {
+      const book = new RuleBook([]);
+      expect(() => book.removeByPattern(String.raw`\bnotfound\b`)).toThrow(DomainError);
+      expect(() => book.removeByPattern(String.raw`\bnotfound\b`)).toThrow(/No rule found/);
     });
   });
 

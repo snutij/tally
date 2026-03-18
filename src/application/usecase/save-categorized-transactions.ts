@@ -1,8 +1,8 @@
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { DomainError } from "../../domain/error/index.js";
-import type { TransactionGateway } from "../gateway/transaction-gateway.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
+import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
 interface CategoryAssignment {
   categoryId: string;
@@ -10,11 +10,11 @@ interface CategoryAssignment {
 }
 
 export class SaveCategorizedTransactions {
-  private readonly txnGateway: TransactionGateway;
+  private readonly txnRepository: TransactionRepository;
   private readonly registry: CategoryRegistry;
 
-  constructor(txnGateway: TransactionGateway, registry: CategoryRegistry) {
-    this.txnGateway = txnGateway;
+  constructor(txnRepository: TransactionRepository, registry: CategoryRegistry) {
+    this.txnRepository = txnRepository;
     this.registry = registry;
   }
 
@@ -24,17 +24,22 @@ export class SaveCategorizedTransactions {
     }
 
     const ids = assignments.map((assignment) => TransactionId(assignment.id));
-    const transactions = this.txnGateway.findByIds(ids);
+    const transactions = this.txnRepository.findByIds(ids);
 
     const assignmentMap = new Map(
       assignments.map((assignment) => [assignment.id, assignment.categoryId]),
     );
     const categorized = transactions.map((txn) => {
       const catId = assignmentMap.get(txn.id);
-      return catId ? txn.categorize(CategoryId(catId), this.registry) : txn;
+      if (!catId) {
+        return txn;
+      }
+      // Validate category existence (application layer responsibility)
+      this.registry.assertValid(catId);
+      return txn.categorize(CategoryId(catId));
     });
 
-    this.txnGateway.saveAll(categorized);
+    this.txnRepository.saveAll(categorized);
     return { categorizedCount: categorized.length };
   }
 }

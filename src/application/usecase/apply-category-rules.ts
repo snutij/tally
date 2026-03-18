@@ -1,19 +1,18 @@
-import type { CategoryRuleGateway } from "../gateway/category-rule-gateway.js";
-import { RuleBook } from "../../domain/aggregate/rule-book.js";
+import type { RuleBookRepository } from "../gateway/rule-book-repository.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
 
 export class ApplyCategoryRules {
-  private readonly ruleGateway: CategoryRuleGateway;
+  private readonly ruleBookRepository: RuleBookRepository;
 
-  constructor(ruleGateway: CategoryRuleGateway) {
-    this.ruleGateway = ruleGateway;
+  constructor(ruleBookRepository: RuleBookRepository) {
+    this.ruleBookRepository = ruleBookRepository;
   }
 
   apply(transactions: TransactionDto[]): {
     matched: TransactionDto[];
     unmatched: TransactionDto[];
   } {
-    const ruleBook = new RuleBook(this.ruleGateway.findAll());
+    const ruleBook = this.ruleBookRepository.load();
     const matched: TransactionDto[] = [];
     const unmatched: TransactionDto[] = [];
 

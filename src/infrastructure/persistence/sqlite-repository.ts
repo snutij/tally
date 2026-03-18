@@ -2,16 +2,16 @@ import { DEFAULT_LOCALE, getDefaultRulesForLocale } from "../config/category-rul
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import { CategoryRule } from "../../domain/entity/category-rule.js";
-import type { CategoryRuleGateway } from "../../application/gateway/category-rule-gateway.js";
-import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import Database from "better-sqlite3";
 import { DateOnly } from "../../domain/value-object/date-only.js";
+import type { IdGenerator } from "../../application/gateway/id-generator.js";
 import { Money } from "../../domain/value-object/money.js";
 import type { Month } from "../../domain/value-object/month.js";
-import { Sha256IdGenerator } from "../id/sha256-id-generator.js";
+import { RuleBook } from "../../domain/aggregate/rule-book.js";
+import type { RuleBookRepository } from "../../application/gateway/rule-book-repository.js";
 import { Transaction } from "../../domain/entity/transaction.js";
-import type { TransactionGateway } from "../../application/gateway/transaction-gateway.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
+import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
 import type { UnitOfWork } from "../../application/gateway/unit-of-work.js";
 
 interface TransactionRow {
@@ -74,26 +74,29 @@ function migrateSchema(db: Database.Database): void {
   }
 }
 
-function seedDefaults(db: Database.Database, registry: CategoryRegistry): void {
+function seedDefaults(
+  db: Database.Database,
+  registry: CategoryRegistry,
+  idGenerator: IdGenerator,
+): void {
   const upsertCat = db.prepare(
     `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
   );
-  for (const cat of DEFAULT_CATEGORIES) {
+  for (const cat of registry.allCategories()) {
     upsertCat.run(cat.id, cat.name, cat.group);
   }
 
   const insertRule = db.prepare(
     `INSERT OR IGNORE INTO category_rules (id, pattern, category_id, source) VALUES (?, ?, ?, ?)`,
   );
-  const idGenerator = new Sha256IdGenerator();
   for (const entry of getDefaultRulesForLocale(DEFAULT_LOCALE)) {
     const id = idGenerator.fromPattern(entry.pattern);
-    const rule = CategoryRule.create(id, entry.pattern, entry.categoryId, "default", registry);
+    const rule = CategoryRule.create(id, entry.pattern, entry.categoryId, "default");
     insertRule.run(rule.id, rule.pattern, rule.categoryId, rule.source);
   }
 }
 
-class SqliteTransactionGateway implements TransactionGateway {
+class SqliteTransactionRepository implements TransactionRepository {
   private db: Database.Database;
 
   constructor(db: Database.Database) {
@@ -146,67 +149,50 @@ class SqliteTransactionGateway implements TransactionGateway {
   }
 }
 
-class SqliteCategoryRuleGateway implements CategoryRuleGateway {
+class SqliteRuleBookRepository implements RuleBookRepository {
   private db: Database.Database;
-  private registry: CategoryRegistry;
 
-  constructor(db: Database.Database, registry: CategoryRegistry) {
+  constructor(db: Database.Database) {
     this.db = db;
-    this.registry = registry;
   }
 
-  save(rule: CategoryRule): void {
-    this.db
-      .prepare(
-        `INSERT OR REPLACE INTO category_rules (id, pattern, category_id, source) VALUES (?, ?, ?, ?)`,
-      )
-      .run(rule.id, rule.pattern, rule.categoryId, rule.source);
-  }
-
-  findAll(): CategoryRule[] {
+  load(): RuleBook {
     const rows = this.db
       .prepare(`SELECT id, pattern, category_id, source FROM category_rules`)
       .all() as { id: string; pattern: string; category_id: string; source: string }[];
-    return rows.map((row) =>
-      CategoryRule.create(
+    const rules = rows.map((row) =>
+      CategoryRule.reconstitute(
         row.id,
         row.pattern,
         row.category_id,
         row.source as CategoryRule["source"],
-        this.registry,
       ),
     );
+    return new RuleBook(rules);
   }
 
-  findByPattern(pattern: string): CategoryRule | undefined {
-    const row = this.db
-      .prepare(`SELECT id, pattern, category_id, source FROM category_rules WHERE pattern = ?`)
-      .get(pattern) as
-      | { id: string; pattern: string; category_id: string; source: string }
-      | undefined;
-    if (!row) {
-      return undefined;
-    }
-    return CategoryRule.create(
-      row.id,
-      row.pattern,
-      row.category_id,
-      row.source as CategoryRule["source"],
-      this.registry,
+  save(ruleBook: RuleBook): void {
+    const rules = ruleBook.allRules();
+    const deleteAll = this.db.prepare(`DELETE FROM category_rules`);
+    const insert = this.db.prepare(
+      `INSERT OR REPLACE INTO category_rules (id, pattern, category_id, source) VALUES (?, ?, ?, ?)`,
     );
-  }
-
-  removeByPattern(pattern: string): void {
-    this.db.prepare(`DELETE FROM category_rules WHERE pattern = ?`).run(pattern);
+    this.db.transaction(() => {
+      deleteAll.run();
+      for (const rule of rules) {
+        insert.run(rule.id, rule.pattern, rule.categoryId, rule.source);
+      }
+    })();
   }
 }
 
 export function openDatabase(
   dbPath: string,
   registry: CategoryRegistry,
+  idGenerator: IdGenerator,
 ): {
-  txnGateway: TransactionGateway;
-  ruleGateway: CategoryRuleGateway;
+  txnRepository: TransactionRepository;
+  ruleBookRepository: RuleBookRepository;
   unitOfWork: UnitOfWork;
   close(): void;
 } {
@@ -214,11 +200,11 @@ export function openDatabase(
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   migrateSchema(db);
-  seedDefaults(db, registry);
+  seedDefaults(db, registry, idGenerator);
   return {
     close: () => db.close(),
-    ruleGateway: new SqliteCategoryRuleGateway(db, registry),
-    txnGateway: new SqliteTransactionGateway(db),
+    ruleBookRepository: new SqliteRuleBookRepository(db),
+    txnRepository: new SqliteTransactionRepository(db),
     unitOfWork: { runInTransaction: (fn) => db.transaction(fn)() },
   };
 }

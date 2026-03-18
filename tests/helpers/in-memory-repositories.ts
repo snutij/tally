@@ -1,31 +1,39 @@
 import type { CategoryRule } from "../../src/domain/entity/category-rule.js";
-import type { CategoryRuleGateway } from "../../src/application/gateway/category-rule-gateway.js";
 import type { Month } from "../../src/domain/value-object/month.js";
+import { RuleBook } from "../../src/domain/aggregate/rule-book.js";
+import type { RuleBookRepository } from "../../src/application/gateway/rule-book-repository.js";
 import type { Transaction } from "../../src/domain/entity/transaction.js";
-import type { TransactionGateway } from "../../src/application/gateway/transaction-gateway.js";
 import type { TransactionId } from "../../src/domain/value-object/transaction-id.js";
+import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 
-export class InMemoryCategoryRuleGateway implements CategoryRuleGateway {
-  private readonly store = new Map<string, CategoryRule>();
+export class InMemoryRuleBookRepository implements RuleBookRepository {
+  private rules: CategoryRule[] = [];
 
-  save(rule: CategoryRule): void {
-    this.store.set(rule.pattern, rule);
+  load(): RuleBook {
+    return new RuleBook([...this.rules]);
   }
 
-  findAll(): CategoryRule[] {
-    return [...this.store.values()];
+  save(ruleBook: RuleBook): void {
+    this.rules = [...ruleBook.allRules()];
   }
 
+  /** Test helper: seed a rule directly, bypassing RuleBook.addRule() duplicate check. */
+  seed(rule: CategoryRule): void {
+    this.rules.push(rule);
+  }
+
+  /** Test helper: find a rule by pattern for assertions. */
   findByPattern(pattern: string): CategoryRule | undefined {
-    return this.store.get(pattern);
+    return this.rules.find((rule) => rule.pattern === pattern);
   }
 
-  removeByPattern(pattern: string): void {
-    this.store.delete(pattern);
+  /** Test helper: return all rules for assertions. */
+  allRules(): readonly CategoryRule[] {
+    return this.rules;
   }
 }
 
-export class InMemoryTransactionGateway implements TransactionGateway {
+export class InMemoryTransactionRepository implements TransactionRepository {
   readonly saved: Transaction[] = [];
 
   saveAll(transactions: Transaction[]): void {

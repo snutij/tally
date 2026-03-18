@@ -1,4 +1,4 @@
-import type { DefaultRuleEntry } from "../../../domain/entity/category-rule.js";
+import type { DefaultRuleEntry } from "./index.js";
 
 // Common French bank label prefixes to strip before extracting the merchant name.
 // Sorted longest-first so we match the most specific prefix at runtime.

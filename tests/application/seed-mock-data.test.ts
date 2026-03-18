@@ -4,8 +4,9 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { MockDataGeneratorImpl } from "../../src/infrastructure/mock/mock-data-generator-impl.js";
 import { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
+import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { join } from "node:path";
-import { openDatabase } from "../../src/infrastructure/persistence/sqlite-gateway.js";
+import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
 
 describe("SeedMockData", () => {
@@ -15,12 +16,13 @@ describe("SeedMockData", () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-mock-"));
-    const { close: closeDb, txnGateway } = openDatabase(
+    const { close: closeDb, txnRepository } = openDatabase(
       join(tmpDir, "test.db"),
       new CategoryRegistry(DEFAULT_CATEGORIES),
+      new Sha256IdGenerator(),
     );
     close = closeDb;
-    seedMockData = new SeedMockData(txnGateway, new MockDataGeneratorImpl());
+    seedMockData = new SeedMockData(txnRepository, new MockDataGeneratorImpl());
   });
 
   afterEach(() => {
