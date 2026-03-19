@@ -4,6 +4,12 @@ import {
   type ReportKpisDto,
   isMonthlyReportDto,
 } from "../../application/dto/report-dto.js";
+import {
+  type MonthOverMonthDeltaDto,
+  type SavingsRateEntryDto,
+  type TrendReportDto,
+  isTrendReportDto,
+} from "../../application/dto/trend-report-dto.js";
 import type { Renderer } from "./renderer.js";
 
 const MONTH_NAMES = [
@@ -103,7 +109,117 @@ export class HtmlRenderer implements Renderer {
     if (isMonthlyReportDto(data)) {
       return HtmlRenderer.renderReport(data);
     }
+    if (isTrendReportDto(data)) {
+      return HtmlRenderer.renderTrend(data);
+    }
     return HtmlRenderer.wrapHtml("Data", `<pre>${esc(JSON.stringify(data, undefined, 2))}</pre>`);
+  }
+
+  // ── Trend ──────────────────────────────────────────────
+
+  private static renderTrend(dto: TrendReportDto): string {
+    const sections = [
+      HtmlRenderer.trendHeader(dto),
+      HtmlRenderer.savingsRateSection(dto.savingsRateSeries),
+      HtmlRenderer.overshootSection(dto),
+      HtmlRenderer.momDeltaSection(dto.monthOverMonthDeltas),
+      HtmlRenderer.monthlyBreakdownSection(dto.months),
+    ].filter(Boolean);
+
+    return HtmlRenderer.wrapHtml(`Trend Report — ${dto.start} to ${dto.end}`, sections.join("\n"));
+  }
+
+  private static trendHeader(dto: TrendReportDto): string {
+    return `<header class="hero">
+  <div class="hero-eyebrow">Spending Trend</div>
+  <h1 class="hero-month">${esc(dto.start)} → ${esc(dto.end)}</h1>
+</header>`;
+  }
+
+  private static savingsRateSection(series: SavingsRateEntryDto[]): string {
+    if (series.length === 0) {
+      return "";
+    }
+    const rows = series
+      .map((entry) => {
+        const cls = entry.rate !== null && entry.rate >= 20 ? "under-budget" : "over-budget"; // eslint-disable-line unicorn/no-null
+        return `<tr><td>${esc(entry.month)}</td><td class="num ${cls}">${fmtPct(entry.rate)}</td></tr>`;
+      })
+      .join("\n");
+    return `<section>
+<h2>Savings Rate Evolution</h2>
+<table>
+  <thead><tr><th>Month</th><th class="num">Savings Rate</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+</section>`;
+  }
+
+  private static overshootSection(dto: TrendReportDto): string {
+    if (dto.groupOvershootFrequency.length === 0) {
+      return "";
+    }
+    const rows = dto.groupOvershootFrequency
+      .map((entry) => {
+        const pctVal =
+          entry.totalMonths === 0 ? 0 : Math.round((entry.count / entry.totalMonths) * 100);
+        const cls = entry.count > 0 ? "over-budget" : "under-budget";
+        return `<tr><td>${esc(entry.group)}</td><td class="num">${entry.count}/${entry.totalMonths}</td><td class="num ${cls}">${pctVal}%</td></tr>`;
+      })
+      .join("\n");
+    return `<section>
+<h2>Group Overshoot Frequency</h2>
+<table>
+  <thead><tr><th>Group</th><th class="num">Overshoots</th><th class="num">Rate</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+</section>`;
+  }
+
+  private static momDeltaSection(deltas: MonthOverMonthDeltaDto[]): string {
+    if (deltas.length === 0) {
+      return "";
+    }
+    const rows = deltas
+      .map((delta) => {
+        const netCls = delta.netDelta >= 0 ? "under-budget" : "over-budget";
+        return `<tr><td>${esc(delta.month)}</td><td class="num ${netCls}">${fmtDelta(delta.netDelta, true)}</td></tr>`;
+      })
+      .join("\n");
+    return `<section>
+<h2>Month-over-Month Net</h2>
+<table>
+  <thead><tr><th>Month</th><th class="num">Net Δ</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+</section>`;
+  }
+
+  private static monthlyBreakdownSection(months: MonthlyReportDto[]): string {
+    if (months.length === 0) {
+      return "";
+    }
+    const cards = months
+      .map((report) => {
+        let netCls = "";
+        if (report.net > 0) {
+          netCls = "under-budget";
+        } else if (report.net < 0) {
+          netCls = "over-budget";
+        }
+        const savingsStr = fmtPct(report.kpis.savingsRate);
+        return `<div class="insight-card">
+  <h3>${esc(report.month)}</h3>
+  <div class="insight-item"><span class="insight-label">Net</span><span class="insight-value ${netCls}">${fmt(report.net)}</span></div>
+  <div class="insight-item"><span class="insight-label">Savings Rate</span><span class="insight-value">${savingsStr}</span></div>
+  <div class="insight-item"><span class="insight-label">Transactions</span><span class="insight-value">${report.transactionCount}</span></div>
+</div>`;
+      })
+      .join("\n");
+    return `<section>
+<h2>Monthly Summary</h2>
+<div class="insights-grid">${cards}</div>
+</section>`;
   }
 
   // ── Report ─────────────────────────────────────────────

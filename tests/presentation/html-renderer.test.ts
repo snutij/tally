@@ -151,6 +151,99 @@ describe("HtmlRenderer", () => {
     });
   });
 
+  describe("render(TrendReportDto)", () => {
+    const monthDto = toMonthlyReportDto(
+      computeMonthlyReport(Month.from("2026-01"), targets, txns, categoryMap),
+    );
+    const dto = {
+      _type: "TrendReportDto" as const,
+      end: "2026-02",
+      groupOvershootFrequency: [
+        { count: 1, group: "NEEDS", totalMonths: 2 },
+        { count: 0, group: "WANTS", totalMonths: 2 },
+        { count: 0, group: "INVESTMENTS", totalMonths: 2 },
+      ],
+      monthOverMonthDeltas: [
+        {
+          groupDeltas: [
+            { delta: 100, group: "NEEDS" },
+            { delta: 0, group: "WANTS" },
+            { delta: 0, group: "INVESTMENTS" },
+          ],
+          month: "2026-02",
+          netDelta: 50,
+        },
+      ],
+      months: [monthDto],
+      savingsRateSeries: [
+        { month: "2026-01", rate: 25 },
+        // eslint-disable-next-line unicorn/no-null -- testing null path
+        { month: "2026-02", rate: null },
+      ],
+      start: "2026-01",
+    };
+    const html = renderer.render(dto);
+
+    it("produces a valid HTML5 document with trend title", () => {
+      expect(html).toMatch(/^<!DOCTYPE html>/);
+      expect(html).toContain("Trend Report");
+    });
+
+    it("contains savings rate evolution section", () => {
+      expect(html).toContain("Savings Rate Evolution");
+    });
+
+    it("contains group overshoot frequency section", () => {
+      expect(html).toContain("Group Overshoot Frequency");
+      expect(html).toContain("NEEDS");
+    });
+
+    it("contains month-over-month net section", () => {
+      expect(html).toContain("Month-over-Month Net");
+    });
+
+    it("contains monthly breakdown section", () => {
+      expect(html).toContain("Monthly Summary");
+    });
+
+    it("omits savings rate section when series is empty", () => {
+      const minimal = { ...dto, savingsRateSeries: [] };
+      const out = renderer.render(minimal);
+      expect(out).not.toContain("Savings Rate Evolution");
+    });
+
+    it("omits overshoot section when frequency list is empty", () => {
+      const minimal = { ...dto, groupOvershootFrequency: [] };
+      const out = renderer.render(minimal);
+      expect(out).not.toContain("Group Overshoot Frequency");
+    });
+
+    it("omits month-over-month section when no deltas", () => {
+      const minimal = { ...dto, monthOverMonthDeltas: [] };
+      const out = renderer.render(minimal);
+      expect(out).not.toContain("Month-over-Month Net");
+    });
+
+    it("omits monthly breakdown section when no months", () => {
+      const minimal = { ...dto, months: [] };
+      const out = renderer.render(minimal);
+      expect(out).not.toContain("Monthly Summary");
+    });
+
+    it("applies over-budget class when net is negative", () => {
+      const negativeNet = toMonthlyReportDto(
+        computeMonthlyReport(
+          Month.from("2026-01"),
+          targets,
+          [makeTxn("1", -500, "2026-01-05", "n01")],
+          categoryMap,
+        ),
+      );
+      const out = renderer.render({ ...dto, months: [negativeNet] });
+      expect(out).toContain("over-budget");
+    });
+  });
+
   it("passes through plain objects as JSON pre block", () => {
     const html = renderer.render({ foo: "bar" });
     expect(html).toContain("<pre>");

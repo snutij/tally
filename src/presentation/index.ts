@@ -16,6 +16,7 @@ import { DomainError } from "../application/error.js";
 import { ExitPromptError } from "@inquirer/core";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
+import { GenerateTrend } from "../application/usecase/generate-trend.js";
 import { ImportCsvWorkflow } from "../application/usecase/import-csv-workflow.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { LearnCategoryRules } from "../application/usecase/learn-category-rules.js";
@@ -32,6 +33,7 @@ import { createImportCommand } from "./command/import-command.js";
 import { createReportCommand } from "./command/report-command.js";
 import { createRulesCommand } from "./command/rules-command.js";
 import { createTransactionsCommand } from "./command/transactions-command.js";
+import { createTrendCommand } from "./command/trend-command.js";
 import { openDatabase } from "../infrastructure/persistence/sqlite-repository.js";
 
 // --- Data directory (XDG convention) ---
@@ -52,6 +54,7 @@ const mockDataGenerator = new MockDataGeneratorImpl();
 const csvFormatDetector = new CsvFormatDetectorImpl();
 const importTransactions = new ImportTransactions(txnRepository);
 const generateReport = new GenerateReport(txnRepository, categoryRegistry);
+const generateTrend = new GenerateTrend(txnRepository, categoryRegistry);
 const seedMockData = new SeedMockData(txnRepository, mockDataGenerator);
 const applyCategoryRules = new ApplyCategoryRules(ruleBookRepository);
 const learnCategoryRules = new LearnCategoryRules(
@@ -102,6 +105,7 @@ program.addCommand(
   }),
 );
 program.addCommand(createReportCommand(generateReport, renderer));
+program.addCommand(createTrendCommand(generateTrend, renderer));
 program.addCommand(
   createTransactionsCommand(
     listTransactions,
