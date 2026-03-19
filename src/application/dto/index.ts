@@ -4,3 +4,5 @@ export type { MonthlyReportDto, GroupSummaryDto, ReportKpisDto } from "./report-
 export { isMonthlyReportDto, toMonthlyReportDto } from "./report-dto.js";
 export type { TransactionDto } from "./transaction-dto.js";
 export { toTransactionDto } from "./transaction-dto.js";
+export type { TrendReportDto } from "./trend-report-dto.js";
+export { isTrendReportDto, toTrendReportDto } from "./trend-report-dto.js";

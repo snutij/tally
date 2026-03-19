@@ -16,3 +16,9 @@ export class InvalidImportData extends DomainError {
     super(`Invalid import data: ${detail}`);
   }
 }
+
+export class InvalidMonthRange extends DomainError {
+  constructor(start: string, end: string) {
+    super(`Invalid month range: start "${start}" must be before or equal to end "${end}".`);
+  }
+}

@@ -11,6 +11,7 @@ export default defineConfig({
         "src/application/gateway/*.ts",
         "src/domain/entity/category.ts",
         "src/domain/read-model/monthly-report.ts",
+        "src/domain/read-model/trend-report.ts",
         "src/presentation/prompt/column-mapping-prompt.ts",
         "src/presentation/renderer/renderer.ts",
         "src/presentation/index.ts",

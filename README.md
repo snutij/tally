@@ -34,7 +34,21 @@ tally report 2026-03
 tally report 2026-03 --needs 50 --wants 30 --invest 20
 ```
 
-Output is JSON — pipe to `jq` for slicing.
+Output is JSON — pipe to `jq` for slicing. For an HTML report, redirect to a file:
+
+```bash
+tally --format html report 2026-03 > report.html && open report.html
+```
+
+### `tally trend <start> <end>`
+
+Compare budget vs. actual across multiple months. Surfaces savings rate evolution, group overshoot frequency, and month-over-month spending deltas.
+
+```bash
+tally trend 2026-01 2026-03
+tally trend 2026-01 2026-03 --needs 50 --wants 30 --invest 20
+tally --format html trend 2026-01 2026-03 > trend.html && open trend.html
+```
 
 ### `tally import`
 

@@ -28,6 +28,12 @@ export class Month {
     return new Date(this.year, this.month, 0).getDate();
   }
 
+  next(): Month {
+    const nextMonth = this.month === 12 ? 1 : this.month + 1;
+    const nextYear = this.month === 12 ? this.year + 1 : this.year;
+    return Month.from(`${nextYear}-${String(nextMonth).padStart(2, "0")}`);
+  }
+
   equals(other: Month): boolean {
     return this.value === other.value;
   }

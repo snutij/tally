@@ -79,6 +79,28 @@ describe("JsonRenderer", () => {
     expect("categoryVariance" in parsed.kpis).toBe(false);
   });
 
+  it("serializes a TrendReportDto omitting _type", () => {
+    const monthDto = toMonthlyReportDto(
+      computeMonthlyReport(Month.from("2026-01"), targets, [], categoryMap),
+    );
+    const dto = {
+      _type: "TrendReportDto" as const,
+      end: "2026-01",
+      groupOvershootFrequency: [],
+      monthOverMonthDeltas: [],
+      months: [monthDto],
+      savingsRateSeries: [{ month: "2026-01", rate: null }], // eslint-disable-line unicorn/no-null -- null is a valid savings rate
+      start: "2026-01",
+    };
+    const parsed = JSON.parse(renderer.render(dto));
+
+    expect(parsed.start).toBe("2026-01");
+    expect(parsed.end).toBe("2026-01");
+    expect(parsed.months).toHaveLength(1);
+    expect(parsed.savingsRateSeries).toHaveLength(1);
+    expect("_type" in parsed).toBe(false);
+  });
+
   it("passes through plain objects", () => {
     const data = { foo: "bar" };
     expect(JSON.parse(renderer.render(data))).toEqual({ foo: "bar" });

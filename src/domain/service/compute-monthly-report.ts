@@ -1,16 +1,10 @@
+import { CategoryGroup, EXPENSE_GROUPS } from "../value-object/category-group.js";
 import type { GroupSummary, MonthlyReport, ReportKpis } from "../read-model/monthly-report.js";
-import { CategoryGroup } from "../value-object/category-group.js";
 import type { CategoryMapEntry } from "./category-registry.js";
 import { Money } from "../value-object/money.js";
 import type { Month } from "../value-object/month.js";
 import type { SpendingTargets } from "../config/spending-targets.js";
 import type { Transaction } from "../entity/transaction.js";
-
-const EXPENSE_GROUPS: CategoryGroup[] = [
-  CategoryGroup.NEEDS,
-  CategoryGroup.WANTS,
-  CategoryGroup.INVESTMENTS,
-];
 
 /** Get value from a pre-initialized map (all keys guaranteed present). */
 function mapGet<TK, TV>(map: Map<TK, TV>, key: TK): TV {
