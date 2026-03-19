@@ -24,16 +24,8 @@ export class MonthRange {
     let current = this.start;
     while (current.value <= this.end.value) {
       result.push(current);
-      current = MonthRange.increment(current);
+      current = current.next();
     }
     return result;
-  }
-
-  private static increment(month: Month): Month {
-    if (month.month === 12) {
-      return Month.from(`${month.year + 1}-01`);
-    }
-    const next = String(month.month + 1).padStart(2, "0");
-    return Month.from(`${month.year}-${next}`);
   }
 }

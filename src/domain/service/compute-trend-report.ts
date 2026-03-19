@@ -4,15 +4,9 @@ import type {
   SavingsRateEntry,
   TrendReport,
 } from "../read-model/trend-report.js";
-import { CategoryGroup } from "../value-object/category-group.js";
+import { EXPENSE_GROUPS } from "../value-object/category-group.js";
 import type { MonthRange } from "../value-object/month-range.js";
 import type { MonthlyReport } from "../read-model/monthly-report.js";
-
-const EXPENSE_GROUPS: CategoryGroup[] = [
-  CategoryGroup.NEEDS,
-  CategoryGroup.WANTS,
-  CategoryGroup.INVESTMENTS,
-];
 
 function computeSavingsRateSeries(months: MonthlyReport[]): SavingsRateEntry[] {
   return months.map((report) => ({
@@ -22,12 +16,13 @@ function computeSavingsRateSeries(months: MonthlyReport[]): SavingsRateEntry[] {
 }
 
 function computeGroupOvershootFrequency(months: MonthlyReport[]): GroupOvershootFrequency[] {
+  const totalMonths = months.length;
   return EXPENSE_GROUPS.map((group) => {
     const count = months.filter((report) => {
       const summary = report.groups.find((grp) => grp.group === group);
       return summary !== undefined && summary.delta.cents < 0;
     }).length;
-    return { count, group, totalMonths: months.length };
+    return { count, group, totalMonths };
   });
 }
 

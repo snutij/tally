@@ -6,3 +6,9 @@ export const CategoryGroup = {
 } as const;
 
 export type CategoryGroup = (typeof CategoryGroup)[keyof typeof CategoryGroup];
+
+export const EXPENSE_GROUPS: CategoryGroup[] = [
+  CategoryGroup.NEEDS,
+  CategoryGroup.WANTS,
+  CategoryGroup.INVESTMENTS,
+];

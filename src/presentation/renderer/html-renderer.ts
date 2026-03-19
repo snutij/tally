@@ -201,12 +201,7 @@ export class HtmlRenderer implements Renderer {
     }
     const cards = months
       .map((report) => {
-        let netCls = "";
-        if (report.net > 0) {
-          netCls = "under-budget";
-        } else if (report.net < 0) {
-          netCls = "over-budget";
-        }
+        const netCls = deltaColor(report.net);
         const savingsStr = fmtPct(report.kpis.savingsRate);
         return `<div class="insight-card">
   <h3>${esc(report.month)}</h3>

@@ -1,12 +1,12 @@
 import { Command } from "commander";
-import { DEFAULT_SPENDING_TARGETS } from "../../application/config.js";
 import type { GenerateTrend } from "../../application/usecase/generate-trend.js";
 import type { Renderer } from "../renderer/renderer.js";
+import { resolveSpendingTargets } from "./spending-targets-option.js";
 
 interface TrendOptions {
+  invest?: number;
   needs?: number;
   wants?: number;
-  invest?: number;
 }
 
 export function createTrendCommand(generateTrend: GenerateTrend, renderer: Renderer): Command {
@@ -18,27 +18,10 @@ export function createTrendCommand(generateTrend: GenerateTrend, renderer: Rende
     .option("--wants <pct>", "Percentage target for Wants (0-100)", Number.parseInt)
     .option("--invest <pct>", "Percentage target for Investments (0-100)", Number.parseInt)
     .action((startStr: string, endStr: string, opts: TrendOptions) => {
-      const hasAny =
-        opts.needs !== undefined || opts.wants !== undefined || opts.invest !== undefined;
-
-      let targets = DEFAULT_SPENDING_TARGETS;
-
-      if (hasAny) {
-        const { needs, wants, invest } = opts;
-        if (needs === undefined || wants === undefined || invest === undefined) {
-          console.error("All three flags (--needs, --wants, --invest) must be provided together.");
-          process.exitCode = 1;
-          return;
-        }
-        const sum = needs + wants + invest;
-        if (sum !== 100) {
-          console.error(`Percentages must sum to 100 (got ${sum}).`);
-          process.exitCode = 1;
-          return;
-        }
-        targets = { invest, needs, wants };
+      const targets = resolveSpendingTargets(opts);
+      if (targets === undefined) {
+        return;
       }
-
       const result = generateTrend.execute(startStr, endStr, targets);
       console.log(renderer.render(result));
     });
