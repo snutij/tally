@@ -1,7 +1,5 @@
 import type { CategoryGroup } from "../value-object/category-group.js";
-import type { DateOnly } from "../value-object/date-only.js";
 import type { Money } from "../value-object/money.js";
-import type { Month } from "../value-object/month.js";
 
 export interface GroupSummary {
   readonly group: CategoryGroup;
@@ -22,7 +20,7 @@ export interface TopSpendingEntry {
 
 export interface LargestExpenseEntry {
   readonly id: string;
-  readonly date: DateOnly;
+  readonly date: Temporal.PlainDate;
   readonly label: string;
   readonly amount: Money;
 }
@@ -43,7 +41,7 @@ export interface ReportKpis {
 export interface MonthlyReport {
   readonly groups: GroupSummary[];
   readonly kpis: ReportKpis;
-  readonly month: Month;
+  readonly month: Temporal.PlainYearMonth;
   readonly net: Money;
   readonly totalExpenseActual: Money;
   readonly totalExpenseTarget: Money;

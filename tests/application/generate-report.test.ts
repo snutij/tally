@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
+
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
+import { InvalidMonth } from "../../src/domain/error/index.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
@@ -13,7 +14,7 @@ function makeTxn(id: string, amount: number, date: string, categoryId?: string):
   return Transaction.create({
     amount: Money.fromEuros(amount),
     categoryId: categoryId ? CategoryId(categoryId) : undefined,
-    date: DateOnly.from(date),
+    date: Temporal.PlainDate.from(date),
     id: TransactionId(id),
     label: `txn-${id}`,
     source: "csv",
@@ -65,6 +66,10 @@ describe("GenerateReport", () => {
     expect(report.transactionCount).toBe(1);
     expect(report.uncategorized).toBe(50);
     expect(report.totalExpenseActual).toBe(0);
+  });
+
+  it("throws InvalidMonth for invalid month string", () => {
+    expect(() => useCase.execute("not-a-month")).toThrow(InvalidMonth);
   });
 
   it("accepts custom spending targets", () => {

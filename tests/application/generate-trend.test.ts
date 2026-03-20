@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
+
 import { GenerateTrend } from "../../src/application/usecase/generate-trend.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { InvalidMonthRange } from "../../src/domain/error/index.js";
@@ -14,7 +14,7 @@ function makeTxn(id: string, amount: number, date: string, categoryId?: string):
   return Transaction.create({
     amount: Money.fromEuros(amount),
     categoryId: categoryId ? CategoryId(categoryId) : undefined,
-    date: DateOnly.from(date),
+    date: Temporal.PlainDate.from(date),
     id: TransactionId(id),
     label: `txn-${id}`,
     source: "csv",

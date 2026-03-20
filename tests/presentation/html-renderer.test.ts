@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-report.js";
 import { toMonthlyReportDto } from "../../src/application/dto/report-dto.js";
@@ -17,7 +15,7 @@ function makeTxn(id: string, amount: number, date: string, categoryId?: string):
   return Transaction.create({
     amount: Money.fromEuros(amount),
     categoryId,
-    date: DateOnly.from(date),
+    date: Temporal.PlainDate.from(date),
     id,
     label: `txn-${id}`,
     source: "csv",
@@ -31,7 +29,7 @@ describe("HtmlRenderer", () => {
 
   describe("render(MonthlyReportDto)", () => {
     const report = toMonthlyReportDto(
-      computeMonthlyReport(Month.from("2026-03"), targets, txns, categoryMap),
+      computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, txns, categoryMap),
     );
     const html = renderer.render(report);
 
@@ -86,7 +84,7 @@ describe("HtmlRenderer", () => {
   describe("render(MonthlyReport) — no transactions", () => {
     it("omits insights section when there are no expense transactions", () => {
       const report = toMonthlyReportDto(
-        computeMonthlyReport(Month.from("2026-03"), targets, [], categoryMap),
+        computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, [], categoryMap),
       );
       const html = renderer.render(report);
       const [, body] = html.split("<body>");
@@ -99,7 +97,7 @@ describe("HtmlRenderer", () => {
     it("shows largest expenses but no top spending when all uncategorized", () => {
       const report = toMonthlyReportDto(
         computeMonthlyReport(
-          Month.from("2026-03"),
+          Temporal.PlainYearMonth.from("2026-03"),
           targets,
           [makeTxn("1", -200, "2026-03-05")],
           categoryMap,
@@ -114,7 +112,7 @@ describe("HtmlRenderer", () => {
     it("shows top spending but no largest expenses when only refunds", () => {
       const report = toMonthlyReportDto(
         computeMonthlyReport(
-          Month.from("2026-03"),
+          Temporal.PlainYearMonth.from("2026-03"),
           targets,
           [makeTxn("1", 100, "2026-03-05", "n01")],
           categoryMap,
@@ -131,7 +129,7 @@ describe("HtmlRenderer", () => {
     it("shows uncategorized section when non-zero", () => {
       const report = toMonthlyReportDto(
         computeMonthlyReport(
-          Month.from("2026-03"),
+          Temporal.PlainYearMonth.from("2026-03"),
           targets,
           [makeTxn("3", -100, "2026-03-05")],
           categoryMap,
@@ -144,7 +142,7 @@ describe("HtmlRenderer", () => {
 
     it("omits uncategorized section when zero", () => {
       const report = toMonthlyReportDto(
-        computeMonthlyReport(Month.from("2026-03"), targets, txns, categoryMap),
+        computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, txns, categoryMap),
       );
       const html = renderer.render(report);
       expect(html).not.toContain('class="uncategorized"');
@@ -153,7 +151,7 @@ describe("HtmlRenderer", () => {
 
   describe("render(TrendReportDto)", () => {
     const monthDto = toMonthlyReportDto(
-      computeMonthlyReport(Month.from("2026-01"), targets, txns, categoryMap),
+      computeMonthlyReport(Temporal.PlainYearMonth.from("2026-01"), targets, txns, categoryMap),
     );
     const dto = {
       _type: "TrendReportDto" as const,
@@ -233,7 +231,7 @@ describe("HtmlRenderer", () => {
     it("applies over-budget class when net is negative", () => {
       const negativeNet = toMonthlyReportDto(
         computeMonthlyReport(
-          Month.from("2026-01"),
+          Temporal.PlainYearMonth.from("2026-01"),
           targets,
           [makeTxn("1", -500, "2026-01-05", "n01")],
           categoryMap,

@@ -49,7 +49,7 @@ export function isTrendReportDto(data: unknown): data is TrendReportDto {
 }
 
 function toSavingsRateEntryDto(entry: SavingsRateEntry): SavingsRateEntryDto {
-  return { month: entry.month.value, rate: entry.rate };
+  return { month: entry.month.toString(), rate: entry.rate };
 }
 
 function toGroupOvershootFrequencyDto(entry: GroupOvershootFrequency): GroupOvershootFrequencyDto {
@@ -62,7 +62,7 @@ function toMonthOverMonthDeltaDto(delta: MonthOverMonthDelta): MonthOverMonthDel
       delta: gd.delta.toEuros(),
       group: gd.group,
     })),
-    month: delta.month.value,
+    month: delta.month.toString(),
     netDelta: delta.netDelta.toEuros(),
   };
 }
@@ -70,11 +70,11 @@ function toMonthOverMonthDeltaDto(delta: MonthOverMonthDelta): MonthOverMonthDel
 export function toTrendReportDto(report: TrendReport): TrendReportDto {
   return {
     _type: "TrendReportDto",
-    end: report.range.end.value,
+    end: report.range.end.toString(),
     groupOvershootFrequency: report.groupOvershootFrequency.map(toGroupOvershootFrequencyDto),
     monthOverMonthDeltas: report.monthOverMonthDeltas.map(toMonthOverMonthDeltaDto),
     months: report.months.map(toMonthlyReportDto),
     savingsRateSeries: report.savingsRateSeries.map(toSavingsRateEntryDto),
-    start: report.range.start.value,
+    start: report.range.start.toString(),
   };
 }

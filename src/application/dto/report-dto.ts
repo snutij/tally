@@ -92,7 +92,7 @@ function toTopSpendingEntryDto(entry: TopSpendingEntry): TopSpendingEntryDto {
 function toLargestExpenseEntryDto(entry: LargestExpenseEntry): LargestExpenseEntryDto {
   return {
     amount: entry.amount.toEuros(),
-    date: entry.date.value,
+    date: entry.date.toString(),
     id: entry.id,
     label: entry.label,
   };
@@ -114,7 +114,7 @@ export function toMonthlyReportDto(report: MonthlyReport): MonthlyReportDto {
     _type: "MonthlyReportDto",
     groups: report.groups.map((grp) => toGroupSummaryDto(grp)),
     kpis: toReportKpisDto(report.kpis),
-    month: report.month.value,
+    month: report.month.toString(),
     net: report.net.toEuros(),
     totalExpenseActual: report.totalExpenseActual.toEuros(),
     totalExpenseTarget: report.totalExpenseTarget.toEuros(),

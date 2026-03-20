@@ -2,9 +2,14 @@ import type { GroupSummary, MonthlyReport } from "../../../src/domain/read-model
 import { describe, expect, it } from "vitest";
 import { CategoryGroup } from "../../../src/domain/value-object/category-group.js";
 import { Money } from "../../../src/domain/value-object/money.js";
-import { Month } from "../../../src/domain/value-object/month.js";
-import { MonthRange } from "../../../src/domain/value-object/month-range.js";
 import { computeTrendReport } from "../../../src/domain/service/compute-trend-report.js";
+
+function makeRange(
+  start: string,
+  end: string,
+): { end: Temporal.PlainYearMonth; start: Temporal.PlainYearMonth } {
+  return { end: Temporal.PlainYearMonth.from(end), start: Temporal.PlainYearMonth.from(start) };
+}
 
 // ── Test helpers ────────────────────────────────────────────────────────
 
@@ -70,7 +75,7 @@ function makeReport(
       topSpendingCategories: [],
       uncategorizedRatio: null, // eslint-disable-line unicorn/no-null
     },
-    month: Month.from(monthStr),
+    month: Temporal.PlainYearMonth.from(monthStr),
     net: euros(netEuros),
     totalExpenseActual: euros(1000),
     totalExpenseTarget: euros(1000),
@@ -83,7 +88,7 @@ function makeReport(
 // ── Tests ──────────────────────────────────────────────────────────────
 
 describe("computeTrendReport", () => {
-  const range = MonthRange.from("2026-01", "2026-03");
+  const range = makeRange("2026-01", "2026-03");
 
   describe("savingsRateSeries", () => {
     it("maps savings rate per month", () => {
@@ -103,7 +108,7 @@ describe("computeTrendReport", () => {
     it("preserves null for zero-income months", () => {
       // eslint-disable-next-line unicorn/no-null -- testing null path
       const months = [makeReport("2026-01", { savingsRate: null })];
-      const singleRange = MonthRange.from("2026-01", "2026-01");
+      const singleRange = makeRange("2026-01", "2026-01");
       const trend = computeTrendReport(singleRange, months);
       const [entry] = trend.savingsRateSeries;
 
@@ -138,7 +143,7 @@ describe("computeTrendReport", () => {
 
     it("excludes INCOME group from overshoot tracking", () => {
       const months = [makeReport("2026-01")];
-      const singleRange = MonthRange.from("2026-01", "2026-01");
+      const singleRange = makeRange("2026-01", "2026-01");
       const trend = computeTrendReport(singleRange, months);
       const groups = trend.groupOvershootFrequency.map((entry) => entry.group);
 
@@ -169,16 +174,16 @@ describe("computeTrendReport", () => {
         makeReport("2026-01", { netEuros: -500 }),
         makeReport("2026-02", { netEuros: -300 }),
       ];
-      const twoMonthRange = MonthRange.from("2026-01", "2026-02");
+      const twoMonthRange = makeRange("2026-01", "2026-02");
       const trend = computeTrendReport(twoMonthRange, months);
       const [first] = trend.monthOverMonthDeltas;
 
-      expect(first?.month.value).toBe("2026-02");
+      expect(first?.month.toString()).toBe("2026-02");
     });
 
     it("produces no deltas for a single-month range", () => {
       const months = [makeReport("2026-03")];
-      const singleRange = MonthRange.from("2026-03", "2026-03");
+      const singleRange = makeRange("2026-03", "2026-03");
       const trend = computeTrendReport(singleRange, months);
 
       expect(trend.monthOverMonthDeltas).toHaveLength(0);
@@ -189,7 +194,7 @@ describe("computeTrendReport", () => {
         makeReport("2026-01", { needsActual: 500 }),
         makeReport("2026-02", { needsActual: 600 }),
       ];
-      const twoMonthRange = MonthRange.from("2026-01", "2026-02");
+      const twoMonthRange = makeRange("2026-01", "2026-02");
       const trend = computeTrendReport(twoMonthRange, months);
       const [first] = trend.monthOverMonthDeltas;
       const needsDelta = first?.groupDeltas.find((dd) => dd.group === CategoryGroup.NEEDS);

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
+
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
@@ -39,7 +39,7 @@ describe("ImportTransactions", () => {
     const categorizedEntity = Transaction.create({
       amount: Money.fromEuros(-42.5),
       categoryId: CategoryId("n01"),
-      date: DateOnly.from("2026-03-01"),
+      date: Temporal.PlainDate.from("2026-03-01"),
       id: TransactionId("tx-1"),
       label: "Test transaction",
       source: "csv",

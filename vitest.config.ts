@@ -25,5 +25,6 @@ export default defineConfig({
         statements: 100,
       },
     },
+    setupFiles: ["tests/setup.ts"],
   },
 });

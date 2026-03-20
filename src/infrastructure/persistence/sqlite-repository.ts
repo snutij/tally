@@ -6,10 +6,8 @@ import type { CategoryRepository } from "../../application/gateway/category-repo
 import { CategoryRule } from "../../domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import Database from "better-sqlite3";
-import { DateOnly } from "../../domain/value-object/date-only.js";
 import type { IdGenerator } from "../../application/gateway/id-generator.js";
 import { Money } from "../../domain/value-object/money.js";
-import type { Month } from "../../domain/value-object/month.js";
 import { RuleBook } from "../../domain/aggregate/rule-book.js";
 import type { RuleBookRepository } from "../../application/gateway/rule-book-repository.js";
 import { Transaction } from "../../domain/entity/transaction.js";
@@ -30,7 +28,7 @@ function rowToTransaction(row: TransactionRow): Transaction {
   return Transaction.create({
     amount: Money.fromCents(row.amount_cents),
     categoryId: row.category_id ? CategoryId(row.category_id) : undefined,
-    date: DateOnly.from(row.date),
+    date: Temporal.PlainDate.from(row.date),
     id: TransactionId(row.id),
     label: row.label,
     source: row.source as Transaction["source"],
@@ -135,8 +133,8 @@ class SqliteTransactionRepository implements TransactionRepository {
     return rows.map((row) => rowToTransaction(row));
   }
 
-  findByMonth(month: Month): Transaction[] {
-    const pattern = `${month.value}-%`;
+  findByMonth(month: Temporal.PlainYearMonth): Transaction[] {
+    const pattern = `${month.toString()}-%`;
     const rows = this.db
       .prepare(
         `SELECT id, date, label, amount_cents, category_id, source

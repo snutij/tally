@@ -1,11 +1,11 @@
 import type {
   GroupOvershootFrequency,
   MonthOverMonthDelta,
+  MonthRange,
   SavingsRateEntry,
   TrendReport,
 } from "../read-model/trend-report.js";
 import { EXPENSE_GROUPS } from "../value-object/category-group.js";
-import type { MonthRange } from "../value-object/month-range.js";
 import type { MonthlyReport } from "../read-model/monthly-report.js";
 
 function computeSavingsRateSeries(months: MonthlyReport[]): SavingsRateEntry[] {

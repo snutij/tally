@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
+
 import { DomainError } from "../../src/domain/error/index.js";
 import { FindUncategorizedTransactions } from "../../src/application/usecase/find-uncategorized-transactions.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
@@ -15,7 +15,7 @@ function txn(id: string, categoryId?: string): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(-10),
     categoryId: categoryId ? CategoryId(categoryId) : undefined,
-    date: DateOnly.from("2026-03-15"),
+    date: Temporal.PlainDate.from("2026-03-15"),
     id: TransactionId(id),
     label: "TEST",
     source: "csv",

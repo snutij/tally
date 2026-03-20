@@ -3,22 +3,20 @@ import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-report.js";
 
 // DEFAULT_SPENDING_TARGETS = 50/30/20
 const targets = DEFAULT_SPENDING_TARGETS;
-const month = Month.from("2026-03");
+const month = Temporal.PlainYearMonth.from("2026-03");
 const categoryMap = new CategoryRegistry(DEFAULT_CATEGORIES).categoryToGroupMap();
 
 function txn(id: string, amount: number, categoryId?: string, date = "2026-03-01"): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(amount),
     categoryId,
-    date: DateOnly.from(date),
+    date: Temporal.PlainDate.from(date),
     id,
     label: `txn-${id}`,
     source: "csv",

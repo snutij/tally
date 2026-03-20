@@ -13,7 +13,7 @@ export function toTransactionDto(txn: Transaction): TransactionDto {
   return {
     amount: txn.amount.toEuros(),
     categoryId: txn.categoryId as string | undefined,
-    date: txn.date.value,
+    date: txn.date.toString(),
     id: txn.id,
     label: txn.label,
     source: txn.source,

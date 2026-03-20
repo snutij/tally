@@ -1,5 +1,4 @@
 import type { CategoryId } from "../value-object/category-id.js";
-import type { DateOnly } from "../value-object/date-only.js";
 import { DomainError } from "../error/index.js";
 import type { Money } from "../value-object/money.js";
 import type { TransactionId } from "../value-object/transaction-id.js";
@@ -8,7 +7,7 @@ export type TransactionSource = "csv" | "mock";
 
 export interface TransactionParams {
   readonly id: TransactionId;
-  readonly date: DateOnly;
+  readonly date: Temporal.PlainDate;
   readonly label: string;
   readonly amount: Money;
   readonly categoryId?: CategoryId | undefined;
@@ -17,7 +16,7 @@ export interface TransactionParams {
 
 export class Transaction {
   readonly id: TransactionId;
-  readonly date: DateOnly;
+  readonly date: Temporal.PlainDate;
   readonly label: string;
   readonly amount: Money;
   readonly categoryId: CategoryId | undefined;

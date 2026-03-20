@@ -3,10 +3,8 @@ import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { JsonRenderer } from "../../src/presentation/renderer/json-renderer.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import { Month } from "../../src/domain/value-object/month.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-report.js";
 import { toMonthlyReportDto } from "../../src/application/dto/report-dto.js";
@@ -18,7 +16,7 @@ function makeTxn(id: string, amount: number, date: string, categoryId?: string):
   return Transaction.create({
     amount: Money.fromEuros(amount),
     categoryId,
-    date: DateOnly.from(date),
+    date: Temporal.PlainDate.from(date),
     id,
     label: `txn-${id}`,
     source: "csv",
@@ -30,7 +28,7 @@ describe("JsonRenderer", () => {
 
   it("serializes a MonthlyReportDto", () => {
     const report = toMonthlyReportDto(
-      computeMonthlyReport(Month.from("2026-03"), targets, [], categoryMap),
+      computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, [], categoryMap),
     );
     const parsed = JSON.parse(renderer.render(report));
     expect(parsed.month).toBe("2026-03");
@@ -42,7 +40,7 @@ describe("JsonRenderer", () => {
   it("serializes totalExpenseTarget instead of totalExpenseBudgeted", () => {
     const report = toMonthlyReportDto(
       computeMonthlyReport(
-        Month.from("2026-03"),
+        Temporal.PlainYearMonth.from("2026-03"),
         targets,
         [makeTxn("1", 3000, "2026-03-01", "inc01")],
         categoryMap,
@@ -58,7 +56,7 @@ describe("JsonRenderer", () => {
   it("serializes kpis without adherenceRate or categoryVariance", () => {
     const report = toMonthlyReportDto(
       computeMonthlyReport(
-        Month.from("2026-03"),
+        Temporal.PlainYearMonth.from("2026-03"),
         targets,
         [makeTxn("1", 3000, "2026-03-01", "inc01"), makeTxn("2", -800, "2026-03-02", "n01")],
         categoryMap,
@@ -81,7 +79,7 @@ describe("JsonRenderer", () => {
 
   it("serializes a TrendReportDto omitting _type", () => {
     const monthDto = toMonthlyReportDto(
-      computeMonthlyReport(Month.from("2026-01"), targets, [], categoryMap),
+      computeMonthlyReport(Temporal.PlainYearMonth.from("2026-01"), targets, [], categoryMap),
     );
     const dto = {
       _type: "TrendReportDto" as const,

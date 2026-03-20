@@ -3,9 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import type { CategoryRepository } from "../../src/application/gateway/category-repository.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import { Month } from "../../src/domain/value-object/month.js";
 import type { RuleBookRepository } from "../../src/application/gateway/rule-book-repository.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
@@ -148,25 +146,25 @@ describe("SqliteRepository", () => {
       txnRepository.saveAll([
         Transaction.create({
           amount: Money.fromEuros(-800),
-          date: DateOnly.from("2026-03-01"),
+          date: Temporal.PlainDate.from("2026-03-01"),
           id: TransactionId("tx-1"),
           label: "Rent",
           source: "csv",
         }),
         Transaction.create({
           amount: Money.fromEuros(-800),
-          date: DateOnly.from("2026-04-01"),
+          date: Temporal.PlainDate.from("2026-04-01"),
           id: TransactionId("tx-2"),
           label: "Rent April",
           source: "csv",
         }),
       ]);
 
-      const marchTxns = txnRepository.findByMonth(Month.from("2026-03"));
+      const marchTxns = txnRepository.findByMonth(Temporal.PlainYearMonth.from("2026-03"));
       expect(marchTxns).toHaveLength(1);
       expect(marchTxns[0]?.id).toBe("tx-1");
 
-      const aprilTxns = txnRepository.findByMonth(Month.from("2026-04"));
+      const aprilTxns = txnRepository.findByMonth(Temporal.PlainYearMonth.from("2026-04"));
       expect(aprilTxns).toHaveLength(1);
       expect(aprilTxns[0]?.id).toBe("tx-2");
     });
@@ -176,7 +174,7 @@ describe("SqliteRepository", () => {
     });
 
     it("returns empty array for month with no transactions", () => {
-      expect(txnRepository.findByMonth(Month.from("2026-03"))).toEqual([]);
+      expect(txnRepository.findByMonth(Temporal.PlainYearMonth.from("2026-03"))).toEqual([]);
     });
   });
 
@@ -186,7 +184,7 @@ describe("SqliteRepository", () => {
         txnRepository.saveAll([
           Transaction.create({
             amount: Money.fromEuros(-10),
-            date: DateOnly.from("2026-03-01"),
+            date: Temporal.PlainDate.from("2026-03-01"),
             id: TransactionId("tx-uow"),
             label: "UoW test",
             source: "csv",
@@ -196,7 +194,7 @@ describe("SqliteRepository", () => {
         ruleBook.addRule(makeTestRule(String.raw`\buow\b`, "w01", "learned"));
         ruleBookRepository.save(ruleBook);
       });
-      expect(txnRepository.findByMonth(Month.from("2026-03"))).toHaveLength(1);
+      expect(txnRepository.findByMonth(Temporal.PlainYearMonth.from("2026-03"))).toHaveLength(1);
       expect(ruleBookRepository.load().findByPattern(String.raw`\buow\b`)).toBeDefined();
     });
   });

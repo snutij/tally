@@ -1,10 +1,9 @@
 import { Transaction, type TransactionSource } from "../../domain/entity/transaction.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
-import { DateOnly } from "../../domain/value-object/date-only.js";
 import { Money } from "../../domain/value-object/money.js";
 import { TransactionId } from "../../domain/value-object/transaction-id.js";
 
-type DateFn = (day: number) => DateOnly;
+type DateFn = (day: number) => Temporal.PlainDate;
 
 function incomeTransactions(
   prefix: string,
@@ -191,8 +190,8 @@ function uncategorizedTransactions(
  * Includes 2 uncategorized transactions for edge-case testing.
  */
 export function mockTransactions(year: number, month: number): Transaction[] {
-  function dateFn(day: number): DateOnly {
-    return DateOnly.from(
+  function dateFn(day: number): Temporal.PlainDate {
+    return Temporal.PlainDate.from(
       `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
     );
   }

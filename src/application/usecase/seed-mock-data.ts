@@ -1,5 +1,5 @@
+import { InvalidMonth } from "../../domain/error/index.js";
 import type { MockDataGenerator } from "../gateway/mock-data-generator.js";
-import { Month } from "../../domain/value-object/month.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
 
 export class SeedMockData {
@@ -12,7 +12,12 @@ export class SeedMockData {
   }
 
   execute(monthStr: string): { transactionCount: number } {
-    const month = Month.from(monthStr);
+    let month: Temporal.PlainYearMonth;
+    try {
+      month = Temporal.PlainYearMonth.from(monthStr);
+    } catch {
+      throw new InvalidMonth(monthStr);
+    }
     const txns = this.mockDataGenerator.generate(month.year, month.month);
     this.txnRepository.saveAll(txns);
     return { transactionCount: txns.length };

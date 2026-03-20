@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
+
 import type { ImportCsvWorkflow } from "../../src/application/usecase/import-csv-workflow.js";
 import type { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { Money } from "../../src/domain/value-object/money.js";
@@ -22,7 +22,7 @@ import { createImportCommand } from "../../src/presentation/command/import-comma
 function parsedTxn(id = "t1"): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(-42),
-    date: DateOnly.from("2026-03-15"),
+    date: Temporal.PlainDate.from("2026-03-15"),
     id: TransactionId(id),
     label: "TEST",
     source: "csv",

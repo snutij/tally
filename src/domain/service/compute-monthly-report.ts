@@ -2,7 +2,7 @@ import { CategoryGroup, EXPENSE_GROUPS } from "../value-object/category-group.js
 import type { GroupSummary, MonthlyReport, ReportKpis } from "../read-model/monthly-report.js";
 import type { CategoryMapEntry } from "./category-registry.js";
 import { Money } from "../value-object/money.js";
-import type { Month } from "../value-object/month.js";
+
 import type { SpendingTargets } from "../config/spending-targets.js";
 import type { Transaction } from "../entity/transaction.js";
 
@@ -55,7 +55,7 @@ function computeKpis(ctx: {
   actualByCategory: Map<string, Money>;
   actualByGroup: Map<CategoryGroup, Money>;
   categoryMap: ReadonlyMap<string, CategoryMapEntry>;
-  month: Month;
+  month: Temporal.PlainYearMonth;
   totalIncomeActual: Money;
   totalExpenseActual: Money;
   transactions: Transaction[];
@@ -101,7 +101,7 @@ function computeKpis(ctx: {
     .slice(0, 5);
 
   const dailyAverageSpending = Money.fromCents(
-    Math.round(totalExpenseActual.cents / month.daysInMonth()),
+    Math.round(totalExpenseActual.cents / month.daysInMonth),
   );
 
   const largestExpenses = transactions
@@ -130,7 +130,7 @@ function computeKpis(ctx: {
 }
 
 export function computeMonthlyReport(
-  month: Month,
+  month: Temporal.PlainYearMonth,
   targets: SpendingTargets,
   transactions: Transaction[],
   categoryMap: ReadonlyMap<string, CategoryMapEntry>,

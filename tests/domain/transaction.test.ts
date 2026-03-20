@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
+
 import { DomainError } from "../../src/domain/error/index.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
@@ -8,7 +8,7 @@ import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
 const BASE_PARAMS = {
   amount: Money.fromEuros(-42),
-  date: DateOnly.from("2026-03-15"),
+  date: Temporal.PlainDate.from("2026-03-15"),
   id: TransactionId("t1"),
   label: "CARREFOUR CITY",
   source: "csv" as const,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { DateOnly } from "../../src/domain/value-object/date-only.js";
+
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { ListTransactions } from "../../src/application/usecase/list-transactions.js";
 import { Money } from "../../src/domain/value-object/money.js";
@@ -9,7 +9,7 @@ import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 function txn(id: string, date: string): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(-10),
-    date: DateOnly.from(date),
+    date: Temporal.PlainDate.from(date),
     id: TransactionId(id),
     label: "TEST",
     source: "csv",

@@ -168,6 +168,18 @@ describe("CsvTransactionParser", () => {
       expect(txns).toHaveLength(0);
     });
 
+    it("skips rows when YYYY-MM-DD date is out of range (e.g. Feb 30)", () => {
+      const mapping = new CsvColumnMapping({
+        dateFormat: "YYYY-MM-DD",
+        decimalSeparator: ".",
+        delimiter: ",",
+        fields: ["date", "label", "amount"],
+      });
+      const parser = new CsvTransactionParser(mapping);
+      const txns = parser.parse(join(FIXTURES, "sample-iso-invalid-date.csv"));
+      expect(txns).toHaveLength(0);
+    });
+
     it("skips rows when date format is unsupported", () => {
       const mapping = new CsvColumnMapping({
         dateFormat: "DD.MM.YYYY",

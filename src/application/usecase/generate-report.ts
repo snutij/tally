@@ -4,7 +4,7 @@ import {
 } from "../../domain/config/spending-targets.js";
 import { type MonthlyReportDto, toMonthlyReportDto } from "../dto/report-dto.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
-import { Month } from "../../domain/value-object/month.js";
+import { InvalidMonth } from "../../domain/error/index.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
 import { computeMonthlyReport } from "../../domain/service/compute-monthly-report.js";
 
@@ -18,7 +18,12 @@ export class GenerateReport {
   }
 
   execute(monthStr: string, targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): MonthlyReportDto {
-    const month = Month.from(monthStr);
+    let month: Temporal.PlainYearMonth;
+    try {
+      month = Temporal.PlainYearMonth.from(monthStr);
+    } catch {
+      throw new InvalidMonth(monthStr);
+    }
     const transactions = this.txnRepository.findByMonth(month);
     const report = computeMonthlyReport(
       month,

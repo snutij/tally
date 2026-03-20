@@ -1,5 +1,4 @@
 import type { CsvColumnMapping } from "./csv-column-mapping.js";
-import { DateOnly } from "../../domain/value-object/date-only.js";
 import { InvalidImportData } from "../../domain/error/index.js";
 import { Money } from "../../domain/value-object/money.js";
 import { Transaction } from "../../domain/entity/transaction.js";
@@ -9,7 +8,7 @@ import { deterministicTransactionId } from "./transaction-id.js";
 import { parse } from "csv-parse/sync";
 import { readFileSync } from "node:fs";
 
-function parseDateWithFormat(dateStr: string, format: string): DateOnly {
+function parseDateWithFormat(dateStr: string, format: string): Temporal.PlainDate {
   let day: string;
   let month: string;
   let year: string;
@@ -38,7 +37,12 @@ function parseDateWithFormat(dateStr: string, format: string): DateOnly {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- checked by length above
-  return DateOnly.from(`${year!}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`);
+  const iso = `${year!}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`;
+  try {
+    return Temporal.PlainDate.from(iso);
+  } catch {
+    throw new InvalidImportData(`invalid date: "${dateStr}"`);
+  }
 }
 
 function parseAmountCents(str: string, decimalSeparator: "," | "."): number {
@@ -113,7 +117,7 @@ export class CsvTransactionParser implements TransactionParser {
     const dateStr = row[dateIdx] ?? "";
     const label = row[labelIdx] ?? "";
 
-    let date: DateOnly;
+    let date: Temporal.PlainDate;
     try {
       date = parseDateWithFormat(dateStr, this.mapping.dateFormat);
     } catch {
