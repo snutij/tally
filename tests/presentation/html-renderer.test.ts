@@ -76,8 +76,8 @@ describe("HtmlRenderer", () => {
       expect(html).not.toContain("Expenses (Budgeted)");
     });
 
-    it("uses Money.format() for amounts", () => {
-      expect(html).toContain("750.00 €");
+    it("uses Intl.NumberFormat for amounts", () => {
+      expect(html).toContain("750,00\u00A0€");
     });
   });
 
@@ -137,7 +137,7 @@ describe("HtmlRenderer", () => {
       );
       const html = renderer.render(report);
       expect(html).toContain("Uncategorized");
-      expect(html).toContain("100.00 €");
+      expect(html).toContain("100,00\u00A0€");
     });
 
     it("omits uncategorized section when zero", () => {
@@ -198,6 +198,22 @@ describe("HtmlRenderer", () => {
 
     it("contains month-over-month net section", () => {
       expect(html).toContain("Month-over-Month Net");
+    });
+
+    it("formats non-zero net delta with sign and zero net delta without sign", () => {
+      const withZero = {
+        ...dto,
+        monthOverMonthDeltas: [
+          { groupDeltas: [], month: "2026-01", netDelta: 50 },
+          { groupDeltas: [], month: "2026-02", netDelta: 0 },
+          { groupDeltas: [], month: "2026-03", netDelta: -30 },
+        ],
+      };
+      const out = renderer.render(withZero);
+      expect(out).toContain("+50,00\u00A0€");
+      expect(out).toContain("0,00\u00A0€");
+      expect(out).not.toContain("+0,00\u00A0€");
+      expect(out).toContain("-30,00\u00A0€");
     });
 
     it("contains monthly breakdown section", () => {

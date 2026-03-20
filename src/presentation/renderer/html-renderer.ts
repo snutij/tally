@@ -27,6 +27,16 @@ const MONTH_NAMES = [
   "December",
 ];
 
+// ── Formatters ──────────────────────────────────────────
+
+const fmtCurrency = new Intl.NumberFormat("fr-FR", { currency: "EUR", style: "currency" });
+const fmtCurrencySigned = new Intl.NumberFormat("fr-FR", {
+  currency: "EUR",
+  signDisplay: "exceptZero",
+  style: "currency",
+});
+const fmtPercent = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0, style: "percent" });
+
 // ── Helpers ─────────────────────────────────────────────
 
 function esc(str: string): string {
@@ -50,7 +60,7 @@ function deltaColor(delta: number): string {
 // eslint-disable-next-line unicorn/no-null -- null comes from domain ReportKpis interface
 function fmtPct(val: number | null): string {
   // eslint-disable-next-line unicorn/no-null -- null comparison required by domain model
-  return val === null ? "N/A" : `${val}%`;
+  return val === null ? "N/A" : fmtPercent.format(val / 100);
 }
 
 interface TooltipContent {
@@ -86,21 +96,6 @@ function card(label: string, value: string, highlight = false): string {
 
 function item(label: string, value: string, cls = ""): string {
   return `<div class="total-item"><span class="total-label">${label}</span><span class="total-value${cls ? ` ${cls}` : ""}">${value}</span></div>`;
-}
-
-function fmt(amount: number): string {
-  const sign = amount < 0 ? "-" : "";
-  return `${sign}${Math.abs(amount).toFixed(2)} €`;
-}
-
-function fmtDelta(delta: number, signed: boolean): string {
-  if (!signed || delta === 0) {
-    return fmt(delta);
-  }
-  if (delta > 0) {
-    return `+${fmt(delta)}`;
-  }
-  return fmt(delta);
 }
 
 export class HtmlRenderer implements Renderer {
@@ -161,10 +156,11 @@ export class HtmlRenderer implements Renderer {
     }
     const rows = dto.groupOvershootFrequency
       .map((entry) => {
-        const pctVal =
-          entry.totalMonths === 0 ? 0 : Math.round((entry.count / entry.totalMonths) * 100);
+        const pctVal = fmtPercent.format(
+          entry.totalMonths === 0 ? 0 : entry.count / entry.totalMonths,
+        );
         const cls = entry.count > 0 ? "over-budget" : "under-budget";
-        return `<tr><td>${esc(entry.group)}</td><td class="num">${entry.count}/${entry.totalMonths}</td><td class="num ${cls}">${pctVal}%</td></tr>`;
+        return `<tr><td>${esc(entry.group)}</td><td class="num">${entry.count}/${entry.totalMonths}</td><td class="num ${cls}">${pctVal}</td></tr>`;
       })
       .join("\n");
     return `<section>
@@ -183,7 +179,7 @@ export class HtmlRenderer implements Renderer {
     const rows = deltas
       .map((delta) => {
         const netCls = delta.netDelta >= 0 ? "under-budget" : "over-budget";
-        return `<tr><td>${esc(delta.month)}</td><td class="num ${netCls}">${fmtDelta(delta.netDelta, true)}</td></tr>`;
+        return `<tr><td>${esc(delta.month)}</td><td class="num ${netCls}">${fmtCurrencySigned.format(delta.netDelta)}</td></tr>`;
       })
       .join("\n");
     return `<section>
@@ -205,7 +201,7 @@ export class HtmlRenderer implements Renderer {
         const savingsStr = fmtPct(report.kpis.savingsRate);
         return `<div class="insight-card">
   <h3>${esc(report.month)}</h3>
-  <div class="insight-item"><span class="insight-label">Net</span><span class="insight-value ${netCls}">${fmt(report.net)}</span></div>
+  <div class="insight-item"><span class="insight-label">Net</span><span class="insight-value ${netCls}">${fmtCurrency.format(report.net)}</span></div>
   <div class="insight-item"><span class="insight-label">Savings Rate</span><span class="insight-value">${savingsStr}</span></div>
   <div class="insight-item"><span class="insight-label">Transactions</span><span class="insight-value">${report.transactionCount}</span></div>
 </div>`;
@@ -245,7 +241,7 @@ export class HtmlRenderer implements Renderer {
   private static kpiSection(kpis: ReportKpisDto): string {
     const cards = [
       card("Savings Rate", fmtPct(kpis.savingsRate), true),
-      card("Daily Avg Spending", fmt(kpis.dailyAverageSpending)),
+      card("Daily Avg Spending", fmtCurrency.format(kpis.dailyAverageSpending)),
       card("Uncategorized", fmtPct(kpis.uncategorizedRatio)),
     ];
 
@@ -286,9 +282,9 @@ export class HtmlRenderer implements Renderer {
         const cls = isExpense ? deltaColor(grp.delta) : "";
         return `<tr>
   <td>${esc(grp.group)}</td>
-  <td class="num">${fmt(grp.budgeted)}</td>
-  <td class="num">${fmt(grp.actual)}</td>
-  <td class="num ${cls}">${fmtDelta(grp.delta, isExpense)}</td>
+  <td class="num">${fmtCurrency.format(grp.budgeted)}</td>
+  <td class="num">${fmtCurrency.format(grp.actual)}</td>
+  <td class="num ${cls}">${isExpense ? fmtCurrencySigned.format(grp.delta) : fmtCurrency.format(grp.delta)}</td>
 </tr>`;
       })
       .join("\n");
@@ -313,7 +309,7 @@ export class HtmlRenderer implements Renderer {
       ? `<div class="insight-card"><h3>Top Spending</h3>${kpis.topSpendingCategories
           .map(
             (cat, idx) =>
-              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(cat.categoryName)}</span><span class="insight-value">${fmt(cat.actual)}</span></div>`,
+              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(cat.categoryName)}</span><span class="insight-value">${fmtCurrency.format(cat.actual)}</span></div>`,
           )
           .join("")}</div>`
       : "";
@@ -322,7 +318,7 @@ export class HtmlRenderer implements Renderer {
       ? `<div class="insight-card"><h3>Largest Expenses</h3>${kpis.largestExpenses
           .map(
             (expense, idx) =>
-              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(expense.label)}<span class="insight-date">${expense.date}</span></span><span class="insight-value">${fmt(expense.amount)}</span></div>`,
+              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(expense.label)}<span class="insight-date">${expense.date}</span></span><span class="insight-value">${fmtCurrency.format(expense.amount)}</span></div>`,
           )
           .join("")}</div>`
       : "";
@@ -337,7 +333,7 @@ export class HtmlRenderer implements Renderer {
     if (amount === 0) {
       return "";
     }
-    return `<section class="uncategorized"><span class="uncat-dot"></span><p>Uncategorized transactions total: <strong>${fmt(amount)}</strong></p></section>`;
+    return `<section class="uncategorized"><span class="uncat-dot"></span><p>Uncategorized transactions total: <strong>${fmtCurrency.format(amount)}</strong></p></section>`;
   }
 
   private static reportFooter(report: MonthlyReportDto): string {
@@ -350,10 +346,10 @@ export class HtmlRenderer implements Renderer {
 
     return `<footer class="footer-totals">
   <div class="totals-grid">
-    ${item("Income (Actual)", fmt(report.totalIncomeActual))}
-    ${item("Expense Target", fmt(report.totalExpenseTarget))}
-    ${item("Expenses (Actual)", fmt(report.totalExpenseActual))}
-    ${item("Net", fmt(report.net), netCls)}
+    ${item("Income (Actual)", fmtCurrency.format(report.totalIncomeActual))}
+    ${item("Expense Target", fmtCurrency.format(report.totalExpenseTarget))}
+    ${item("Expenses (Actual)", fmtCurrency.format(report.totalExpenseActual))}
+    ${item("Net", fmtCurrency.format(report.net), netCls)}
     ${item("Transactions", `${report.transactionCount}`)}
   </div>
 </footer>
