@@ -76,8 +76,8 @@ describe("HtmlRenderer", () => {
       expect(html).not.toContain("Expenses (Budgeted)");
     });
 
-    it("uses Money.format() for amounts", () => {
-      expect(html).toContain("750.00 €");
+    it("uses Intl.NumberFormat for amounts", () => {
+      expect(html).toContain("750,00\u00A0€");
     });
   });
 
@@ -137,7 +137,7 @@ describe("HtmlRenderer", () => {
       );
       const html = renderer.render(report);
       expect(html).toContain("Uncategorized");
-      expect(html).toContain("100.00 €");
+      expect(html).toContain("100,00\u00A0€");
     });
 
     it("omits uncategorized section when zero", () => {
