@@ -5,8 +5,12 @@ import type {
   SavingsRateEntry,
   TrendReport,
 } from "../read-model/trend-report.js";
+import type { GroupSummary, MonthlyReport } from "../read-model/monthly-report.js";
 import { EXPENSE_GROUPS } from "../value-object/category-group.js";
-import type { MonthlyReport } from "../read-model/monthly-report.js";
+
+function indexGroups(report: MonthlyReport): Record<string, GroupSummary> {
+  return Object.fromEntries(report.groups.map((grp) => [grp.group, grp]));
+}
 
 function computeSavingsRateSeries(months: MonthlyReport[]): SavingsRateEntry[] {
   return months.map((report) => ({
@@ -17,11 +21,9 @@ function computeSavingsRateSeries(months: MonthlyReport[]): SavingsRateEntry[] {
 
 function computeGroupOvershootFrequency(months: MonthlyReport[]): GroupOvershootFrequency[] {
   const totalMonths = months.length;
+  const indices = months.map((report) => indexGroups(report));
   return EXPENSE_GROUPS.map((group) => {
-    const count = months.filter((report) => {
-      const summary = report.groups.find((grp) => grp.group === group);
-      return summary !== undefined && summary.delta.cents < 0;
-    }).length;
+    const count = indices.filter((index) => (index[group]?.delta.cents ?? 0) < 0).length;
     return { count, group, totalMonths };
   });
 }
@@ -29,13 +31,12 @@ function computeGroupOvershootFrequency(months: MonthlyReport[]): GroupOvershoot
 function computeMonthOverMonthDeltas(months: MonthlyReport[]): MonthOverMonthDelta[] {
   return months.slice(1).map((curr, idx) => {
     const prev = months[idx] as MonthlyReport;
-    const groupDeltas = EXPENSE_GROUPS.map((group) => {
-      const prevActual = prev.groups.find((grp) => grp.group === group)?.actual;
-      const currActual = curr.groups.find((grp) => grp.group === group)?.actual;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- EXPENSE_GROUPS always present in MonthlyReport.groups
-      const delta = currActual!.subtract(prevActual!);
-      return { delta, group };
-    });
+    const prevIndex = indexGroups(prev);
+    const currIndex = indexGroups(curr);
+    const groupDeltas = EXPENSE_GROUPS.map((group) => ({
+      delta: currIndex[group].actual.subtract(prevIndex[group].actual),
+      group,
+    }));
     return {
       groupDeltas,
       month: curr.month,

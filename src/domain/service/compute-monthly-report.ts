@@ -6,18 +6,13 @@ import { Money } from "../value-object/money.js";
 import type { SpendingTargets } from "../config/spending-targets.js";
 import type { Transaction } from "../entity/transaction.js";
 
-/** Get value from a pre-initialized map (all keys guaranteed present). */
-function mapGet<TK, TV>(map: Map<TK, TV>, key: TK): TV {
-  return map.get(key) as TV;
-}
-
 function pct(numerator: number, denominator: number): number {
   return Math.round((numerator / denominator) * 10_000) / 100;
 }
 
 interface Actuals {
-  actualByCategory: Map<string, Money>;
-  actualByGroup: Map<CategoryGroup, Money>;
+  actualByCategory: Record<string, Money>;
+  actualByGroup: Record<CategoryGroup, Money>;
   uncategorized: Money;
   uncategorizedCount: number;
 }
@@ -26,38 +21,59 @@ function accumulateActuals(
   transactions: Transaction[],
   categoryMap: ReadonlyMap<string, CategoryMapEntry>,
 ): Actuals {
-  const actualByGroup = new Map<CategoryGroup, Money>();
-  for (const group of Object.values(CategoryGroup)) {
-    actualByGroup.set(group, Money.zero());
+  interface Annotated {
+    absAmount: Money;
+    categoryId: string;
+    group: CategoryGroup;
   }
 
   let uncategorized = Money.zero();
-  const actualByCategory = new Map<string, Money>();
   let uncategorizedCount = 0;
 
-  for (const txn of transactions) {
+  const annotated = transactions.flatMap((txn): Annotated[] => {
     const group = txn.categoryId ? categoryMap.get(txn.categoryId)?.group : undefined;
     const absAmount = Money.fromCents(Math.abs(txn.amount.cents));
-    if (group !== undefined && txn.categoryId) {
-      actualByGroup.set(group, mapGet(actualByGroup, group).add(absAmount));
-      const prev = actualByCategory.get(txn.categoryId) ?? Money.zero();
-      actualByCategory.set(txn.categoryId, prev.add(absAmount));
-    } else {
+    if (group === undefined || !txn.categoryId) {
       uncategorized = uncategorized.add(absAmount);
       uncategorizedCount += 1;
+      return [];
     }
-  }
+    return [{ absAmount, categoryId: txn.categoryId, group }];
+  });
+
+  const byGroup = Object.groupBy(annotated, (item) => item.group);
+  const byCategory = Object.groupBy(annotated, (item) => item.categoryId);
+
+  const actualByGroup: Record<CategoryGroup, Money> = Object.fromEntries(
+    Object.values(CategoryGroup).map((group) => {
+      let total = Money.zero();
+      for (const item of byGroup[group] ?? []) {
+        total = total.add(item.absAmount);
+      }
+      return [group, total];
+    }),
+  ) as Record<CategoryGroup, Money>;
+
+  const actualByCategory: Record<string, Money> = Object.fromEntries(
+    Object.entries(byCategory).map(([categoryId, items]) => {
+      let total = Money.zero();
+      for (const item of items ?? []) {
+        total = total.add(item.absAmount);
+      }
+      return [categoryId, total];
+    }),
+  );
 
   return { actualByCategory, actualByGroup, uncategorized, uncategorizedCount };
 }
 
 function computeKpis(ctx: {
-  actualByCategory: Map<string, Money>;
-  actualByGroup: Map<CategoryGroup, Money>;
+  actualByCategory: Record<string, Money>;
+  actualByGroup: Record<CategoryGroup, Money>;
   categoryMap: ReadonlyMap<string, CategoryMapEntry>;
   month: Temporal.PlainYearMonth;
-  totalIncomeActual: Money;
   totalExpenseActual: Money;
+  totalIncomeActual: Money;
   transactions: Transaction[];
   uncategorizedCount: number;
 }): ReportKpis {
@@ -66,8 +82,8 @@ function computeKpis(ctx: {
     actualByGroup,
     categoryMap,
     month,
-    totalIncomeActual,
     totalExpenseActual,
+    totalIncomeActual,
     transactions,
     uncategorizedCount,
   } = ctx;
@@ -81,15 +97,12 @@ function computeKpis(ctx: {
   const fiftyThirtyTwenty = incomeZero
     ? { investments: null, needs: null, wants: null } // eslint-disable-line unicorn/no-null -- ReportKpis interface contract uses null
     : {
-        investments: pct(
-          mapGet(actualByGroup, CategoryGroup.INVESTMENTS).cents,
-          totalIncomeActual.cents,
-        ),
-        needs: pct(mapGet(actualByGroup, CategoryGroup.NEEDS).cents, totalIncomeActual.cents),
-        wants: pct(mapGet(actualByGroup, CategoryGroup.WANTS).cents, totalIncomeActual.cents),
+        investments: pct(actualByGroup[CategoryGroup.INVESTMENTS].cents, totalIncomeActual.cents),
+        needs: pct(actualByGroup[CategoryGroup.NEEDS].cents, totalIncomeActual.cents),
+        wants: pct(actualByGroup[CategoryGroup.WANTS].cents, totalIncomeActual.cents),
       };
 
-  const topSpendingCategories = [...actualByCategory.entries()]
+  const topSpendingCategories = Object.entries(actualByCategory)
     .flatMap(([categoryId, actual]) => {
       const entry = categoryMap.get(categoryId);
       if (!entry || entry.group === CategoryGroup.INCOME) {
@@ -140,44 +153,40 @@ export function computeMonthlyReport(
     categoryMap,
   );
 
-  const totalIncomeActual = mapGet(actualByGroup, CategoryGroup.INCOME);
+  const totalIncomeActual = actualByGroup[CategoryGroup.INCOME];
 
   let totalExpenseActual = Money.zero();
   for (const grp of EXPENSE_GROUPS) {
-    totalExpenseActual = totalExpenseActual.add(mapGet(actualByGroup, grp));
+    totalExpenseActual = totalExpenseActual.add(actualByGroup[grp]);
   }
 
-  // Group-level targets: income × percentage
-  const targetByGroup = new Map<CategoryGroup, Money>([
-    [
-      CategoryGroup.NEEDS,
-      Money.fromCents(Math.round((totalIncomeActual.cents * targets.needs) / 100)),
-    ],
-    [
-      CategoryGroup.WANTS,
-      Money.fromCents(Math.round((totalIncomeActual.cents * targets.wants) / 100)),
-    ],
-    [
-      CategoryGroup.INVESTMENTS,
-      Money.fromCents(Math.round((totalIncomeActual.cents * targets.invest) / 100)),
-    ],
-    [CategoryGroup.INCOME, Money.zero()],
-  ]);
+  const targetByGroup: Record<CategoryGroup, Money> = {
+    [CategoryGroup.INCOME]: Money.zero(),
+    [CategoryGroup.INVESTMENTS]: Money.fromCents(
+      Math.round((totalIncomeActual.cents * targets.invest) / 100),
+    ),
+    [CategoryGroup.NEEDS]: Money.fromCents(
+      Math.round((totalIncomeActual.cents * targets.needs) / 100),
+    ),
+    [CategoryGroup.WANTS]: Money.fromCents(
+      Math.round((totalIncomeActual.cents * targets.wants) / 100),
+    ),
+  };
 
-  const totalExpenseTarget = mapGet(targetByGroup, CategoryGroup.NEEDS)
-    .add(mapGet(targetByGroup, CategoryGroup.WANTS))
-    .add(mapGet(targetByGroup, CategoryGroup.INVESTMENTS));
+  const totalExpenseTarget = targetByGroup[CategoryGroup.NEEDS]
+    .add(targetByGroup[CategoryGroup.WANTS])
+    .add(targetByGroup[CategoryGroup.INVESTMENTS]);
 
-  const targetPctByGroup: ReadonlyMap<CategoryGroup, number> = new Map([
-    [CategoryGroup.NEEDS, targets.needs],
-    [CategoryGroup.WANTS, targets.wants],
-    [CategoryGroup.INVESTMENTS, targets.invest],
-    [CategoryGroup.INCOME, 0],
-  ]);
+  const targetPctByGroup: Record<CategoryGroup, number> = {
+    [CategoryGroup.INCOME]: 0,
+    [CategoryGroup.INVESTMENTS]: targets.invest,
+    [CategoryGroup.NEEDS]: targets.needs,
+    [CategoryGroup.WANTS]: targets.wants,
+  };
 
   const groups: GroupSummary[] = Object.values(CategoryGroup).map((group) => {
-    const budgeted = mapGet(targetByGroup, group);
-    const actual = mapGet(actualByGroup, group);
+    const budgeted = targetByGroup[group];
+    const actual = actualByGroup[group];
     const isIncome = group === CategoryGroup.INCOME;
     const typeActualTotal = isIncome ? totalIncomeActual : totalExpenseActual;
 
@@ -187,7 +196,7 @@ export function computeMonthlyReport(
         ? 0
         : Math.round((actual.cents / typeActualTotal.cents) * 10_000) / 100,
       budgeted,
-      budgetedPercent: mapGet(targetPctByGroup, group),
+      budgetedPercent: targetPctByGroup[group],
       delta: budgeted.subtract(actual),
       group,
     };
