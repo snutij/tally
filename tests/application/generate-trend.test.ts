@@ -1,3 +1,4 @@
+import { InvalidMonth, InvalidMonthRange } from "../../src/domain/error/index.js";
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
@@ -5,7 +6,6 @@ import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 
 import { GenerateTrend } from "../../src/application/usecase/generate-trend.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
-import { InvalidMonthRange } from "../../src/domain/error/index.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
@@ -50,8 +50,12 @@ describe("GenerateTrend", () => {
     expect(() => useCase.execute("2026-06", "2026-01")).toThrow(InvalidMonthRange);
   });
 
-  it("throws for invalid month format", () => {
-    expect(() => useCase.execute("2026-13", "2026-06")).toThrow();
+  it("throws InvalidMonth for invalid startStr", () => {
+    expect(() => useCase.execute("not-a-month", "2026-06")).toThrow(InvalidMonth);
+  });
+
+  it("throws InvalidMonth for invalid endStr", () => {
+    expect(() => useCase.execute("2026-01", "not-a-month")).toThrow(InvalidMonth);
   });
 
   it("returns correct DTO shape", () => {

@@ -37,12 +37,16 @@ export class GenerateTrend {
     targets: SpendingTargets = DEFAULT_SPENDING_TARGETS,
   ): TrendReportDto {
     let start: Temporal.PlainYearMonth;
-    let end: Temporal.PlainYearMonth;
     try {
       start = Temporal.PlainYearMonth.from(startStr);
-      end = Temporal.PlainYearMonth.from(endStr);
     } catch {
       throw new InvalidMonth(startStr);
+    }
+    let end: Temporal.PlainYearMonth;
+    try {
+      end = Temporal.PlainYearMonth.from(endStr);
+    } catch {
+      throw new InvalidMonth(endStr);
     }
     if (Temporal.PlainYearMonth.compare(start, end) > 0) {
       throw new InvalidMonthRange(startStr, endStr);
