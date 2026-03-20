@@ -32,7 +32,7 @@ const MONTH_NAMES = [
 const fmtCurrency = new Intl.NumberFormat("fr-FR", { currency: "EUR", style: "currency" });
 const fmtCurrencySigned = new Intl.NumberFormat("fr-FR", {
   currency: "EUR",
-  signDisplay: "always",
+  signDisplay: "exceptZero",
   style: "currency",
 });
 const fmtPercent = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0, style: "percent" });

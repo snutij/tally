@@ -200,6 +200,22 @@ describe("HtmlRenderer", () => {
       expect(html).toContain("Month-over-Month Net");
     });
 
+    it("formats non-zero net delta with sign and zero net delta without sign", () => {
+      const withZero = {
+        ...dto,
+        monthOverMonthDeltas: [
+          { groupDeltas: [], month: "2026-01", netDelta: 50 },
+          { groupDeltas: [], month: "2026-02", netDelta: 0 },
+          { groupDeltas: [], month: "2026-03", netDelta: -30 },
+        ],
+      };
+      const out = renderer.render(withZero);
+      expect(out).toContain("+50,00\u00A0€");
+      expect(out).toContain("0,00\u00A0€");
+      expect(out).not.toContain("+0,00\u00A0€");
+      expect(out).toContain("-30,00\u00A0€");
+    });
+
     it("contains monthly breakdown section", () => {
       expect(html).toContain("Monthly Summary");
     });
