@@ -20,16 +20,12 @@ export class RuleBook {
     ];
 
     for (const rule of sorted) {
-      let regex: RegExp;
       try {
-        regex = new RegExp(rule.pattern, "i");
+        if (new RegExp(rule.pattern, "i").test(label)) {
+          return rule.categoryId;
+        }
       } catch {
         // invalid stored pattern — skip gracefully
-        // eslint-disable-next-line no-continue -- intentional skip of invalid patterns
-        continue;
-      }
-      if (regex.test(label)) {
-        return rule.categoryId;
       }
     }
     return undefined;

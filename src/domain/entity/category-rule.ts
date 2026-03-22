@@ -37,8 +37,7 @@ export class CategoryRule {
       throw new DomainError("Pattern must not be empty");
     }
     try {
-      // eslint-disable-next-line no-new -- validation only
-      new RegExp(pattern, "i");
+      new RegExp(pattern, "i").test("");
     } catch {
       throw new DomainError(`Invalid regex pattern: "${pattern}"`);
     }

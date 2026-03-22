@@ -30,8 +30,7 @@ function extractImportPaths(content: string): string[] {
   const paths: string[] = [];
   let match: RegExpExecArray | undefined = importRe.exec(content) ?? undefined;
   while (match !== undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- regex group always present
-    paths.push(match[1]!);
+    paths.push(match[1] ?? "");
     match = importRe.exec(content) ?? undefined;
   }
   return paths;
@@ -76,6 +75,36 @@ interface Violation {
   reason: string;
 }
 
+function checkImportViolations(
+  importPaths: string[],
+  fileLayer: Layer,
+  relativePath: string,
+): Violation[] {
+  const allowed = ALLOWED_IMPORTS[fileLayer] ?? [];
+  const violations: Violation[] = [];
+  for (const importPath of importPaths) {
+    if (isBareModuleImport(importPath)) {
+      if (fileLayer === "domain") {
+        violations.push({
+          file: relativePath,
+          importPath,
+          reason: `domain layer must not import bare modules (node:* or npm packages)`,
+        });
+      }
+    } else {
+      const importedLayer = getImportedLayer(importPath);
+      if (importedLayer && !allowed.includes(importedLayer)) {
+        violations.push({
+          file: relativePath,
+          importPath,
+          reason: `${fileLayer} must not import from ${importedLayer}`,
+        });
+      }
+    }
+  }
+  return violations;
+}
+
 describe("Architecture boundary: dependency rule", () => {
   it("has no dependency rule violations", () => {
     const sourceFiles = collectSourceFiles(resolve(import.meta.dirname, "../../src"));
@@ -84,41 +113,12 @@ describe("Architecture boundary: dependency rule", () => {
     for (const filePath of sourceFiles) {
       const relativePath = filePath.replace(/.*\/src\//, "src/");
 
-      if (EXEMPT_FILES.has(relativePath)) {
-        // eslint-disable-next-line no-continue -- intentional skip of exempt files
-        continue;
-      }
-
-      const fileLayer = detectLayer(filePath);
-      if (!fileLayer) {
-        // eslint-disable-next-line no-continue -- skip files not in a recognized layer
-        continue;
-      }
-
-      const content = readFileSync(filePath, "utf8");
-      const importPaths = extractImportPaths(content);
-      const allowed = ALLOWED_IMPORTS[fileLayer] ?? [];
-
-      for (const importPath of importPaths) {
-        if (isBareModuleImport(importPath)) {
-          // Domain files must have zero bare module imports (node:*, npm packages)
-          if (fileLayer === "domain") {
-            violations.push({
-              file: relativePath,
-              importPath,
-              reason: `domain layer must not import bare modules (node:* or npm packages)`,
-            });
-          }
-          // Non-domain layers may import node:* and npm packages freely
-        } else {
-          const importedLayer = getImportedLayer(importPath);
-          if (importedLayer && !allowed.includes(importedLayer)) {
-            violations.push({
-              file: relativePath,
-              importPath,
-              reason: `${fileLayer} must not import from ${importedLayer}`,
-            });
-          }
+      if (!EXEMPT_FILES.has(relativePath)) {
+        const fileLayer = detectLayer(filePath);
+        if (fileLayer) {
+          const content = readFileSync(filePath, "utf8");
+          const importPaths = extractImportPaths(content);
+          violations.push(...checkImportViolations(importPaths, fileLayer, relativePath));
         }
       }
     }

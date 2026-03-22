@@ -175,7 +175,6 @@ describe("HtmlRenderer", () => {
       months: [monthDto],
       savingsRateSeries: [
         { month: "2026-01", rate: 25 },
-        // eslint-disable-next-line unicorn/no-null -- testing null path
         { month: "2026-02", rate: null },
       ],
       start: "2026-01",

@@ -8,7 +8,6 @@ import { type MonthlyReportDto, toMonthlyReportDto } from "./report-dto.js";
 
 export interface SavingsRateEntryDto {
   readonly month: string;
-  // eslint-disable-next-line unicorn/no-null -- mirrors domain model null for zero-income months
   readonly rate: number | null;
 }
 
@@ -42,7 +41,6 @@ export interface TrendReportDto {
 export function isTrendReportDto(data: unknown): data is TrendReportDto {
   return (
     typeof data === "object" &&
-    // eslint-disable-next-line unicorn/no-null -- standard null check for unknown data
     data !== null &&
     (data as { _type?: unknown })._type === "TrendReportDto"
   );

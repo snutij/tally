@@ -34,9 +34,7 @@ export async function categorizePrompt(
   const result: TransactionDto[] = [];
 
   try {
-    for (let idx = 0; idx < transactions.length; idx += 1) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- idx bounded by transactions.length
-      const txn = transactions[idx]!;
+    for (const [idx, txn] of transactions.entries()) {
       const sign = txn.amount < 0 ? "" : "+";
       const formatted = `${sign}${Math.abs(txn.amount).toFixed(2)}`;
       const header = `${idx + 1}/${transactions.length}  ${formatted} €  ${txn.label}  (${txn.date})`;

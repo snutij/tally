@@ -91,11 +91,11 @@ function computeKpis(ctx: {
   const incomeZero = totalIncomeActual.isZero();
 
   const savingsRate = incomeZero
-    ? null // eslint-disable-line unicorn/no-null -- ReportKpis interface contract uses null
+    ? null
     : pct(totalIncomeActual.cents - totalExpenseActual.cents, totalIncomeActual.cents);
 
   const fiftyThirtyTwenty = incomeZero
-    ? { investments: null, needs: null, wants: null } // eslint-disable-line unicorn/no-null -- ReportKpis interface contract uses null
+    ? { investments: null, needs: null, wants: null }
     : {
         investments: pct(actualByGroup[CategoryGroup.INVESTMENTS].cents, totalIncomeActual.cents),
         needs: pct(actualByGroup[CategoryGroup.NEEDS].cents, totalIncomeActual.cents),
@@ -129,7 +129,6 @@ function computeKpis(ctx: {
     }));
 
   const uncategorizedRatio =
-    // eslint-disable-next-line unicorn/no-null -- ReportKpis interface contract uses null
     transactions.length === 0 ? null : pct(uncategorizedCount, transactions.length);
 
   return {

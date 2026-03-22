@@ -3,7 +3,6 @@ import { type TrendReportDto, isTrendReportDto } from "../../application/dto/tre
 import type { Renderer } from "./renderer.js";
 
 export class JsonRenderer implements Renderer {
-  // eslint-disable-next-line class-methods-use-this -- implements Renderer interface
   render(data: unknown): string {
     return JSON.stringify(JsonRenderer.serialize(data), undefined, 2);
   }

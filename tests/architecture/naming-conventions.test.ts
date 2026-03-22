@@ -83,8 +83,7 @@ describe("Architecture: naming conventions", () => {
         const importRe = /from\s+['"](\.[^'"]+)['"]/g;
         let match: RegExpExecArray | undefined = importRe.exec(content) ?? undefined;
         while (match !== undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- regex group always present
-          const importPath = match[1]!;
+          const importPath = match[1] ?? "";
           // A same-directory relative import (./foo) is a direct use-case → use-case import
           if (importPath.startsWith("./")) {
             violations.push(`${file}: imports ${importPath}`);

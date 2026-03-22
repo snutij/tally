@@ -184,8 +184,8 @@ describe("MonthlyReport", () => {
         txn("3", -200, "w02"), // categorized
       ];
       const report = computeMonthlyReport(month, targets, transactions, categoryMap);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- non-null asserted in test
-      expect(report.kpis.uncategorizedRatio!).toBeCloseTo(33.33, 1);
+      expect(report.kpis.uncategorizedRatio).not.toBeNull();
+      expect(report.kpis.uncategorizedRatio).toBeCloseTo(33.33, 1);
     });
 
     it("uncategorized ratio is null when no transactions", () => {

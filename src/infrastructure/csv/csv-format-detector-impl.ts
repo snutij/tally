@@ -9,22 +9,18 @@ import { detectDelimiter } from "./detect-delimiter.js";
 import { readFileSync } from "node:fs";
 
 export class CsvFormatDetectorImpl implements CsvFormatDetector {
-  // eslint-disable-next-line class-methods-use-this -- implements CsvFormatDetector interface
   readFileContent(filePath: string): string {
     return decodeFileContent(readFileSync(filePath));
   }
 
-  // eslint-disable-next-line class-methods-use-this -- implements CsvFormatDetector interface
   detectDelimiter(lines: string[]): FormatDetectionResult<string> {
     return detectDelimiter(lines);
   }
 
-  // eslint-disable-next-line class-methods-use-this -- implements CsvFormatDetector interface
   detectDateFormat(samples: string[]): FormatDetectionResult<string> {
     return detectDateFormat(samples);
   }
 
-  // eslint-disable-next-line class-methods-use-this -- implements CsvFormatDetector interface
   detectDecimalSeparator(samples: string[]): FormatDetectionResult<"," | "."> {
     return detectDecimalSeparator(samples);
   }

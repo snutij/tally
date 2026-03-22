@@ -37,7 +37,6 @@ function makeGroupSummary(
 function makeReport(
   monthStr: string,
   opts: {
-    // eslint-disable-next-line unicorn/no-null -- null is a valid savings rate
     savingsRate?: number | null;
     netEuros?: number;
     needsActual?: number;
@@ -49,7 +48,6 @@ function makeReport(
   } = {},
 ): MonthlyReport {
   const {
-    // eslint-disable-next-line unicorn/no-null -- null is a valid savings rate
     savingsRate = null,
     netEuros = 0,
     needsActual = 500,
@@ -69,11 +67,11 @@ function makeReport(
     ],
     kpis: {
       dailyAverageSpending: euros(33),
-      fiftyThirtyTwenty: { investments: null, needs: null, wants: null }, // eslint-disable-line unicorn/no-null
+      fiftyThirtyTwenty: { investments: null, needs: null, wants: null },
       largestExpenses: [],
       savingsRate,
       topSpendingCategories: [],
-      uncategorizedRatio: null, // eslint-disable-line unicorn/no-null
+      uncategorizedRatio: null,
     },
     month: Temporal.PlainYearMonth.from(monthStr),
     net: euros(netEuros),
@@ -106,7 +104,6 @@ describe("computeTrendReport", () => {
     });
 
     it("preserves null for zero-income months", () => {
-      // eslint-disable-next-line unicorn/no-null -- testing null path
       const months = [makeReport("2026-01", { savingsRate: null })];
       const singleRange = makeRange("2026-01", "2026-01");
       const trend = computeTrendReport(singleRange, months);

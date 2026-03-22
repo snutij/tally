@@ -9,7 +9,6 @@ export interface MonthRange {
 
 export interface SavingsRateEntry {
   readonly month: Temporal.PlainYearMonth;
-  // eslint-disable-next-line unicorn/no-null -- mirrors MonthlyReport.kpis.savingsRate nullability
   readonly rate: number | null;
 }
 

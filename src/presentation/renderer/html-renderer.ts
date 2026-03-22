@@ -57,9 +57,7 @@ function deltaColor(delta: number): string {
   return "";
 }
 
-// eslint-disable-next-line unicorn/no-null -- null comes from domain ReportKpis interface
 function fmtPct(val: number | null): string {
-  // eslint-disable-next-line unicorn/no-null -- null comparison required by domain model
   return val === null ? "N/A" : fmtPercent.format(val / 100);
 }
 
@@ -88,9 +86,10 @@ const KPI_TOOLTIPS: Record<string, TooltipContent> = {
 };
 
 function card(label: string, value: string, highlight = false): string {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- label always matches a KPI_TOOLTIPS key
-  const tooltip = KPI_TOOLTIPS[label]!;
-  const tooltipHtml = `<span class="kpi-help-wrap"><button class="kpi-help" aria-label="About ${esc(label)}" type="button">?</button><div class="kpi-tooltip" role="tooltip"><strong>${esc(tooltip.purpose)}</strong><br>${esc(tooltip.target)}<br><em>${esc(tooltip.tip)}</em></div></span>`;
+  const tooltip = KPI_TOOLTIPS[label];
+  const tooltipHtml = tooltip
+    ? `<span class="kpi-help-wrap"><button class="kpi-help" aria-label="About ${esc(label)}" type="button">?</button><div class="kpi-tooltip" role="tooltip"><strong>${esc(tooltip.purpose)}</strong><br>${esc(tooltip.target)}<br><em>${esc(tooltip.tip)}</em></div></span>`
+    : "";
   return `<div class="kpi${highlight ? " kpi-highlight" : ""}">${tooltipHtml}<div class="kpi-value">${value}</div><div class="kpi-label">${label}</div></div>`;
 }
 
@@ -99,7 +98,6 @@ function item(label: string, value: string, cls = ""): string {
 }
 
 export class HtmlRenderer implements Renderer {
-  // eslint-disable-next-line class-methods-use-this -- implements Renderer interface
   render(data: unknown): string {
     if (isMonthlyReportDto(data)) {
       return HtmlRenderer.renderReport(data);
@@ -137,7 +135,7 @@ export class HtmlRenderer implements Renderer {
     }
     const rows = series
       .map((entry) => {
-        const cls = entry.rate !== null && entry.rate >= 20 ? "under-budget" : "over-budget"; // eslint-disable-line unicorn/no-null
+        const cls = entry.rate !== null && entry.rate >= 20 ? "under-budget" : "over-budget";
         return `<tr><td>${esc(entry.month)}</td><td class="num ${cls}">${fmtPct(entry.rate)}</td></tr>`;
       })
       .join("\n");
@@ -230,8 +228,7 @@ export class HtmlRenderer implements Renderer {
 
   private static heroHeader(ref: { month: string }, eyebrow: string): string {
     const [year, monthNum] = ref.month.split("-") as [string, string];
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- monthNum is 01-12, always valid index
-    const monthName = MONTH_NAMES[Number.parseInt(monthNum, 10) - 1]!;
+    const monthName = MONTH_NAMES[Number.parseInt(monthNum, 10) - 1] ?? monthNum;
     return `<header class="hero">
   <div class="hero-eyebrow">${esc(eyebrow)}</div>
   <h1 class="hero-month">${esc(monthName)} ${esc(year)}</h1>

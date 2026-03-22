@@ -87,7 +87,7 @@ describe("JsonRenderer", () => {
       groupOvershootFrequency: [],
       monthOverMonthDeltas: [],
       months: [monthDto],
-      savingsRateSeries: [{ month: "2026-01", rate: null }], // eslint-disable-line unicorn/no-null -- null is a valid savings rate
+      savingsRateSeries: [{ month: "2026-01", rate: null }],
       start: "2026-01",
     };
     const parsed = JSON.parse(renderer.render(dto));

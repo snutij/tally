@@ -111,7 +111,6 @@ class SqliteTransactionRepository implements TransactionRepository {
         txn.date.toString(),
         txn.label,
         txn.amount.cents,
-        // eslint-disable-next-line unicorn/no-null -- SQLite requires null for missing column values
         txn.categoryId ?? null,
         txn.source,
       );

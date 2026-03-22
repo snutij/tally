@@ -26,7 +26,8 @@ export class LearnCategoryRules {
 
   learn(transactions: TransactionDto[]): void {
     const relevant = transactions.filter(
-      (txn) => txn.categoryId !== undefined && this.registry.has(txn.categoryId),
+      (txn): txn is TransactionDto & { categoryId: string } =>
+        txn.categoryId !== undefined && this.registry.has(txn.categoryId),
     );
     if (relevant.length === 0) {
       return;
@@ -36,8 +37,7 @@ export class LearnCategoryRules {
     let changed = false;
 
     for (const txn of relevant) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- filtered above
-      const categoryId = txn.categoryId!;
+      const { categoryId } = txn;
       const pattern = extractPattern(txn.label, this.bankPrefixes);
       if (pattern) {
         const brandedCategoryId = CategoryId(categoryId);

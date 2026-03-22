@@ -32,18 +32,13 @@ export interface LargestExpenseEntryDto {
 export interface ReportKpisDto {
   readonly dailyAverageSpending: number;
   readonly fiftyThirtyTwenty: {
-    // eslint-disable-next-line unicorn/no-null -- mirrors domain model nullable KPIs
     readonly investments: number | null;
-    // eslint-disable-next-line unicorn/no-null -- mirrors domain model nullable KPIs
     readonly needs: number | null;
-    // eslint-disable-next-line unicorn/no-null -- mirrors domain model nullable KPIs
     readonly wants: number | null;
   };
   readonly largestExpenses: LargestExpenseEntryDto[];
-  // eslint-disable-next-line unicorn/no-null -- mirrors domain model nullable KPIs
   readonly savingsRate: number | null;
   readonly topSpendingCategories: TopSpendingEntryDto[];
-  // eslint-disable-next-line unicorn/no-null -- mirrors domain model nullable KPIs
   readonly uncategorizedRatio: number | null;
 }
 
@@ -63,7 +58,6 @@ export interface MonthlyReportDto {
 export function isMonthlyReportDto(data: unknown): data is MonthlyReportDto {
   return (
     typeof data === "object" &&
-    // eslint-disable-next-line unicorn/no-null -- standard null check for unknown data
     data !== null &&
     (data as { _type?: unknown })._type === "MonthlyReportDto"
   );

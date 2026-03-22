@@ -74,8 +74,8 @@ export async function collectColumnMapping(
   const sampleRow = dataRows[0] ?? [];
 
   // 3. Column mapping — loop until validation passes
-  // eslint-disable-next-line no-constant-condition -- re-prompt on validation failure
-  while (true) {
+  let validationError: string | undefined = undefined;
+  do {
     const fields: ColumnField[] = [];
     for (let idx = 0; idx < headers.length; idx += 1) {
       const header = headers[idx] ?? `col${idx + 1}`;
@@ -87,9 +87,9 @@ export async function collectColumnMapping(
       fields.push(field);
     }
 
-    const error = validateFields(fields);
-    if (error) {
-      console.error(`\n${error} Please re-map the columns.\n`);
+    validationError = validateFields(fields);
+    if (validationError) {
+      console.error(`\n${validationError} Please re-map the columns.\n`);
     } else {
       // 4. Auto-detect date format from samples
       const dateIdx = fields.indexOf("date");
@@ -126,5 +126,5 @@ export async function collectColumnMapping(
 
       return { dateFormat, decimalSeparator, delimiter, fields };
     }
-  }
+  } while (validationError);
 }

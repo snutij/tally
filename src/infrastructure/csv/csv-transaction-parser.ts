@@ -36,8 +36,7 @@ function parseDateWithFormat(dateStr: string, format: string): Temporal.PlainDat
     throw new InvalidImportData(`unsupported date format: "${format}"`);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- checked by length above
-  const iso = `${year!}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`;
+  const iso = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
   try {
     return Temporal.PlainDate.from(iso);
   } catch {
@@ -81,7 +80,6 @@ export class CsvTransactionParser implements TransactionParser {
     this.mapping = mapping;
   }
 
-  // eslint-disable-next-line class-methods-use-this -- implements TransactionParser, delegates to helpers
   parse(filePath: string): Transaction[] {
     const content = decodeFileContent(readFileSync(filePath));
     const records = parse(content, {
