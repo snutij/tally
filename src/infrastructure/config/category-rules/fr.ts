@@ -56,6 +56,18 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "w02", pattern: "\\bpizzeria\\b" },
   { categoryId: "w02", pattern: "\\bbrasserie\\b" },
   { categoryId: "w02", pattern: "\\bcreperie\\b" },
+  { categoryId: "w02", pattern: "\\bbagelstein\\b" },
+  { categoryId: "w02", pattern: "\\bpokawa\\b" },
+  { categoryId: "w02", pattern: "\\bbig\\s*fernand\\b" },
+  { categoryId: "w02", pattern: "\\bquick\\b" },
+  { categoryId: "w02", pattern: "\\bpomme\\s*de\\s*pain\\b" },
+  { categoryId: "w02", pattern: "\\bcojean\\b" },
+  { categoryId: "w02", pattern: "\\bcolumbus\\s*cafe\\b" },
+  { categoryId: "w02", pattern: "\\bpopeyes\\b" },
+  { categoryId: "w02", pattern: "\\bpitaya\\b" },
+  { categoryId: "w02", pattern: "\\beat\\s*salad\\b" },
+  { categoryId: "w02", pattern: "\\bexki\\b" },
+  { categoryId: "w02", pattern: "\\bbagel\\s*corner\\b" },
 
   // ─── GROCERIES (n02) ─────────────────────────────────────────────────────────
   { categoryId: "n02", pattern: "\\bcarrefour\\b" },
@@ -83,6 +95,13 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "n02", pattern: "\\bmonop\\b" }, // Monop' convenience format — after monoprix
   { categoryId: "n02", pattern: "\\bcolruyt\\b" },
 
+  // ─── SHARED EXPENSES (n03) ─────────────────────────────────────────────────
+  { categoryId: "n03", pattern: "\\bsplitwise\\b" },
+  { categoryId: "n03", pattern: "\\btricount\\b" },
+  { categoryId: "n03", pattern: "\\blydia\\b" },
+  { categoryId: "n03", pattern: "\\bpaylib\\b" },
+  { categoryId: "n03", pattern: "\\bcagnotte\\b" },
+
   // ─── TRANSPORT (n08) ─────────────────────────────────────────────────────────
   { categoryId: "n08", pattern: "\\bsncf\\b|\\btgv\\b|\\bouigo\\b" },
   { categoryId: "n08", pattern: "\\bratp\\b|\\bnavigo\\b|\\btitre\\s*de\\s*transport\\b" },
@@ -107,6 +126,16 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "n08", pattern: "\\bidfm\\b|\\bile\\s*de\\s*france\\s*mobilites\\b" },
   { categoryId: "n08", pattern: "\\beurotunnel\\b|\\bgetlink\\b" },
   { categoryId: "n08", pattern: "\\bthalys\\b|\\beurostar\\b" },
+  { categoryId: "n08", pattern: "\\bcityscoot\\b" },
+  { categoryId: "n08", pattern: "\\bgetaround\\b" },
+  { categoryId: "n08", pattern: "\\bfree2move\\b" }, // before "free" in n11
+  { categoryId: "n08", pattern: "\\bsixt\\b" },
+  { categoryId: "n08", pattern: "\\bhertz\\b" },
+  { categoryId: "n08", pattern: "\\beuropcar\\b" },
+  { categoryId: "n08", pattern: "\\bavis\\b" },
+  { categoryId: "n08", pattern: "\\benterprise\\b" },
+  { categoryId: "n08", pattern: "\\bada\\b" },
+  { categoryId: "n08", pattern: "\\btrenitalia\\b" },
 
   // ─── FUEL (n07) ──────────────────────────────────────────────────────────────
   { categoryId: "n07", pattern: "\\btotalenergies\\b|\\btotal\\s*energies\\b" },
@@ -120,6 +149,10 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   // ─── RENT (n01) ──────────────────────────────────────────────────────────────
   { categoryId: "n01", pattern: "\\bloyer\\b" },
   { categoryId: "n01", pattern: "\\bbailleur\\b" },
+  { categoryId: "n01", pattern: "\\bnexity\\b" },
+  { categoryId: "n01", pattern: "\\bfoncia\\b" },
+  { categoryId: "n01", pattern: "\\borpi\\b" },
+  { categoryId: "n01", pattern: "\\bcentury\\s*21\\b" },
 
   // ─── HOUSEHOLD (n05) ─────────────────────────────────────────────────────────
   { categoryId: "n05", pattern: "\\bikea\\b" },
@@ -138,6 +171,10 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "n05", pattern: "\\btruffaut\\b" },
   { categoryId: "n05", pattern: "\\bgamm\\s*vert\\b" },
   { categoryId: "n05", pattern: "\\bbotanic\\b" },
+  { categoryId: "n05", pattern: "\\bbut\\b" },
+  { categoryId: "n05", pattern: "\\bbricomarche\\b" },
+  { categoryId: "n05", pattern: "\\bweldom\\b" },
+  { categoryId: "n05", pattern: "\\bschmidt\\b" },
 
   // ─── INSURANCE (n06) ─────────────────────────────────────────────────────────
   {
@@ -158,6 +195,9 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "n06", pattern: "\\bcardif\\b" },
   { categoryId: "n06", pattern: "\\bpacifica\\b" },
   { categoryId: "n06", pattern: "\\bmutuelle\\b" },
+  { categoryId: "n06", pattern: "\\bdirect\\s*assurance\\b" },
+  { categoryId: "n06", pattern: "\\bluko\\b" },
+  { categoryId: "n06", pattern: "\\bl.olivier\\s*assurance\\b" },
 
   // ─── ELECTRICITY (n12) ───────────────────────────────────────────────────────
   { categoryId: "n12", pattern: "\\bedf\\b" },
@@ -166,9 +206,15 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "n12", pattern: "\\bmint\\s*energie\\b" },
   { categoryId: "n12", pattern: "\\bilek\\b" },
   { categoryId: "n12", pattern: "\\belectricite\\b" },
+  { categoryId: "n12", pattern: "\\btotal\\s*direct\\s*energie\\b" },
+  { categoryId: "n12", pattern: "\\bvattenfall\\b" },
+  { categoryId: "n12", pattern: "\\bohm\\s*energie\\b" },
 
   // ─── GAS (n13) ───────────────────────────────────────────────────────────────
   { categoryId: "n13", pattern: "\\bgdf\\b|\\bgaz\\s*de\\s*france\\b" },
+  { categoryId: "n13", pattern: "\\beni\\b" },
+  { categoryId: "n13", pattern: "\\bgrdf\\b" },
+  { categoryId: "n13", pattern: "\\bgaz\\s*tarif\\s*reglemente\\b" },
 
   // ─── WATER (n14) ─────────────────────────────────────────────────────────────
   { categoryId: "n14", pattern: "\\bveolia\\b" },
@@ -203,6 +249,14 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "w06", pattern: "\\baudible\\b" },
   { categoryId: "w06", pattern: "\\bkindle\\s*unlimited\\b" },
   { categoryId: "w06", pattern: "\\btwitch\\b" },
+  { categoryId: "w06", pattern: "\\bmax\\b" },
+  { categoryId: "w06", pattern: "\\btidal\\b" },
+  { categoryId: "w06", pattern: "\\bnotion\\b" },
+  { categoryId: "w06", pattern: "\\bdropbox\\b" },
+  { categoryId: "w06", pattern: "\\bstrava\\b" },
+  { categoryId: "w06", pattern: "\\bduolingo\\b" },
+  { categoryId: "w06", pattern: "\\bmycanal\\b" },
+  { categoryId: "w06", pattern: "\\bocs\\b" },
 
   // ─── PHONE (n10) — more specific before generic ───────────────────────────────
   { categoryId: "n10", pattern: "\\bfree\\s*mobile\\b" },
@@ -212,6 +266,9 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "n10", pattern: "\\bsfr\\b" },
   { categoryId: "n10", pattern: "\\borange\\b" },
   { categoryId: "n10", pattern: "\\bbouygues\\b" },
+  { categoryId: "n10", pattern: "\\bprixtel\\b" },
+  { categoryId: "n10", pattern: "\\bla\\s*poste\\s*mobile\\b" },
+  { categoryId: "n10", pattern: "\\bnrj\\s*mobile\\b" },
 
   // ─── INTERNET (n11) — "free" after "free mobile" ─────────────────────────────
   { categoryId: "n11", pattern: "\\bfree\\b" },
@@ -245,6 +302,12 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "w03", pattern: "\\blaser\\s*game\\b" },
   { categoryId: "w03", pattern: "\\bzoo\\b" },
   { categoryId: "w03", pattern: "\\bkarting\\b" },
+  { categoryId: "w03", pattern: "\\bpatinoire\\b" },
+  { categoryId: "w03", pattern: "\\bopera\\b" },
+  { categoryId: "w03", pattern: "\\bla\\s*cigale\\b" },
+  { categoryId: "w03", pattern: "\\bbataclan\\b" },
+  { categoryId: "w03", pattern: "\\baccor\\s*(?:hotel(?:s)?\\s*)?arena\\b" },
+  { categoryId: "w03", pattern: "\\bstade\\s*de\\s*france\\b" },
 
   // ─── SHOPPING (w01) — "amazon" after "amazon prime", "fnac" after "fnac spectacles" ─
   { categoryId: "w01", pattern: "\\bamazon\\b" },
@@ -284,6 +347,21 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "w01", pattern: "\\btimberland\\b" },
   { categoryId: "w01", pattern: "\\bback\\s*market\\b" },
   { categoryId: "w01", pattern: "\\brakuten\\b" },
+  { categoryId: "w01", pattern: "\\bmango\\b" },
+  { categoryId: "w01", pattern: "\\betam\\b" },
+  { categoryId: "w01", pattern: "\\bjules\\b" },
+  { categoryId: "w01", pattern: "\\bpromod\\b" },
+  { categoryId: "w01", pattern: "\\bjennyfer\\b" },
+  { categoryId: "w01", pattern: "\\bundiz\\b" },
+  { categoryId: "w01", pattern: "\\bgemo\\b" },
+  { categoryId: "w01", pattern: "\\bokaidi\\b" },
+  { categoryId: "w01", pattern: "\\bjacadi\\b" },
+  { categoryId: "w01", pattern: "\\bsergent\\s*major\\b" },
+  { categoryId: "w01", pattern: "\\borchestra\\b" },
+  { categoryId: "w01", pattern: "\\bpetit\\s*bateau\\b" },
+  { categoryId: "w01", pattern: "\\bhema\\b" },
+  { categoryId: "w01", pattern: "\\bflying\\s*tiger\\b" },
+  { categoryId: "w01", pattern: "\\bnoz\\b" },
 
   // ─── BEAUTY (w05) ────────────────────────────────────────────────────────────
   { categoryId: "w05", pattern: "\\bsephora\\b" },
@@ -296,6 +374,19 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "w05", pattern: "\\binstitut\\s*de\\s*beaute\\b" },
   { categoryId: "w05", pattern: "\\bmanucure\\b|\\bpedicure\\b" },
   { categoryId: "w05", pattern: "\\bbarbier\\b" },
+  { categoryId: "w05", pattern: "\\bkiko\\b" },
+  { categoryId: "w05", pattern: "\\blush\\b" },
+  { categoryId: "w05", pattern: "\\brituals\\b" },
+  { categoryId: "w05", pattern: "\\btypology\\b" },
+  { categoryId: "w05", pattern: "\\bblissim\\b" },
+
+  // ─── GIFTS (w07) ───────────────────────────────────────────────────────────────
+  { categoryId: "w07", pattern: "\\binterflora\\b" },
+  { categoryId: "w07", pattern: "\\baquarelle\\b" },
+  { categoryId: "w07", pattern: "\\bfleuriste\\b" },
+  { categoryId: "w07", pattern: "\\bcarte\\s*cadeau\\b" },
+  { categoryId: "w07", pattern: "\\bbijouterie\\b" },
+  { categoryId: "w07", pattern: "\\bswarovski\\b" },
 
   // ─── HEALTH (n16) ────────────────────────────────────────────────────────────
   { categoryId: "n16", pattern: "\\bpharmacie\\b" },
@@ -364,6 +455,7 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   // ─── MORTGAGE INTEREST (n09) ─────────────────────────────────────────────────
   { categoryId: "n09", pattern: "\\binterets?\\s*(?:d.)?emprunt\\b" },
   { categoryId: "n09", pattern: "\\binterets?\\s*(?:de\\s*)?pret\\b" },
+  { categoryId: "n09", pattern: "\\binterets?\\s*credit\\s*immobilier\\b" },
 
   // ─── SAVINGS (i02) ───────────────────────────────────────────────────────────
   { categoryId: "i02", pattern: "\\blivret\\s*a\\b" },
@@ -384,6 +476,10 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
 
   // ─── LIFE INSURANCE (i04) ────────────────────────────────────────────────────
   { categoryId: "i04", pattern: "\\bassurance\\s*vie\\b" },
+  { categoryId: "i04", pattern: "\\blinxea\\b" },
+  { categoryId: "i04", pattern: "\\byomoni\\b" },
+  { categoryId: "i04", pattern: "\\bnalo\\b" },
+  { categoryId: "i04", pattern: "\\bboursorama\\s*vie\\b" },
 
   // ─── MORTGAGE REPAYMENT (i01) ────────────────────────────────────────────────
   {
@@ -391,6 +487,8 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
     pattern: "\\bpret\\s*immo\\b|\\bcredit\\s*immo\\b|\\becheance\\s*(?:de\\s*)?pret\\b",
   },
   { categoryId: "i01", pattern: "\\bcredit\\s*habitat\\b|\\bpret\\s*habitat\\b" },
+  { categoryId: "i01", pattern: "\\bremboursement\\s*emprunt\\b" },
+  { categoryId: "i01", pattern: "\\bamortissement\\s*pret\\b" },
 
   // ─── SALARY (inc01) ──────────────────────────────────────────────────────────
   { categoryId: "inc01", pattern: "\\bsalaire\\b" },
@@ -398,6 +496,11 @@ export const FR_DEFAULT_RULES: DefaultRuleEntry[] = [
   { categoryId: "inc01", pattern: "\\bremuneration\\b" },
   { categoryId: "inc01", pattern: "\\bvir(?:ement)?\\s*salaire\\b" },
   { categoryId: "inc01", pattern: "\\btraitement\\s*mensuel\\b" },
+
+  // ─── RENTAL INCOME (inc02) ─────────────────────────────────────────────────
+  { categoryId: "inc02", pattern: "\\bloyer\\s*recu\\b" },
+  { categoryId: "inc02", pattern: "\\brevenus?\\s*locatifs?\\b" },
+  { categoryId: "inc02", pattern: "\\brevenus?\\s*fonciers?\\b" },
 
   // ─── ALLOWANCES & BENEFITS (inc03) ──────────────────────────────────────────
   { categoryId: "inc03", pattern: "\\bcaf\\b" },
