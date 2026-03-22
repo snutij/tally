@@ -2,6 +2,7 @@ import type { ColumnField, CsvMappingConfig } from "../../application/dto/csv-ma
 import type { CsvFormatDetector } from "../../application/gateway/csv-format-detector.js";
 import { parse } from "csv-parse/sync";
 import select from "@inquirer/select";
+import { validateFields } from "./validate-column-mapping.js";
 
 const FIELD_CHOICES: { name: string; value: ColumnField }[] = [
   { name: "date", value: "date" },
@@ -25,21 +26,6 @@ const DELIMITER_CHOICES = [
   { name: "Comma (,)", value: "," },
   { name: "Tab", value: "\t" },
 ];
-
-function validateFields(fields: ColumnField[]): string | undefined {
-  if (!fields.includes("date")) {
-    return "Mapping must include a 'date' column.";
-  }
-  if (!fields.includes("label")) {
-    return "Mapping must include a 'label' column.";
-  }
-  const hasAmount =
-    fields.includes("amount") || fields.includes("expense") || fields.includes("income");
-  if (!hasAmount) {
-    return "Mapping must include an 'amount' column or at least one 'expense'/'income' column.";
-  }
-  return undefined;
-}
 
 export async function collectColumnMapping(
   filePath: string,

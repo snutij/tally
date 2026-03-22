@@ -4,17 +4,10 @@ export default defineConfig({
   test: {
     coverage: {
       exclude: [
-        "src/application/config.ts",
-        "src/application/dto/csv-mapping-config.ts",
-        "src/application/dto/index.ts",
-        "src/application/error.ts",
-        "src/application/gateway/*.ts",
-        "src/domain/entity/category.ts",
-        "src/domain/read-model/monthly-report.ts",
-        "src/domain/read-model/trend-report.ts",
-        "src/presentation/prompt/column-mapping-prompt.ts",
-        "src/presentation/renderer/renderer.ts",
+        // Composition root: side effects (fs, db, process.exit), Commander + Inquirer wiring — no unit test value
         "src/presentation/index.ts",
+        // Interactive I/O via @inquirer/select — pure logic (validateFields) is extracted and tested separately
+        "src/presentation/prompt/column-mapping-prompt.ts",
       ],
       include: ["src/**/*.ts"],
       provider: "v8",
