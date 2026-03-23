@@ -23,8 +23,8 @@ export interface CategorySuggester {
   suggest(transactions: TransactionDto[]): Promise<TransactionDto[]>;
 
   /**
-   * Updates the embedding index with newly categorized transaction labels.
+   * Updates the embedding index with newly categorized labels.
    * Should be called after the user completes manual categorization.
    */
-  learnBatch(transactions: TransactionDto[]): Promise<void>;
+  learnBatch(items: readonly { label: string; categoryId: string }[]): Promise<void>;
 }

@@ -24,10 +24,4 @@ describe("cosine similarity (math invariants)", () => {
     const vec = new Float32Array([1, 0, 0, 0]);
     expect(cosineSimilarity(zero, vec)).toBe(0);
   });
-
-  it("similarity threshold 0.3 is inclusive — 0.30 passes, 0.29 does not", () => {
-    const threshold = 0.3;
-    expect(threshold <= 0.3).toBe(true);
-    expect(threshold <= 0.29).toBe(false);
-  });
 });

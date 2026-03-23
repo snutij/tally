@@ -33,14 +33,6 @@ function dto(id: string, categoryId?: string, suggestedCategoryId?: string): Tra
   };
 }
 
-function passthroughSuggester(): CategorySuggester {
-  return {
-    init: vi.fn().mockResolvedValue(),
-    learnBatch: vi.fn().mockResolvedValue(),
-    suggest: vi.fn().mockImplementation((txns: TransactionDto[]) => Promise.resolve(txns)),
-  };
-}
-
 describe("ImportCsvWorkflow", () => {
   let txnGateway: InMemoryTransactionRepository;
   let ruleGateway: InMemoryRuleBookRepository;
@@ -67,10 +59,7 @@ describe("ImportCsvWorkflow", () => {
   });
 
   it("saves all transactions and returns count", async () => {
-    const result = await workflow.execute({
-      categorySuggester: passthroughSuggester(),
-      transactions: [dto("t1"), dto("t2")],
-    });
+    const result = await workflow.execute({ transactions: [dto("t1"), dto("t2")] });
     expect(result.savedCount).toBe(2);
     expect(result.interrupted).toBe(false);
   });
@@ -88,7 +77,6 @@ describe("ImportCsvWorkflow", () => {
     ]);
     const onAlreadyCategorized = vi.fn();
     await workflow.execute({
-      categorySuggester: passthroughSuggester(),
       onAlreadyCategorized,
       transactions: [dto("t1"), dto("t2")],
     });
@@ -97,40 +85,25 @@ describe("ImportCsvWorkflow", () => {
 
   it("calls promptFn with unmatched transactions", async () => {
     const promptFn = vi.fn().mockResolvedValue({ categorized: [], interrupted: false });
-    await workflow.execute({
-      categorySuggester: passthroughSuggester(),
-      promptFn,
-      transactions: [dto("t1")],
-    });
+    await workflow.execute({ promptFn, transactions: [dto("t1")] });
     expect(promptFn).toHaveBeenCalledWith([dto("t1")]);
   });
 
   it("propagates interrupted flag from promptFn", async () => {
     const promptFn = vi.fn().mockResolvedValue({ categorized: [], interrupted: true });
-    const result = await workflow.execute({
-      categorySuggester: passthroughSuggester(),
-      promptFn,
-      transactions: [dto("t1")],
-    });
+    const result = await workflow.execute({ promptFn, transactions: [dto("t1")] });
     expect(result.interrupted).toBe(true);
   });
 
   it("does not call promptFn when not provided", async () => {
-    const result = await workflow.execute({
-      categorySuggester: passthroughSuggester(),
-      transactions: [dto("t1")],
-    });
+    const result = await workflow.execute({ transactions: [dto("t1")] });
     expect(result.savedCount).toBe(1);
   });
 
   it("calls onAutoMatched callback when rules match", async () => {
     ruleGateway.seed(CategoryRule.create("id-txn", String.raw`\btxn\b`, "n01", "default"));
     const onAutoMatched = vi.fn();
-    await workflow.execute({
-      categorySuggester: passthroughSuggester(),
-      onAutoMatched,
-      transactions: [dto("t1")],
-    });
+    await workflow.execute({ onAutoMatched, transactions: [dto("t1")] });
     // dto label is "txn-t1" which matches \btxn\b
     expect(onAutoMatched).toHaveBeenCalledWith(1, 1);
   });
@@ -183,6 +156,13 @@ describe("ImportCsvWorkflow", () => {
 
     await workflow.execute({ categorySuggester: suggester, promptFn, transactions: [dto("t1")] });
 
-    expect(suggester.learnBatch).toHaveBeenCalledWith([confirmed]);
+    expect(suggester.learnBatch).toHaveBeenCalledWith([{ categoryId: "n02", label: "txn-t1" }]);
+  });
+
+  it("skips enrichment when no categorySuggester provided", async () => {
+    const promptFn = vi.fn().mockResolvedValue({ categorized: [], interrupted: false });
+    await workflow.execute({ promptFn, transactions: [dto("t1")] });
+    // promptFn receives the original unmatched transaction (no suggestedCategoryId)
+    expect(promptFn).toHaveBeenCalledWith([dto("t1")]);
   });
 });

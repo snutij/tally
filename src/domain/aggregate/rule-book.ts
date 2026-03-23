@@ -1,7 +1,7 @@
 import type { CategoryRule } from "../entity/category-rule.js";
 import { DomainError } from "../error/index.js";
 
-const SOURCE_PRECEDENCE: Record<string, number> = { default: 2, learned: 0, suggested: 1 };
+const SOURCE_PRECEDENCE: Record<string, number> = { default: 1, learned: 0 };
 
 export class RuleBook {
   private readonly rules: CategoryRule[];
@@ -13,7 +13,7 @@ export class RuleBook {
 
   /**
    * Returns the matching categoryId for the given label, with learned rules
-   * taking precedence over suggested, and suggested over default.
+   * taking precedence over default rules.
    * Returns undefined if no rule matches.
    */
   match(label: string): string | undefined {

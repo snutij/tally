@@ -15,17 +15,12 @@ const stubIdGenerator: IdGenerator = {
 function makeRule(
   pattern: string,
   categoryId: string,
-  source: "default" | "learned" | "suggested",
+  source: "default" | "learned",
 ): CategoryRule {
   return CategoryRule.create(stubIdGenerator.fromPattern(pattern), pattern, categoryId, source);
 }
 
-function txn(
-  label: string,
-  categoryId?: string,
-  id = "t1",
-  suggestedCategoryId?: string,
-): TransactionDto {
+function txn(label: string, categoryId?: string, id = "t1"): TransactionDto {
   return {
     amount: -10,
     categoryId,
@@ -33,7 +28,7 @@ function txn(
     id,
     label,
     source: "csv",
-    suggestedCategoryId,
+    suggestedCategoryId: undefined,
   };
 }
 
@@ -74,6 +69,7 @@ describe("LearnCategoryRules", () => {
         id: "t1",
         label: "PRLV SEPA SPOTIFY",
         source: "csv",
+        suggestedCategoryId: undefined,
       },
     ]);
     expect(ruleBookRepo.allRules()).toHaveLength(0);
@@ -105,34 +101,5 @@ describe("LearnCategoryRules", () => {
       txn("CARTE CB CARREFOUR CITY", "n02", "t2"),
     ]);
     expect(ruleBookRepo.allRules()).toHaveLength(2);
-  });
-
-  describe("source attribution (suggested vs learned)", () => {
-    it("creates a 'suggested' rule when user confirms an AI suggestion", () => {
-      // suggestedCategoryId === categoryId → user confirmed
-      useCase.learn([txn("PRLV SEPA SPOTIFY", "w06", "t1", "w06")]);
-      const rule = ruleBookRepo.findByPattern(String.raw`\bspotify\b`);
-      expect(rule?.source).toBe("suggested");
-    });
-
-    it("creates a 'learned' rule when user overrides an AI suggestion", () => {
-      // suggestedCategoryId !== categoryId → user overrode
-      useCase.learn([txn("PRLV SEPA SPOTIFY", "w06", "t1", "n02")]);
-      const rule = ruleBookRepo.findByPattern(String.raw`\bspotify\b`);
-      expect(rule?.source).toBe("learned");
-    });
-
-    it("creates a 'learned' rule when there is no AI suggestion", () => {
-      // suggestedCategoryId === undefined → manual categorization
-      useCase.learn([txn("PRLV SEPA SPOTIFY", "w06", "t1")]);
-      const rule = ruleBookRepo.findByPattern(String.raw`\bspotify\b`);
-      expect(rule?.source).toBe("learned");
-    });
-
-    it("does not upsert when an identical suggested rule already exists", () => {
-      ruleBookRepo.seed(makeRule(String.raw`\bspotify\b`, "w06", "suggested"));
-      useCase.learn([txn("PRLV SEPA SPOTIFY", "w06", "t1", "w06")]);
-      expect(ruleBookRepo.allRules()).toHaveLength(1);
-    });
   });
 });

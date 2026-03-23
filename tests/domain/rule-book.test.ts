@@ -3,11 +3,7 @@ import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DomainError } from "../../src/domain/error/index.js";
 import { RuleBook } from "../../src/domain/aggregate/rule-book.js";
 
-function rule(
-  pattern: string,
-  categoryId: string,
-  source: "default" | "learned" | "suggested",
-): CategoryRule {
+function rule(pattern: string, categoryId: string, source: "default" | "learned"): CategoryRule {
   return CategoryRule.create(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
 }
 
@@ -34,22 +30,6 @@ describe("RuleBook", () => {
         rule(String.raw`\bcarrefour\b`, "w02", "learned"),
       ]);
       expect(book.match("CARTE CB CARREFOUR CITY")).toBe("w02");
-    });
-
-    it("learned rules take precedence over suggested rules", () => {
-      const book = new RuleBook([
-        rule(String.raw`\bauchan\b`, "w02", "suggested"),
-        rule(String.raw`\bauchan\b`, "n02", "learned"),
-      ]);
-      expect(book.match("CARTE CB AUCHAN")).toBe("n02");
-    });
-
-    it("suggested rules take precedence over default rules", () => {
-      const book = new RuleBook([
-        rule(String.raw`\bauchan\b`, "n02", "default"),
-        rule(String.raw`\bauchan\b`, "w02", "suggested"),
-      ]);
-      expect(book.match("CARTE CB AUCHAN")).toBe("w02");
     });
 
     it("matching is case-insensitive", () => {

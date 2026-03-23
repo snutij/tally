@@ -31,7 +31,7 @@ export interface CategorizeResult {
 export interface ImportCsvWorkflowInput {
   transactions: TransactionDto[];
   promptFn?: (uncategorized: TransactionDto[]) => Promise<CategorizeResult>;
-  categorySuggester: CategorySuggester;
+  categorySuggester?: CategorySuggester;
   onAlreadyCategorized?: (count: number) => void;
   onAutoMatched?: (matchedCount: number, totalUncategorized: number) => void;
   /** Called with the number of transactions that received a semantic suggestion. */
@@ -87,7 +87,7 @@ export class ImportCsvWorkflow {
     // Enrichment step: annotate unmatched transactions with AI suggestions.
     // All enriched transactions still enter the prompt — suggestions only pre-select.
     let enriched = unmatched;
-    if (unmatched.length > 0) {
+    if (categorySuggester && unmatched.length > 0) {
       enriched = await categorySuggester.suggest(unmatched);
       const suggestedCount = enriched.filter((txn) => txn.suggestedCategoryId !== undefined).length;
       if (suggestedCount > 0) {
@@ -117,7 +117,14 @@ export class ImportCsvWorkflow {
 
     // Update embedding index with newly categorized labels (outside the DB transaction
     // since model inference is async and cannot run inside better-sqlite3's sync transaction)
-    await categorySuggester.learnBatch(remaining);
+    if (categorySuggester) {
+      const categorized = remaining
+        .filter(
+          (txn): txn is TransactionDto & { categoryId: string } => txn.categoryId !== undefined,
+        )
+        .map(({ label, categoryId }) => ({ categoryId, label }));
+      await categorySuggester.learnBatch(categorized);
+    }
 
     return { interrupted, savedCount };
   }

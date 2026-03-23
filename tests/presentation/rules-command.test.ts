@@ -13,7 +13,7 @@ import { createRulesCommand } from "../../src/presentation/command/rules-command
 function makeTestRule(
   pattern: string,
   categoryId: string,
-  source: "default" | "learned" | "suggested",
+  source: "default" | "learned",
 ): CategoryRule {
   return CategoryRule.create(`id-${pattern}`.slice(0, 32), pattern, categoryId, source);
 }
@@ -57,14 +57,6 @@ describe("createRulesCommand", () => {
     it("renders an empty array when no rules exist", async () => {
       await run("list");
       expect(mockRenderer.render).toHaveBeenCalledWith([]);
-    });
-
-    it("displays 'suggested' source for AI-confirmed rules", async () => {
-      ruleGateway.seed(makeTestRule(String.raw`\bauchan\b`, "n02", "suggested"));
-      await run("list");
-      expect(mockRenderer.render).toHaveBeenCalledWith(
-        expect.arrayContaining([expect.objectContaining({ source: "suggested" })]),
-      );
     });
   });
 

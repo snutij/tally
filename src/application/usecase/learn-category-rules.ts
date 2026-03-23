@@ -1,6 +1,6 @@
-import { CategoryRule, type CategoryRuleSource } from "../../domain/entity/category-rule.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
+import { CategoryRule } from "../../domain/entity/category-rule.js";
 import type { IdGenerator } from "../gateway/id-generator.js";
 import type { RuleBookRepository } from "../gateway/rule-book-repository.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
@@ -40,20 +40,18 @@ export class LearnCategoryRules {
       const { categoryId } = txn;
       const pattern = extractPattern(txn.label, this.bankPrefixes);
       if (pattern) {
-        const source = this.resolveSource(txn);
         const brandedCategoryId = CategoryId(categoryId);
         const existing = ruleBook.findByPattern(pattern);
-        // Skip if an identical learned or suggested rule already exists
+        // Only upsert when the existing rule differs (avoid no-op writes)
         const alreadyLearned =
-          (existing?.source === "learned" || existing?.source === "suggested") &&
-          existing.categoryId === brandedCategoryId;
+          existing?.source === "learned" && existing.categoryId === brandedCategoryId;
         if (!alreadyLearned) {
-          // Upsert: remove old (if any), add new rule
+          // Upsert: remove old (if any), add new learned rule
           if (existing) {
             ruleBook.removeByPattern(pattern);
           }
           const id = this.idGenerator.fromPattern(pattern);
-          const rule = CategoryRule.create(id, pattern, categoryId, source);
+          const rule = CategoryRule.create(id, pattern, categoryId, "learned");
           ruleBook.addRule(rule);
           changed = true;
         }
@@ -63,18 +61,5 @@ export class LearnCategoryRules {
     if (changed) {
       this.ruleBookRepository.save(ruleBook);
     }
-  }
-
-  /**
-   * Determines rule source based on whether the user confirmed an AI suggestion:
-   * - `suggestedCategoryId` defined and matches final `categoryId` → "suggested"
-   * - `suggestedCategoryId` defined but differs from `categoryId` → "learned" (overrode AI)
-   * - `suggestedCategoryId` undefined → "learned" (manual categorization)
-   */
-  private resolveSource(txn: TransactionDto & { categoryId: string }): CategoryRuleSource {
-    if (txn.suggestedCategoryId !== undefined && txn.suggestedCategoryId === txn.categoryId) {
-      return "suggested";
-    }
-    return "learned";
   }
 }

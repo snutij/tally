@@ -249,7 +249,7 @@ describe("SqliteRepository", () => {
       expect(txnRepository.findByMonth(Temporal.PlainYearMonth.from("2026-03"))).toEqual([]);
     });
 
-    it("findAllCategorized returns only transactions with categoryId set", () => {
+    it("findUniqueCategorizedLabels returns unique label→categoryId pairs", () => {
       txnRepository.saveAll([
         Transaction.create({
           amount: Money.fromEuros(-10),
@@ -267,13 +267,13 @@ describe("SqliteRepository", () => {
           source: "csv",
         }),
       ]);
-      const categorized = txnRepository.findAllCategorized();
-      expect(categorized).toHaveLength(1);
-      expect(categorized[0]?.id).toBe("tx-cat");
+      const labels = txnRepository.findUniqueCategorizedLabels();
+      expect(labels).toHaveLength(1);
+      expect(labels[0]).toEqual({ categoryId: "n02", label: "Categorized" });
     });
 
-    it("findAllCategorized returns empty array when no categorized transactions exist", () => {
-      expect(txnRepository.findAllCategorized()).toEqual([]);
+    it("findUniqueCategorizedLabels returns empty array when no categorized transactions exist", () => {
+      expect(txnRepository.findUniqueCategorizedLabels()).toEqual([]);
     });
   });
 

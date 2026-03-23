@@ -2,7 +2,7 @@ import { CategoryId } from "../value-object/category-id.js";
 import { CategoryRuleId } from "../value-object/category-rule-id.js";
 import { DomainError } from "../error/index.js";
 
-export type CategoryRuleSource = "default" | "learned" | "suggested";
+export type CategoryRuleSource = "default" | "learned";
 
 export class CategoryRule {
   readonly id: CategoryRuleId;

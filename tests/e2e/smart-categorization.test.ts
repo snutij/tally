@@ -104,23 +104,11 @@ describe("e2e: smart categorization pipeline", () => {
     expect(onSuggested).toHaveBeenCalledWith(2);
   });
 
-  it("user confirms suggestion → rule gets source 'suggested'", () => {
-    // User confirms: suggestedCategoryId === final categoryId
+  it("confirmed suggestion creates a learned rule", () => {
     const confirmed: TransactionDto[] = [
       { ...txn("t1", "PRLV SEPA SPOTIFY", "w06"), categoryId: "w06" },
     ];
     learnCategoryRules.learn(confirmed);
-
-    const rule = ruleBookRepository.load().findByPattern(String.raw`\bspotify\b`);
-    expect(rule?.source).toBe("suggested");
-  });
-
-  it("user overrides suggestion → rule gets source 'learned'", () => {
-    // suggestedCategoryId was "n02" but user chose "w06"
-    const overridden: TransactionDto[] = [
-      { ...txn("t1", "PRLV SEPA SPOTIFY", "n02"), categoryId: "w06" },
-    ];
-    learnCategoryRules.learn(overridden);
 
     const rule = ruleBookRepository.load().findByPattern(String.raw`\bspotify\b`);
     expect(rule?.source).toBe("learned");

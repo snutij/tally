@@ -67,7 +67,7 @@ function migrateSchema(db: Database.Database): void {
       id TEXT PRIMARY KEY,
       pattern TEXT NOT NULL UNIQUE,
       category_id TEXT NOT NULL,
-      source TEXT NOT NULL CHECK(source IN ('default', 'learned', 'suggested')),
+      source TEXT NOT NULL CHECK(source IN ('default', 'learned')),
       FOREIGN KEY (category_id) REFERENCES categories(id)
     );
 
@@ -84,30 +84,6 @@ function migrateSchema(db: Database.Database): void {
     db.exec("ALTER TABLE transactions RENAME COLUMN source_bank TO source");
   } catch {
     // Column already named `source` on fresh databases
-  }
-
-  // Migrate category_rules CHECK constraint to include 'suggested'
-  const ruleSchema = (
-    db
-      .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='category_rules'`)
-      .get() as { sql: string } | undefined
-  )?.sql;
-  /* v8 ignore next 2 -- one-time migration for databases created before 'suggested' source was added */
-  if (ruleSchema && !ruleSchema.includes("suggested")) {
-    db.transaction(() => {
-      db.exec(`
-        ALTER TABLE category_rules RENAME TO _category_rules_old;
-        CREATE TABLE category_rules (
-          id TEXT PRIMARY KEY,
-          pattern TEXT NOT NULL UNIQUE,
-          category_id TEXT NOT NULL,
-          source TEXT NOT NULL CHECK(source IN ('default', 'learned', 'suggested')),
-          FOREIGN KEY (category_id) REFERENCES categories(id)
-        );
-        INSERT INTO category_rules SELECT * FROM _category_rules_old;
-        DROP TABLE _category_rules_old;
-      `);
-    })();
   }
 }
 
@@ -180,15 +156,14 @@ class SqliteTransactionRepository implements TransactionRepository {
     return rows.map((row) => rowToTransaction(row));
   }
 
-  findAllCategorized(): Transaction[] {
-    const rows = this.db
+  findUniqueCategorizedLabels(): { label: string; categoryId: string }[] {
+    return this.db
       .prepare(
-        `SELECT id, date, label, amount_cents, category_id, source
-         FROM transactions WHERE category_id IS NOT NULL`,
+        `SELECT label, category_id AS categoryId
+         FROM transactions WHERE category_id IS NOT NULL
+         GROUP BY label`,
       )
-      .all() as TransactionRow[];
-
-    return rows.map((row) => rowToTransaction(row));
+      .all() as { label: string; categoryId: string }[];
   }
 }
 
@@ -242,7 +217,12 @@ class SqliteLabelEmbeddingRepository implements LabelEmbeddingRepository {
         `INSERT OR REPLACE INTO label_embeddings (label, category_id, embedding, model_id)
          VALUES (?, ?, ?, ?)`,
       )
-      .run(label, categoryId, Buffer.from(embedding.buffer), modelId);
+      .run(
+        label,
+        categoryId,
+        Buffer.from(embedding.buffer, embedding.byteOffset, embedding.byteLength),
+        modelId,
+      );
   }
 
   findAllByModel(modelId: string): LabelEmbeddingRecord[] {

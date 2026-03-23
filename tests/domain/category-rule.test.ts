@@ -37,11 +37,6 @@ describe("CategoryRule.create()", () => {
     );
   });
 
-  it("creates a rule with source 'suggested'", () => {
-    const rule = CategoryRule.create("id-x", String.raw`\bauchan\b`, "n02", "suggested");
-    expect(rule.source).toBe("suggested");
-  });
-
   it("two rules with the same id are equal", () => {
     const r1 = CategoryRule.create("id-x", String.raw`\bspotify\b`, "w06", "default");
     const r2 = CategoryRule.create("id-x", String.raw`\bspotify\b`, "w06", "default");

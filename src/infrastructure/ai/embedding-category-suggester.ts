@@ -86,28 +86,26 @@ export class EmbeddingCategorySuggester implements CategorySuggester {
     return result;
   }
 
-  async learnBatch(transactions: TransactionDto[]): Promise<void> {
+  async learnBatch(items: readonly { label: string; categoryId: string }[]): Promise<void> {
     if (this.embedder === null) {
       return;
     }
 
-    for (const txn of transactions) {
-      if (txn.categoryId !== undefined) {
-        const embedding = await this.embed(txn.label);
-        this.labelEmbeddingRepository.upsert(txn.label, txn.categoryId, embedding, MODEL_ID);
-        // Update in-memory cache
-        const existingIdx = this.cachedEmbeddings.findIndex((rec) => rec.label === txn.label);
-        const record: LabelEmbeddingRecord = {
-          categoryId: txn.categoryId,
-          embedding,
-          label: txn.label,
-          modelId: MODEL_ID,
-        };
-        if (existingIdx === -1) {
-          this.cachedEmbeddings.push(record);
-        } else {
-          this.cachedEmbeddings[existingIdx] = record;
-        }
+    for (const { label, categoryId } of items) {
+      const embedding = await this.embed(label);
+      this.labelEmbeddingRepository.upsert(label, categoryId, embedding, MODEL_ID);
+      // Update in-memory cache
+      const existingIdx = this.cachedEmbeddings.findIndex((rec) => rec.label === label);
+      const record: LabelEmbeddingRecord = {
+        categoryId,
+        embedding,
+        label,
+        modelId: MODEL_ID,
+      };
+      if (existingIdx === -1) {
+        this.cachedEmbeddings.push(record);
+      } else {
+        this.cachedEmbeddings[existingIdx] = record;
       }
     }
   }
@@ -140,27 +138,20 @@ export class EmbeddingCategorySuggester implements CategorySuggester {
   }
 
   private async seedFromHistory(onProgress?: (message: string) => void): Promise<void> {
-    const allCategorized = this.transactionRepository.findAllCategorized();
-    if (allCategorized.length === 0) {
+    const uniqueLabels = this.transactionRepository.findUniqueCategorizedLabels();
+    if (uniqueLabels.length === 0) {
       return;
     }
 
-    const uniqueLabels = new Map<string, string>();
-    for (const txn of allCategorized) {
-      if (txn.categoryId !== undefined && !uniqueLabels.has(txn.label)) {
-        uniqueLabels.set(txn.label, txn.categoryId);
-      }
-    }
-
-    onProgress?.(`Seeding embedding index from ${uniqueLabels.size} categorized labels...`);
+    onProgress?.(`Seeding embedding index from ${uniqueLabels.length} categorized labels...`);
     let count = 0;
-    for (const [label, categoryId] of uniqueLabels) {
+    for (const { label, categoryId } of uniqueLabels) {
       const embedding = await this.embed(label);
       this.labelEmbeddingRepository.upsert(label, categoryId, embedding, MODEL_ID);
       this.cachedEmbeddings.push({ categoryId, embedding, label, modelId: MODEL_ID });
       count += 1;
       if (count % 50 === 0) {
-        onProgress?.(`  ${count}/${uniqueLabels.size} labels indexed...`);
+        onProgress?.(`  ${count}/${uniqueLabels.length} labels indexed...`);
       }
     }
   }
