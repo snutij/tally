@@ -1,8 +1,4 @@
 import { DEFAULT_LOCALE, getDefaultRulesForLocale } from "../config/category-rules/index.js";
-import type {
-  LabelEmbeddingRecord,
-  LabelEmbeddingRepository,
-} from "../../application/gateway/label-embedding-repository.js";
 import type { Category } from "../../domain/value-object/category.js";
 import type { CategoryGroup } from "../../domain/value-object/category-group.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
@@ -68,14 +64,6 @@ function migrateSchema(db: Database.Database): void {
       pattern TEXT NOT NULL UNIQUE,
       category_id TEXT NOT NULL,
       source TEXT NOT NULL CHECK(source IN ('default', 'learned')),
-      FOREIGN KEY (category_id) REFERENCES categories(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS label_embeddings (
-      label TEXT PRIMARY KEY,
-      category_id TEXT NOT NULL,
-      embedding BLOB NOT NULL,
-      model_id TEXT NOT NULL,
       FOREIGN KEY (category_id) REFERENCES categories(id)
     );
   `);
@@ -155,16 +143,6 @@ class SqliteTransactionRepository implements TransactionRepository {
 
     return rows.map((row) => rowToTransaction(row));
   }
-
-  findUniqueCategorizedLabels(): { label: string; categoryId: string }[] {
-    return this.db
-      .prepare(
-        `SELECT label, category_id AS categoryId
-         FROM transactions WHERE category_id IS NOT NULL
-         GROUP BY label`,
-      )
-      .all() as { label: string; categoryId: string }[];
-  }
 }
 
 class SqliteRuleBookRepository implements RuleBookRepository {
@@ -204,56 +182,6 @@ class SqliteRuleBookRepository implements RuleBookRepository {
   }
 }
 
-class SqliteLabelEmbeddingRepository implements LabelEmbeddingRepository {
-  private db: Database.Database;
-
-  constructor(db: Database.Database) {
-    this.db = db;
-  }
-
-  upsert(label: string, categoryId: string, embedding: Float32Array, modelId: string): void {
-    this.db
-      .prepare(
-        `INSERT OR REPLACE INTO label_embeddings (label, category_id, embedding, model_id)
-         VALUES (?, ?, ?, ?)`,
-      )
-      .run(
-        label,
-        categoryId,
-        Buffer.from(embedding.buffer, embedding.byteOffset, embedding.byteLength),
-        modelId,
-      );
-  }
-
-  findAllByModel(modelId: string): LabelEmbeddingRecord[] {
-    const rows = this.db
-      .prepare(
-        `SELECT label, category_id, embedding, model_id
-         FROM label_embeddings WHERE model_id = ?`,
-      )
-      .all(modelId) as {
-      label: string;
-      category_id: string;
-      embedding: Buffer;
-      model_id: string;
-    }[];
-    return rows.map((row) => ({
-      categoryId: row.category_id,
-      embedding: new Float32Array(
-        row.embedding.buffer,
-        row.embedding.byteOffset,
-        row.embedding.length / 4,
-      ),
-      label: row.label,
-      modelId: row.model_id,
-    }));
-  }
-
-  deleteByModelMismatch(modelId: string): void {
-    this.db.prepare(`DELETE FROM label_embeddings WHERE model_id != ?`).run(modelId);
-  }
-}
-
 class SqliteCategoryRepository implements CategoryRepository {
   private db: Database.Database;
 
@@ -282,7 +210,6 @@ export function openDatabase(
   txnRepository: TransactionRepository;
   ruleBookRepository: RuleBookRepository;
   categoryRepository: CategoryRepository;
-  labelEmbeddingRepository: LabelEmbeddingRepository;
   unitOfWork: UnitOfWork;
   close(): void;
 } {
@@ -294,7 +221,6 @@ export function openDatabase(
   return {
     categoryRepository: new SqliteCategoryRepository(db),
     close: () => db.close(),
-    labelEmbeddingRepository: new SqliteLabelEmbeddingRepository(db),
     ruleBookRepository: new SqliteRuleBookRepository(db),
     txnRepository: new SqliteTransactionRepository(db),
     unitOfWork: { runInTransaction: (fn) => db.transaction(fn)() },

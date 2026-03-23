@@ -28,7 +28,6 @@ function txn(label: string, categoryId?: string, id = "t1"): TransactionDto {
     id,
     label,
     source: "csv",
-    suggestedCategoryId: undefined,
   };
 }
 
@@ -69,7 +68,6 @@ describe("LearnCategoryRules", () => {
         id: "t1",
         label: "PRLV SEPA SPOTIFY",
         source: "csv",
-        suggestedCategoryId: undefined,
       },
     ]);
     expect(ruleBookRepo.allRules()).toHaveLength(0);

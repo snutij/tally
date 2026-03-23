@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CategorySuggester } from "../../src/application/gateway/category-suggester.js";
 import { Command } from "commander";
 
 import type { ImportCsvWorkflow } from "../../src/application/usecase/import-csv-workflow.js";
@@ -37,16 +36,9 @@ describe("createImportCommand", () => {
   const mockImportCsvWorkflow = { execute: vi.fn() };
   const mockCsvFormatDetector = {};
   const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
-  const mockSuggester: CategorySuggester = {
-    init: vi.fn().mockResolvedValue(),
-    learnBatch: vi.fn().mockResolvedValue(),
-    suggest: vi.fn().mockImplementation((txns) => Promise.resolve(txns)),
-  };
   const mockDeps = {
     choiceGroups: [],
     csvFormatDetector: mockCsvFormatDetector,
-    isModelCached: vi.fn().mockReturnValue(true),
-    makeSuggester: vi.fn().mockReturnValue(mockSuggester),
     parserFactory: vi.fn().mockReturnValue(mockParser),
     renderer: mockRenderer,
   };
