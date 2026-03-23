@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
+import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import type { CategoryRepository } from "../../src/application/gateway/category-repository.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
+import type { LabelEmbeddingRepository } from "../../src/application/gateway/label-embedding-repository.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import type { RuleBookRepository } from "../../src/application/gateway/rule-book-repository.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
@@ -54,6 +56,76 @@ describe("SqliteCategoryRepository", () => {
     const found = categories.find((cat) => cat.id === first?.id);
     expect(found?.name).toBe(first?.name);
     expect(found?.group).toBe(first?.group);
+  });
+});
+
+function makeEmbedding(value: number): Float32Array {
+  return new Float32Array([value, value, value, value]);
+}
+
+describe("LabelEmbeddingRepository", () => {
+  let tmpDir: string;
+  let close: () => void;
+  let labelEmbeddingRepository: LabelEmbeddingRepository;
+
+  const MODEL_ID = "test-model-v1";
+  const OTHER_MODEL_ID = "test-model-v2";
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), "tally-emb-test-"));
+    ({ close, labelEmbeddingRepository } = openDatabase(join(tmpDir, "test.db"), idGenerator));
+  });
+
+  afterEach(() => {
+    close();
+    rmSync(tmpDir, { recursive: true });
+  });
+
+  it("stores and retrieves an embedding", () => {
+    const embedding = makeEmbedding(0.5);
+    labelEmbeddingRepository.upsert("AUCHAN VELIZY", "n02", embedding, MODEL_ID);
+
+    const records = labelEmbeddingRepository.findAllByModel(MODEL_ID);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.label).toBe("AUCHAN VELIZY");
+    expect(records[0]?.categoryId).toBe("n02");
+    expect(records[0]?.modelId).toBe(MODEL_ID);
+    expect([...(records[0]?.embedding ?? new Float32Array())]).toEqual([0.5, 0.5, 0.5, 0.5]);
+  });
+
+  it("upserts on duplicate label — updates category and embedding", () => {
+    labelEmbeddingRepository.upsert("AUCHAN VELIZY", "n02", makeEmbedding(0.5), MODEL_ID);
+    labelEmbeddingRepository.upsert("AUCHAN VELIZY", "w02", makeEmbedding(0.8), MODEL_ID);
+
+    const records = labelEmbeddingRepository.findAllByModel(MODEL_ID);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.categoryId).toBe("w02");
+  });
+
+  it("findAllByModel returns only matching model_id records", () => {
+    labelEmbeddingRepository.upsert("LABEL A", "n02", makeEmbedding(0.1), MODEL_ID);
+    labelEmbeddingRepository.upsert("LABEL B", "n02", makeEmbedding(0.2), OTHER_MODEL_ID);
+
+    const v1Records = labelEmbeddingRepository.findAllByModel(MODEL_ID);
+    const v2Records = labelEmbeddingRepository.findAllByModel(OTHER_MODEL_ID);
+    expect(v1Records).toHaveLength(1);
+    expect(v1Records[0]?.label).toBe("LABEL A");
+    expect(v2Records).toHaveLength(1);
+    expect(v2Records[0]?.label).toBe("LABEL B");
+  });
+
+  it("deleteByModelMismatch removes only non-matching model records", () => {
+    labelEmbeddingRepository.upsert("LABEL A", "n02", makeEmbedding(0.1), MODEL_ID);
+    labelEmbeddingRepository.upsert("LABEL B", "n02", makeEmbedding(0.2), OTHER_MODEL_ID);
+
+    labelEmbeddingRepository.deleteByModelMismatch(MODEL_ID);
+
+    expect(labelEmbeddingRepository.findAllByModel(MODEL_ID)).toHaveLength(1);
+    expect(labelEmbeddingRepository.findAllByModel(OTHER_MODEL_ID)).toHaveLength(0);
+  });
+
+  it("findAllByModel returns empty array when no records exist", () => {
+    expect(labelEmbeddingRepository.findAllByModel(MODEL_ID)).toHaveLength(0);
   });
 });
 
@@ -175,6 +247,33 @@ describe("SqliteRepository", () => {
 
     it("returns empty array for month with no transactions", () => {
       expect(txnRepository.findByMonth(Temporal.PlainYearMonth.from("2026-03"))).toEqual([]);
+    });
+
+    it("findUniqueCategorizedLabels returns unique label→categoryId pairs", () => {
+      txnRepository.saveAll([
+        Transaction.create({
+          amount: Money.fromEuros(-10),
+          categoryId: CategoryId("n02"),
+          date: Temporal.PlainDate.from("2026-03-01"),
+          id: TransactionId("tx-cat"),
+          label: "Categorized",
+          source: "csv",
+        }),
+        Transaction.create({
+          amount: Money.fromEuros(-20),
+          date: Temporal.PlainDate.from("2026-03-02"),
+          id: TransactionId("tx-uncat"),
+          label: "Uncategorized",
+          source: "csv",
+        }),
+      ]);
+      const labels = txnRepository.findUniqueCategorizedLabels();
+      expect(labels).toHaveLength(1);
+      expect(labels[0]).toEqual({ categoryId: "n02", label: "Categorized" });
+    });
+
+    it("findUniqueCategorizedLabels returns empty array when no categorized transactions exist", () => {
+      expect(txnRepository.findUniqueCategorizedLabels()).toEqual([]);
     });
   });
 

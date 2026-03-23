@@ -1,25 +1,23 @@
 import type { CategoryRule } from "../entity/category-rule.js";
 import { DomainError } from "../error/index.js";
 
+const SOURCE_PRECEDENCE: Record<string, number> = { default: 1, learned: 0 };
+
 export class RuleBook {
   private readonly rules: CategoryRule[];
 
   constructor(rules: CategoryRule[]) {
     this.rules = [...rules];
+    this.sortByPrecedence();
   }
 
   /**
    * Returns the matching categoryId for the given label, with learned rules
-   * taking precedence over default rules. Returns undefined if no rule matches.
+   * taking precedence over default rules.
+   * Returns undefined if no rule matches.
    */
   match(label: string): string | undefined {
-    // Learned rules take precedence: try them before defaults
-    const sorted: CategoryRule[] = [
-      ...this.rules.filter((rule) => rule.source === "learned"),
-      ...this.rules.filter((rule) => rule.source === "default"),
-    ];
-
-    for (const rule of sorted) {
+    for (const rule of this.rules) {
       try {
         if (new RegExp(rule.pattern, "i").test(label)) {
           return rule.categoryId;
@@ -40,6 +38,7 @@ export class RuleBook {
       throw new DomainError(`A rule for pattern "${rule.pattern}" already exists.`);
     }
     this.rules.push(rule);
+    this.sortByPrecedence();
   }
 
   /**
@@ -60,5 +59,12 @@ export class RuleBook {
 
   allRules(): readonly CategoryRule[] {
     return this.rules;
+  }
+
+  private sortByPrecedence(): void {
+    this.rules.sort(
+      (left, right) =>
+        (SOURCE_PRECEDENCE[left.source] ?? 2) - (SOURCE_PRECEDENCE[right.source] ?? 2),
+    );
   }
 }

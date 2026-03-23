@@ -7,6 +7,7 @@ import { ApplyCategoryRules } from "../../src/application/usecase/apply-category
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
+import type { CategorySuggester } from "../../src/application/gateway/category-suggester.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 
 import type { IdGenerator } from "../../src/application/gateway/id-generator.js";
@@ -20,8 +21,16 @@ import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
 const stubIdGenerator: IdGenerator = { fromPattern: (pat) => `id-${pat.slice(0, 28)}` };
 
-function dto(id: string, categoryId?: string): TransactionDto {
-  return { amount: -10, categoryId, date: "2026-03-15", id, label: `txn-${id}`, source: "csv" };
+function dto(id: string, categoryId?: string, suggestedCategoryId?: string): TransactionDto {
+  return {
+    amount: -10,
+    categoryId,
+    date: "2026-03-15",
+    id,
+    label: `txn-${id}`,
+    source: "csv",
+    suggestedCategoryId,
+  };
 }
 
 describe("ImportCsvWorkflow", () => {
@@ -67,7 +76,10 @@ describe("ImportCsvWorkflow", () => {
       }),
     ]);
     const onAlreadyCategorized = vi.fn();
-    await workflow.execute({ onAlreadyCategorized, transactions: [dto("t1"), dto("t2")] });
+    await workflow.execute({
+      onAlreadyCategorized,
+      transactions: [dto("t1"), dto("t2")],
+    });
     expect(onAlreadyCategorized).toHaveBeenCalledWith(1);
   });
 
@@ -94,5 +106,63 @@ describe("ImportCsvWorkflow", () => {
     await workflow.execute({ onAutoMatched, transactions: [dto("t1")] });
     // dto label is "txn-t1" which matches \btxn\b
     expect(onAutoMatched).toHaveBeenCalledWith(1, 1);
+  });
+
+  it("passes unmatched transactions through categorySuggester before prompt", async () => {
+    const enriched = dto("t1", undefined, "n02");
+    const suggester: CategorySuggester = {
+      init: vi.fn().mockResolvedValue(),
+      learnBatch: vi.fn().mockResolvedValue(),
+      suggest: vi.fn().mockResolvedValue([enriched]),
+    };
+    const promptFn = vi.fn().mockResolvedValue({ categorized: [], interrupted: false });
+
+    await workflow.execute({ categorySuggester: suggester, promptFn, transactions: [dto("t1")] });
+
+    expect(suggester.suggest).toHaveBeenCalledWith([dto("t1")]);
+    // Prompt receives the enriched transaction (with suggestedCategoryId set)
+    expect(promptFn).toHaveBeenCalledWith([enriched]);
+  });
+
+  it("calls onSuggested with the count of enriched transactions", async () => {
+    const enriched = [dto("t1", undefined, "n02"), dto("t2", undefined, "n02")];
+    const suggester: CategorySuggester = {
+      init: vi.fn().mockResolvedValue(),
+      learnBatch: vi.fn().mockResolvedValue(),
+      suggest: vi.fn().mockResolvedValue(enriched),
+    };
+    const onSuggested = vi.fn();
+    const promptFn = vi.fn().mockResolvedValue({ categorized: [], interrupted: false });
+
+    await workflow.execute({
+      categorySuggester: suggester,
+      onSuggested,
+      promptFn,
+      transactions: [dto("t1"), dto("t2")],
+    });
+
+    expect(onSuggested).toHaveBeenCalledWith(2);
+  });
+
+  it("calls categorySuggester.learnBatch after transaction save", async () => {
+    const enriched = dto("t1", undefined, "n02");
+    const confirmed = dto("t1", "n02", "n02");
+    const suggester: CategorySuggester = {
+      init: vi.fn().mockResolvedValue(),
+      learnBatch: vi.fn().mockResolvedValue(),
+      suggest: vi.fn().mockResolvedValue([enriched]),
+    };
+    const promptFn = vi.fn().mockResolvedValue({ categorized: [confirmed], interrupted: false });
+
+    await workflow.execute({ categorySuggester: suggester, promptFn, transactions: [dto("t1")] });
+
+    expect(suggester.learnBatch).toHaveBeenCalledWith([{ categoryId: "n02", label: "txn-t1" }]);
+  });
+
+  it("skips enrichment when no categorySuggester provided", async () => {
+    const promptFn = vi.fn().mockResolvedValue({ categorized: [], interrupted: false });
+    await workflow.execute({ promptFn, transactions: [dto("t1")] });
+    // promptFn receives the original unmatched transaction (no suggestedCategoryId)
+    expect(promptFn).toHaveBeenCalledWith([dto("t1")]);
   });
 });

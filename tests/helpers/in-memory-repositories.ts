@@ -62,4 +62,14 @@ export class InMemoryTransactionRepository implements TransactionRepository {
     const prefix = month.toString();
     return this.saved.filter((txn) => txn.date.toString().startsWith(prefix));
   }
+
+  findUniqueCategorizedLabels(): { label: string; categoryId: string }[] {
+    const seen = new Map<string, string>();
+    for (const txn of this.saved) {
+      if (txn.isCategorized && !seen.has(txn.label)) {
+        seen.set(txn.label, txn.categoryId as string);
+      }
+    }
+    return [...seen.entries()].map(([label, categoryId]) => ({ categoryId, label }));
+  }
 }

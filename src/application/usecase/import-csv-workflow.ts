@@ -1,3 +1,4 @@
+import type { CategorySuggester } from "../gateway/category-suggester.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
 import type { UnitOfWork } from "../gateway/unit-of-work.js";
 
@@ -30,8 +31,11 @@ export interface CategorizeResult {
 export interface ImportCsvWorkflowInput {
   transactions: TransactionDto[];
   promptFn?: (uncategorized: TransactionDto[]) => Promise<CategorizeResult>;
+  categorySuggester?: CategorySuggester;
   onAlreadyCategorized?: (count: number) => void;
   onAutoMatched?: (matchedCount: number, totalUncategorized: number) => void;
+  /** Called with the number of transactions that received a semantic suggestion. */
+  onSuggested?: (suggestedCount: number) => void;
 }
 
 export interface ImportCsvResult {
@@ -58,7 +62,14 @@ export class ImportCsvWorkflow {
   }
 
   async execute(input: ImportCsvWorkflowInput): Promise<ImportCsvResult> {
-    const { transactions, promptFn, onAlreadyCategorized, onAutoMatched } = input;
+    const {
+      transactions,
+      promptFn,
+      categorySuggester,
+      onAlreadyCategorized,
+      onAutoMatched,
+      onSuggested,
+    } = input;
 
     const { alreadyCategorized, uncategorized } =
       this.importTransactions.splitByCategoryStatus(transactions);
@@ -73,17 +84,28 @@ export class ImportCsvWorkflow {
       onAutoMatched?.(matched.length, uncategorized.length);
     }
 
+    // Enrichment step: annotate unmatched transactions with AI suggestions.
+    // All enriched transactions still enter the prompt — suggestions only pre-select.
+    let enriched = unmatched;
+    if (categorySuggester && unmatched.length > 0) {
+      enriched = await categorySuggester.suggest(unmatched);
+      const suggestedCount = enriched.filter((txn) => txn.suggestedCategoryId !== undefined).length;
+      if (suggestedCount > 0) {
+        onSuggested?.(suggestedCount);
+      }
+    }
+
     let manualCategorized: TransactionDto[] = [];
     let interrupted = false;
 
     if (promptFn) {
-      const promptResult = await promptFn(unmatched);
+      const promptResult = await promptFn(enriched);
       manualCategorized = promptResult.categorized;
       ({ interrupted } = promptResult);
     }
 
-    // When no promptFn, include unmatched as-is (no interactive categorization)
-    const remaining = promptFn ? manualCategorized : unmatched;
+    // When no promptFn, include enriched (unmatched) as-is (no interactive categorization)
+    const remaining = promptFn ? manualCategorized : enriched;
     const toSave = [...alreadyCategorized, ...matched, ...remaining];
     let savedCount = 0;
 
@@ -92,6 +114,17 @@ export class ImportCsvWorkflow {
       savedCount = result.count;
       this.learnCategoryRules.learn(remaining);
     });
+
+    // Update embedding index with newly categorized labels (outside the DB transaction
+    // since model inference is async and cannot run inside better-sqlite3's sync transaction)
+    if (categorySuggester) {
+      const categorized = remaining
+        .filter(
+          (txn): txn is TransactionDto & { categoryId: string } => txn.categoryId !== undefined,
+        )
+        .map(({ label, categoryId }) => ({ categoryId, label }));
+      await categorySuggester.learnBatch(categorized);
+    }
 
     return { interrupted, savedCount };
   }

@@ -8,6 +8,10 @@ export default defineConfig({
         "src/presentation/index.ts",
         // Interactive I/O via @inquirer/select — pure logic (validateFields) is extracted and tested separately
         "src/presentation/prompt/column-mapping-prompt.ts",
+        // ONNX model inference — requires 43 MB model download; cosine similarity logic tested in cosine-similarity.test.ts
+        "src/infrastructure/ai/embedding-category-suggester.ts",
+        // Commander wiring + TTY-dependent CLI behavior — side-effectful entrypoint, low unit test value
+        "src/presentation/command/import-command.ts",
       ],
       include: ["src/**/*.ts"],
       provider: "v8",

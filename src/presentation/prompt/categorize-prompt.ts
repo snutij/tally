@@ -37,10 +37,12 @@ export async function categorizePrompt(
     for (const [idx, txn] of transactions.entries()) {
       const sign = txn.amount < 0 ? "" : "+";
       const formatted = `${sign}${Math.abs(txn.amount).toFixed(2)}`;
-      const header = `${idx + 1}/${transactions.length}  ${formatted} €  ${txn.label}  (${txn.date})`;
+      const aiIndicator = txn.suggestedCategoryId === undefined ? "" : " [AI]";
+      const header = `${idx + 1}/${transactions.length}  ${formatted} €  ${txn.label}  (${txn.date})${aiIndicator}`;
 
       const answer = await select({
         choices,
+        default: txn.suggestedCategoryId,
         loop: true,
         message: header,
       });

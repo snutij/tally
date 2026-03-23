@@ -14,6 +14,7 @@ import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
 import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector-impl.js";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
 import { DomainError } from "../application/error.js";
+import { EmbeddingCategorySuggester } from "../infrastructure/ai/embedding-category-suggester.js";
 import { ExitPromptError } from "@inquirer/core";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
@@ -35,6 +36,7 @@ import { createReportCommand } from "./command/report-command.js";
 import { createRulesCommand } from "./command/rules-command.js";
 import { createTransactionsCommand } from "./command/transactions-command.js";
 import { createTrendCommand } from "./command/trend-command.js";
+import { join } from "node:path";
 import { openDatabase } from "../infrastructure/persistence/sqlite-repository.js";
 
 // --- Data directory (XDG convention) ---
@@ -44,10 +46,15 @@ if (!existsSync(dataDir)) {
 
 // --- Composition root ---
 const idGenerator = new Sha256IdGenerator();
-const { txnRepository, ruleBookRepository, categoryRepository, unitOfWork } = openDatabase(
-  dbPath,
-  idGenerator,
-);
+const {
+  txnRepository,
+  ruleBookRepository,
+  categoryRepository,
+  labelEmbeddingRepository,
+  unitOfWork,
+} = openDatabase(dbPath, idGenerator);
+
+const modelsDir = join(dataDir, "models");
 const categoryRegistry = new CategoryRegistry(categoryRepository.findAll());
 const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories());
 
@@ -101,6 +108,9 @@ program.addCommand(
   createImportCommand(importTransactions, seedMockData, importCsvWorkflow, {
     choiceGroups: categoryChoiceGroups,
     csvFormatDetector,
+    isModelCached: () => EmbeddingCategorySuggester.isModelCached(modelsDir),
+    makeSuggester: () =>
+      new EmbeddingCategorySuggester(labelEmbeddingRepository, txnRepository, modelsDir),
     parserFactory: (params) => new CsvTransactionParser(new CsvColumnMapping(params)),
     renderer,
   }),

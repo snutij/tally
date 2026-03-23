@@ -1,4 +1,5 @@
 import type { CategoryChoiceGroup } from "../../application/category-choices.js";
+import type { CategorySuggester } from "../../application/gateway/category-suggester.js";
 import { Command } from "commander";
 import type { CsvFormatDetector } from "../../application/gateway/csv-format-detector.js";
 import type { CsvMappingConfig } from "../../application/dto/csv-mapping-config.js";
@@ -14,8 +15,10 @@ import { toTransactionDto } from "../../application/dto/transaction-dto.js";
 interface ImportCommandDeps {
   choiceGroups: CategoryChoiceGroup[];
   csvFormatDetector: CsvFormatDetector;
+  isModelCached: () => boolean;
   parserFactory: (mapping: CsvMappingConfig) => TransactionParser;
   renderer: Renderer;
+  makeSuggester: () => CategorySuggester;
 }
 
 export function createImportCommand(
@@ -64,12 +67,28 @@ export function createImportCommand(
         return;
       }
 
+      const categorySuggester = deps.makeSuggester();
+      try {
+        if (!deps.isModelCached()) {
+          console.log(
+            "Downloading smart categorization model (~43 MB). This is a one-time operation.",
+          );
+        }
+        await categorySuggester.init((msg) => console.log(msg));
+      } catch (error) {
+        console.warn(`Smart categorization unavailable: ${String(error)}`);
+      }
+
       const result = await importCsvWorkflow.execute({
+        categorySuggester,
         onAlreadyCategorized: (count) => {
           console.log(`Skipping ${count} already-categorized transactions.`);
         },
         onAutoMatched: (matchedCount, totalUncategorized) => {
           console.log(`Auto-categorized ${matchedCount} of ${totalUncategorized} transactions.`);
+        },
+        onSuggested: (suggestedCount) => {
+          console.log(`AI suggested ${suggestedCount} categories (shown as [AI] in prompts).`);
         },
         promptFn: (txns) => categorizePrompt(txns, deps.choiceGroups),
         transactions: parsed,
