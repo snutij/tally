@@ -10,7 +10,7 @@ export default defineConfig({
         "src/presentation/prompt/column-mapping-prompt.ts",
         // ONNX model inference — requires 43 MB model download; cosine similarity logic tested in cosine-similarity.test.ts
         "src/infrastructure/ai/embedding-category-suggester.ts",
-        // Commander wiring + interactive consent flow — depends on TTY
+        // Commander wiring + TTY-dependent CLI behavior — side-effectful entrypoint, low unit test value
         "src/presentation/command/import-command.ts",
       ],
       include: ["src/**/*.ts"],

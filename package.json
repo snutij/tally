@@ -34,7 +34,6 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
-    "@inquirer/confirm": "^6.0.10",
     "@inquirer/select": "^5.1.0",
     "better-sqlite3": "^12.8.0",
     "commander": "^14.0.3",
