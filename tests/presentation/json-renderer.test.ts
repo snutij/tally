@@ -77,26 +77,19 @@ describe("JsonRenderer", () => {
     expect("categoryVariance" in parsed.kpis).toBe(false);
   });
 
-  it("serializes a TrendReportDto omitting _type", () => {
-    const monthDto = toMonthlyReportDto(
+  it("serializes an array of MonthlyReportDto", () => {
+    const jan = toMonthlyReportDto(
       computeMonthlyReport(Temporal.PlainYearMonth.from("2026-01"), targets, [], categoryMap),
     );
-    const dto = {
-      _type: "TrendReportDto" as const,
-      end: "2026-01",
-      groupOvershootFrequency: [],
-      monthOverMonthDeltas: [],
-      months: [monthDto],
-      savingsRateSeries: [{ month: "2026-01", rate: null }],
-      start: "2026-01",
-    };
-    const parsed = JSON.parse(renderer.render(dto));
+    const feb = toMonthlyReportDto(
+      computeMonthlyReport(Temporal.PlainYearMonth.from("2026-02"), targets, [], categoryMap),
+    );
+    const parsed = JSON.parse(renderer.render([jan, feb]));
 
-    expect(parsed.start).toBe("2026-01");
-    expect(parsed.end).toBe("2026-01");
-    expect(parsed.months).toHaveLength(1);
-    expect(parsed.savingsRateSeries).toHaveLength(1);
-    expect("_type" in parsed).toBe(false);
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0].month).toBe("2026-01");
+    expect(parsed[1].month).toBe("2026-02");
+    expect("_type" in parsed[0]).toBe(false);
   });
 
   it("passes through plain objects", () => {

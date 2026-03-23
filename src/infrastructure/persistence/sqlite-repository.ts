@@ -143,6 +143,17 @@ class SqliteTransactionRepository implements TransactionRepository {
 
     return rows.map((row) => rowToTransaction(row));
   }
+
+  listMonths(): Temporal.PlainYearMonth[] {
+    const rows = this.db
+      .prepare(
+        `SELECT DISTINCT substr(date, 1, 7) AS month
+         FROM transactions
+         ORDER BY month`,
+      )
+      .all() as { month: string }[];
+    return rows.map((row) => Temporal.PlainYearMonth.from(row.month));
+  }
 }
 
 class SqliteRuleBookRepository implements RuleBookRepository {

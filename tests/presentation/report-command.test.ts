@@ -5,7 +5,7 @@ import type { GenerateReport } from "../../src/application/usecase/generate-repo
 import { createReportCommand } from "../../src/presentation/command/report-command.js";
 
 describe("createReportCommand", () => {
-  const mockGenerateReport = { execute: vi.fn() };
+  const mockGenerateReport = { execute: vi.fn(), executeAll: vi.fn() };
   const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
 
   beforeEach(() => {
@@ -14,6 +14,7 @@ describe("createReportCommand", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     process.exitCode = 0;
     mockGenerateReport.execute.mockReturnValue({ _type: "MonthlyReportDto" });
+    mockGenerateReport.executeAll.mockReturnValue([{ _type: "MonthlyReportDto" }]);
   });
 
   function run(...args: string[]): Promise<unknown> {
@@ -21,17 +22,17 @@ describe("createReportCommand", () => {
     return new Command().addCommand(cmd).parseAsync(["node", "tally", "report", ...args]);
   }
 
-  it("calls execute with default targets when no flags", async () => {
-    await run("2026-03");
+  it("calls executeAll with default targets when no flags", async () => {
+    await run();
 
-    expect(mockGenerateReport.execute).toHaveBeenCalledWith("2026-03", DEFAULT_SPENDING_TARGETS);
+    expect(mockGenerateReport.executeAll).toHaveBeenCalledWith(DEFAULT_SPENDING_TARGETS);
     expect(console.log).toHaveBeenCalled();
   });
 
-  it("passes custom targets when all three flags provided", async () => {
-    await run("2026-03", "--needs", "60", "--wants", "20", "--invest", "20");
+  it("passes custom targets to executeAll when all three flags provided", async () => {
+    await run("--needs", "60", "--wants", "20", "--invest", "20");
 
-    expect(mockGenerateReport.execute).toHaveBeenCalledWith("2026-03", {
+    expect(mockGenerateReport.executeAll).toHaveBeenCalledWith({
       invest: 20,
       needs: 60,
       wants: 20,
@@ -39,14 +40,14 @@ describe("createReportCommand", () => {
   });
 
   it("errors when percentages do not sum to 100", async () => {
-    await run("2026-03", "--needs", "50", "--wants", "30", "--invest", "30");
+    await run("--needs", "50", "--wants", "30", "--invest", "30");
 
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining("sum to 100"));
     expect(process.exitCode).toBe(1);
   });
 
   it("errors when only some flags are provided", async () => {
-    await run("2026-03", "--needs", "60");
+    await run("--needs", "60");
 
     expect(console.error).toHaveBeenCalledWith(
       expect.stringContaining("must be provided together"),
@@ -54,10 +55,16 @@ describe("createReportCommand", () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it("throws on invalid month format", async () => {
+  it("supports monthly sub-view via report month <month>", async () => {
+    await run("month", "2026-03");
+
+    expect(mockGenerateReport.execute).toHaveBeenCalledWith("2026-03", DEFAULT_SPENDING_TARGETS);
+  });
+
+  it("throws on invalid month format in monthly sub-view", async () => {
     mockGenerateReport.execute.mockImplementation(() => {
       throw new Error("Invalid month");
     });
-    await expect(run("not-a-month")).rejects.toThrow();
+    await expect(run("month", "not-a-month")).rejects.toThrow();
   });
 });

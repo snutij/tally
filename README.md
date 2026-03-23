@@ -19,35 +19,31 @@ tally import mock
 # Or import a real CSV
 tally import csv statement.csv
 
-# Budget vs actual for the current month
-tally report 2026-03
+# See all available reports (all imported months)
+tally report
+
+# Monthly report sub-view
+tally report month 2026-03
 ```
 
 ## Commands
 
-### `tally report <month>`
+### `tally report`
 
-Generate a budget vs. actual spending report for a given month.
+Show all available report data (one summary per imported month).
 
 ```bash
-tally report 2026-03
-tally report 2026-03 --needs 50 --wants 30 --invest 20
+tally report
+tally report --needs 50 --wants 30 --invest 20
+tally report month 2026-03
+tally report month 2026-03 --needs 50 --wants 30 --invest 20
 ```
 
 Output is JSON — pipe to `jq` for slicing. For an HTML report, redirect to a file:
 
 ```bash
-tally --format html report 2026-03 > report.html && open report.html
-```
-
-### `tally trend <start> <end>`
-
-Compare budget vs. actual across multiple months. Surfaces savings rate evolution, group overshoot frequency, and month-over-month spending deltas.
-
-```bash
-tally trend 2026-01 2026-03
-tally trend 2026-01 2026-03 --needs 50 --wants 30 --invest 20
-tally --format html trend 2026-01 2026-03 > trend.html && open trend.html
+tally --format html report > report.html && open report.html
+tally --format html report month 2026-03 > report-2026-03.html && open report-2026-03.html
 ```
 
 ### `tally import`

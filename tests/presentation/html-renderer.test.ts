@@ -149,98 +149,26 @@ describe("HtmlRenderer", () => {
     });
   });
 
-  describe("render(TrendReportDto)", () => {
+  describe("render(MonthlyReportDto[])", () => {
     const monthDto = toMonthlyReportDto(
       computeMonthlyReport(Temporal.PlainYearMonth.from("2026-01"), targets, txns, categoryMap),
     );
-    const dto = {
-      _type: "TrendReportDto" as const,
-      end: "2026-02",
-      groupOvershootFrequency: [
-        { count: 1, group: "NEEDS", totalMonths: 2 },
-        { count: 0, group: "WANTS", totalMonths: 2 },
-        { count: 0, group: "INVESTMENTS", totalMonths: 2 },
-      ],
-      monthOverMonthDeltas: [
-        {
-          groupDeltas: [
-            { delta: 100, group: "NEEDS" },
-            { delta: 0, group: "WANTS" },
-            { delta: 0, group: "INVESTMENTS" },
-          ],
-          month: "2026-02",
-          netDelta: 50,
-        },
-      ],
-      months: [monthDto],
-      savingsRateSeries: [
-        { month: "2026-01", rate: 25 },
-        { month: "2026-02", rate: null },
-      ],
-      start: "2026-01",
-    };
-    const html = renderer.render(dto);
+    const html = renderer.render([monthDto]);
 
-    it("produces a valid HTML5 document with trend title", () => {
+    it("produces a valid HTML5 document with reports title", () => {
       expect(html).toMatch(/^<!DOCTYPE html>/);
-      expect(html).toContain("Trend Report");
+      expect(html).toContain("Financial Reports");
+      expect(html).toContain("All Data");
     });
 
-    it("contains savings rate evolution section", () => {
-      expect(html).toContain("Savings Rate Evolution");
+    it("contains all reports section", () => {
+      expect(html).toContain("All Reports");
+      expect(html).toContain("2026-01");
     });
 
-    it("contains group overshoot frequency section", () => {
-      expect(html).toContain("Group Overshoot Frequency");
-      expect(html).toContain("NEEDS");
-    });
-
-    it("contains month-over-month net section", () => {
-      expect(html).toContain("Month-over-Month Net");
-    });
-
-    it("formats non-zero net delta with sign and zero net delta without sign", () => {
-      const withZero = {
-        ...dto,
-        monthOverMonthDeltas: [
-          { groupDeltas: [], month: "2026-01", netDelta: 50 },
-          { groupDeltas: [], month: "2026-02", netDelta: 0 },
-          { groupDeltas: [], month: "2026-03", netDelta: -30 },
-        ],
-      };
-      const out = renderer.render(withZero);
-      expect(out).toContain("+50,00\u00A0€");
-      expect(out).toContain("0,00\u00A0€");
-      expect(out).not.toContain("+0,00\u00A0€");
-      expect(out).toContain("-30,00\u00A0€");
-    });
-
-    it("contains monthly breakdown section", () => {
-      expect(html).toContain("Monthly Summary");
-    });
-
-    it("omits savings rate section when series is empty", () => {
-      const minimal = { ...dto, savingsRateSeries: [] };
-      const out = renderer.render(minimal);
-      expect(out).not.toContain("Savings Rate Evolution");
-    });
-
-    it("omits overshoot section when frequency list is empty", () => {
-      const minimal = { ...dto, groupOvershootFrequency: [] };
-      const out = renderer.render(minimal);
-      expect(out).not.toContain("Group Overshoot Frequency");
-    });
-
-    it("omits month-over-month section when no deltas", () => {
-      const minimal = { ...dto, monthOverMonthDeltas: [] };
-      const out = renderer.render(minimal);
-      expect(out).not.toContain("Month-over-Month Net");
-    });
-
-    it("omits monthly breakdown section when no months", () => {
-      const minimal = { ...dto, months: [] };
-      const out = renderer.render(minimal);
-      expect(out).not.toContain("Monthly Summary");
+    it("renders empty-state message when no reports are available", () => {
+      const out = renderer.render([]);
+      expect(out).toContain("No data available yet");
     });
 
     it("applies over-budget class when net is negative", () => {
@@ -252,7 +180,7 @@ describe("HtmlRenderer", () => {
           categoryMap,
         ),
       );
-      const out = renderer.render({ ...dto, months: [negativeNet] });
+      const out = renderer.render([negativeNet]);
       expect(out).toContain("over-budget");
     });
   });

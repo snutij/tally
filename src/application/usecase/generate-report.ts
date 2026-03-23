@@ -33,4 +33,13 @@ export class GenerateReport {
     );
     return toMonthlyReportDto(report);
   }
+
+  executeAll(targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): MonthlyReportDto[] {
+    const categoryMap = this.registry.categoryToGroupMap();
+    return this.txnRepository.listMonths().map((month) => {
+      const transactions = this.txnRepository.findByMonth(month);
+      const report = computeMonthlyReport(month, targets, transactions, categoryMap);
+      return toMonthlyReportDto(report);
+    });
+  }
 }

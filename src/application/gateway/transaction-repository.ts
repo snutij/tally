@@ -5,4 +5,5 @@ export interface TransactionRepository {
   saveAll(transactions: Transaction[]): void;
   findByIds(ids: TransactionId[]): Transaction[];
   findByMonth(month: Temporal.PlainYearMonth): Transaction[];
+  listMonths(): Temporal.PlainYearMonth[];
 }

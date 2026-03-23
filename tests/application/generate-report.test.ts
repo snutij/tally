@@ -79,4 +79,15 @@ describe("GenerateReport", () => {
     const needs = report.groups.find((grp) => grp.group === "NEEDS");
     expect(needs?.budgeted).toBe(1200); // 2000 × 60%
   });
+
+  it("returns one report per available month in chronological order", () => {
+    txnGateway.saveAll([
+      makeTxn("1", 2000, "2026-03-01", "inc01"),
+      makeTxn("2", -100, "2026-01-01", "n01"),
+      makeTxn("3", 2500, "2026-02-01", "inc01"),
+    ]);
+
+    const reports = useCase.executeAll();
+    expect(reports.map((report) => report.month)).toEqual(["2026-01", "2026-02", "2026-03"]);
+  });
 });

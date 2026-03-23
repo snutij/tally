@@ -4,12 +4,6 @@ import {
   type ReportKpisDto,
   isMonthlyReportDto,
 } from "../../application/dto/report-dto.js";
-import {
-  type MonthOverMonthDeltaDto,
-  type SavingsRateEntryDto,
-  type TrendReportDto,
-  isTrendReportDto,
-} from "../../application/dto/trend-report-dto.js";
 import type { Renderer } from "./renderer.js";
 
 const MONTH_NAMES = [
@@ -102,96 +96,29 @@ export class HtmlRenderer implements Renderer {
     if (isMonthlyReportDto(data)) {
       return HtmlRenderer.renderReport(data);
     }
-    if (isTrendReportDto(data)) {
-      return HtmlRenderer.renderTrend(data);
+    if (Array.isArray(data) && data.every((entry) => isMonthlyReportDto(entry))) {
+      return HtmlRenderer.renderAllReports(data);
     }
     return HtmlRenderer.wrapHtml("Data", `<pre>${esc(JSON.stringify(data, undefined, 2))}</pre>`);
   }
 
-  // ── Trend ──────────────────────────────────────────────
-
-  private static renderTrend(dto: TrendReportDto): string {
+  private static renderAllReports(months: MonthlyReportDto[]): string {
     const sections = [
-      HtmlRenderer.trendHeader(dto),
-      HtmlRenderer.savingsRateSection(dto.savingsRateSeries),
-      HtmlRenderer.overshootSection(dto),
-      HtmlRenderer.momDeltaSection(dto.monthOverMonthDeltas),
-      HtmlRenderer.monthlyBreakdownSection(dto.months),
-    ].filter(Boolean);
-
-    return HtmlRenderer.wrapHtml(`Trend Report — ${dto.start} to ${dto.end}`, sections.join("\n"));
+      `<header class="hero">
+  <div class="hero-eyebrow">Financial Reports</div>
+  <h1 class="hero-month">All Data</h1>
+</header>`,
+      HtmlRenderer.allReportsSection(months),
+    ];
+    return HtmlRenderer.wrapHtml("Reports", sections.join("\n"));
   }
 
-  private static trendHeader(dto: TrendReportDto): string {
-    return `<header class="hero">
-  <div class="hero-eyebrow">Spending Trend</div>
-  <h1 class="hero-month">${esc(dto.start)} → ${esc(dto.end)}</h1>
-</header>`;
-  }
-
-  private static savingsRateSection(series: SavingsRateEntryDto[]): string {
-    if (series.length === 0) {
-      return "";
-    }
-    const rows = series
-      .map((entry) => {
-        const cls = entry.rate !== null && entry.rate >= 20 ? "under-budget" : "over-budget";
-        return `<tr><td>${esc(entry.month)}</td><td class="num ${cls}">${fmtPct(entry.rate)}</td></tr>`;
-      })
-      .join("\n");
-    return `<section>
-<h2>Savings Rate Evolution</h2>
-<table>
-  <thead><tr><th>Month</th><th class="num">Savings Rate</th></tr></thead>
-  <tbody>${rows}</tbody>
-</table>
-</section>`;
-  }
-
-  private static overshootSection(dto: TrendReportDto): string {
-    if (dto.groupOvershootFrequency.length === 0) {
-      return "";
-    }
-    const rows = dto.groupOvershootFrequency
-      .map((entry) => {
-        const pctVal = fmtPercent.format(
-          entry.totalMonths === 0 ? 0 : entry.count / entry.totalMonths,
-        );
-        const cls = entry.count > 0 ? "over-budget" : "under-budget";
-        return `<tr><td>${esc(entry.group)}</td><td class="num">${entry.count}/${entry.totalMonths}</td><td class="num ${cls}">${pctVal}</td></tr>`;
-      })
-      .join("\n");
-    return `<section>
-<h2>Group Overshoot Frequency</h2>
-<table>
-  <thead><tr><th>Group</th><th class="num">Overshoots</th><th class="num">Rate</th></tr></thead>
-  <tbody>${rows}</tbody>
-</table>
-</section>`;
-  }
-
-  private static momDeltaSection(deltas: MonthOverMonthDeltaDto[]): string {
-    if (deltas.length === 0) {
-      return "";
-    }
-    const rows = deltas
-      .map((delta) => {
-        const netCls = delta.netDelta >= 0 ? "under-budget" : "over-budget";
-        return `<tr><td>${esc(delta.month)}</td><td class="num ${netCls}">${fmtCurrencySigned.format(delta.netDelta)}</td></tr>`;
-      })
-      .join("\n");
-    return `<section>
-<h2>Month-over-Month Net</h2>
-<table>
-  <thead><tr><th>Month</th><th class="num">Net Δ</th></tr></thead>
-  <tbody>${rows}</tbody>
-</table>
-</section>`;
-  }
-
-  private static monthlyBreakdownSection(months: MonthlyReportDto[]): string {
+  private static allReportsSection(months: MonthlyReportDto[]): string {
     if (months.length === 0) {
-      return "";
+      return `<section>
+<h2>All Reports</h2>
+<p>No data available yet. Run <code>tally import</code> to add transactions.</p>
+</section>`;
     }
     const cards = months
       .map((report) => {
@@ -206,7 +133,7 @@ export class HtmlRenderer implements Renderer {
       })
       .join("\n");
     return `<section>
-<h2>Monthly Summary</h2>
+<h2>All Reports</h2>
 <div class="insights-grid">${cards}</div>
 </section>`;
   }
