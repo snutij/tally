@@ -62,4 +62,8 @@ export class InMemoryTransactionRepository implements TransactionRepository {
     const prefix = month.toString();
     return this.saved.filter((txn) => txn.date.toString().startsWith(prefix));
   }
+
+  findAllCategorized(): Transaction[] {
+    return this.saved.filter((txn) => txn.isCategorized);
+  }
 }

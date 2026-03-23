@@ -13,9 +13,10 @@ export class RuleBook {
    * taking precedence over default rules. Returns undefined if no rule matches.
    */
   match(label: string): string | undefined {
-    // Learned rules take precedence: try them before defaults
+    // Precedence: learned > suggested > default
     const sorted: CategoryRule[] = [
       ...this.rules.filter((rule) => rule.source === "learned"),
+      ...this.rules.filter((rule) => rule.source === "suggested"),
       ...this.rules.filter((rule) => rule.source === "default"),
     ];
 
