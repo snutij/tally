@@ -15,6 +15,7 @@ import { toTransactionDto } from "../../application/dto/transaction-dto.js";
 interface ImportCommandDeps {
   choiceGroups: CategoryChoiceGroup[];
   csvFormatDetector: CsvFormatDetector;
+  isModelCached: () => boolean;
   parserFactory: (mapping: CsvMappingConfig) => TransactionParser;
   renderer: Renderer;
   makeSuggester: () => CategorySuggester;
@@ -68,6 +69,11 @@ export function createImportCommand(
 
       const categorySuggester = deps.makeSuggester();
       try {
+        if (!deps.isModelCached()) {
+          console.log(
+            "Downloading smart categorization model (~43 MB). This is a one-time operation.",
+          );
+        }
         await categorySuggester.init((msg) => console.log(msg));
       } catch (error) {
         console.warn(`Smart categorization unavailable: ${String(error)}`);

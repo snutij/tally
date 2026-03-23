@@ -108,6 +108,7 @@ program.addCommand(
   createImportCommand(importTransactions, seedMockData, importCsvWorkflow, {
     choiceGroups: categoryChoiceGroups,
     csvFormatDetector,
+    isModelCached: () => EmbeddingCategorySuggester.isModelCached(modelsDir),
     makeSuggester: () =>
       new EmbeddingCategorySuggester(labelEmbeddingRepository, txnRepository, modelsDir),
     parserFactory: (params) => new CsvTransactionParser(new CsvColumnMapping(params)),

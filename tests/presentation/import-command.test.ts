@@ -45,6 +45,7 @@ describe("createImportCommand", () => {
   const mockDeps = {
     choiceGroups: [],
     csvFormatDetector: mockCsvFormatDetector,
+    isModelCached: vi.fn().mockReturnValue(true),
     makeSuggester: vi.fn().mockReturnValue(mockSuggester),
     parserFactory: vi.fn().mockReturnValue(mockParser),
     renderer: mockRenderer,

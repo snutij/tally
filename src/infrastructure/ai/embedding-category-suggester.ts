@@ -3,11 +3,12 @@ import type {
   LabelEmbeddingRepository,
 } from "../../application/gateway/label-embedding-repository.js";
 import { env, pipeline } from "@huggingface/transformers";
+import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import type { CategorySuggester } from "../../application/gateway/category-suggester.js";
 import type { TransactionDto } from "../../application/dto/transaction-dto.js";
 import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
 import { cosineSimilarity } from "./cosine-similarity.js";
-import { mkdirSync } from "node:fs";
+import { join } from "node:path";
 
 type FeatureExtractionPipeline = Awaited<ReturnType<typeof pipeline<"feature-extraction">>>;
 
@@ -112,6 +113,11 @@ export class EmbeddingCategorySuggester implements CategorySuggester {
 
   static get modelId(): string {
     return MODEL_ID;
+  }
+
+  static isModelCached(modelsDir: string): boolean {
+    const modelDir = join(modelsDir, MODEL_ID);
+    return existsSync(modelDir) && readdirSync(modelDir).length > 0;
   }
 
   private async embed(label: string): Promise<Float32Array> {
