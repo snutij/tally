@@ -10,8 +10,14 @@ import type { TransactionDto } from "../dto/transaction-dto.js";
  */
 export interface CategorySuggester {
   /**
+   * Initializes the suggester (loads model, seeds index if empty).
+   * Must be called before `suggest()` or `learnBatch()`.
+   */
+  init(onProgress?: (message: string) => void): Promise<void>;
+
+  /**
    * Returns the same transactions, enriching each with `suggestedCategoryId`
-   * where the embedding model finds a high-confidence match (≥ 0.3 cosine
+   * where the embedding model finds a high-confidence match (>= 0.3 cosine
    * similarity). Transactions with no match are returned unchanged.
    */
   suggest(transactions: TransactionDto[]): Promise<TransactionDto[]>;
@@ -21,17 +27,4 @@ export interface CategorySuggester {
    * Should be called after the user completes manual categorization.
    */
   learnBatch(transactions: TransactionDto[]): Promise<void>;
-
-  /**
-   * Returns true if the underlying model is cached and ready to use.
-   * Always true for no-op implementations (no model required).
-   */
-  isModelCached(): boolean;
-
-  /**
-   * Initializes the suggester (loads model, seeds index if empty).
-   * Must be called before `suggest()` or `learnBatch()`.
-   * No-op implementations can implement this as an instant resolve.
-   */
-  init(onProgress?: (message: string) => void): Promise<void>;
 }

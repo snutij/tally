@@ -1,53 +1,5 @@
-/**
- * Tests for the cosine similarity math and NoOpCategorySuggester.
- */
 import { describe, expect, it } from "vitest";
-import { NoOpCategorySuggester } from "../../src/application/usecase/no-op-category-suggester.js";
-
-function cosineSimilarity(vecA: Float32Array, vecB: Float32Array): number {
-  let dot = 0;
-  let normA = 0;
-  let normB = 0;
-  for (let idx = 0; idx < vecA.length; idx += 1) {
-    const ai = vecA[idx] ?? 0;
-    const bi = vecB[idx] ?? 0;
-    dot += ai * bi;
-    normA += ai * ai;
-    normB += bi * bi;
-  }
-  const denom = Math.sqrt(normA) * Math.sqrt(normB);
-  return denom === 0 ? 0 : dot / denom;
-}
-
-describe("NoOpCategorySuggester", () => {
-  const txns = [
-    {
-      amount: -10,
-      categoryId: undefined,
-      date: "2026-03-15",
-      id: "t1",
-      label: "SPOTIFY",
-      source: "csv",
-      suggestedCategoryId: undefined,
-    },
-  ];
-
-  it("returns transactions unchanged", async () => {
-    expect(await new NoOpCategorySuggester().suggest(txns)).toEqual(txns);
-  });
-
-  it("learnBatch is a no-op", async () => {
-    await expect(new NoOpCategorySuggester().learnBatch(txns)).resolves.toBeUndefined();
-  });
-
-  it("isModelCached always returns true", () => {
-    expect(new NoOpCategorySuggester().isModelCached()).toBe(true);
-  });
-
-  it("init resolves immediately", async () => {
-    await expect(new NoOpCategorySuggester().init()).resolves.toBeUndefined();
-  });
-});
+import { cosineSimilarity } from "../../src/infrastructure/ai/cosine-similarity.js";
 
 describe("cosine similarity (math invariants)", () => {
   it("identical vectors have similarity 1", () => {
@@ -75,9 +27,7 @@ describe("cosine similarity (math invariants)", () => {
 
   it("similarity threshold 0.3 is inclusive — 0.30 passes, 0.29 does not", () => {
     const threshold = 0.3;
-    // 0.30 is at or above threshold (passes)
     expect(threshold <= 0.3).toBe(true);
-    // 0.29 is strictly below threshold (does not pass)
     expect(threshold <= 0.29).toBe(false);
   });
 });

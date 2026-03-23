@@ -1,13 +1,10 @@
-import {
-  type LabelEmbeddingRepository,
-  openDatabase,
-} from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import type { CategoryRepository } from "../../src/application/gateway/category-repository.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
+import type { LabelEmbeddingRepository } from "../../src/application/gateway/label-embedding-repository.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import type { RuleBookRepository } from "../../src/application/gateway/rule-book-repository.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
@@ -16,6 +13,7 @@ import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
 import type { UnitOfWork } from "../../src/application/gateway/unit-of-work.js";
 import { join } from "node:path";
+import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
 
 const idGenerator = new Sha256IdGenerator();

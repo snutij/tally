@@ -9,7 +9,6 @@ import { existsSync, mkdirSync } from "node:fs";
 import { AddRule } from "../application/usecase/add-rule.js";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
 import { CategoryRegistry } from "../domain/service/category-registry.js";
-import type { CategorySuggester } from "../application/gateway/category-suggester.js";
 import { Command } from "commander";
 import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
 import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector-impl.js";
@@ -109,7 +108,7 @@ program.addCommand(
   createImportCommand(importTransactions, seedMockData, importCsvWorkflow, {
     choiceGroups: categoryChoiceGroups,
     csvFormatDetector,
-    makeSuggester: (): CategorySuggester =>
+    makeSuggester: () =>
       new EmbeddingCategorySuggester(labelEmbeddingRepository, txnRepository, modelsDir),
     parserFactory: (params) => new CsvTransactionParser(new CsvColumnMapping(params)),
     renderer,

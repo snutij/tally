@@ -1,4 +1,8 @@
 import { DEFAULT_LOCALE, getDefaultRulesForLocale } from "../config/category-rules/index.js";
+import type {
+  LabelEmbeddingRecord,
+  LabelEmbeddingRepository,
+} from "../../application/gateway/label-embedding-repository.js";
 import type { Category } from "../../domain/value-object/category.js";
 import type { CategoryGroup } from "../../domain/value-object/category-group.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
@@ -223,19 +227,6 @@ class SqliteRuleBookRepository implements RuleBookRepository {
       }
     })();
   }
-}
-
-export interface LabelEmbeddingRecord {
-  label: string;
-  categoryId: string;
-  embedding: Float32Array;
-  modelId: string;
-}
-
-export interface LabelEmbeddingRepository {
-  upsert(label: string, categoryId: string, embedding: Float32Array, modelId: string): void;
-  findAllByModel(modelId: string): LabelEmbeddingRecord[];
-  deleteByModelMismatch(modelId: string): void;
 }
 
 class SqliteLabelEmbeddingRepository implements LabelEmbeddingRepository {

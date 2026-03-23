@@ -1,36 +1,21 @@
 import type {
   LabelEmbeddingRecord,
   LabelEmbeddingRepository,
-} from "../persistence/sqlite-repository.js";
+} from "../../application/gateway/label-embedding-repository.js";
 import { env, pipeline } from "@huggingface/transformers";
-import { existsSync, mkdirSync } from "node:fs";
 import type { CategorySuggester } from "../../application/gateway/category-suggester.js";
 import type { TransactionDto } from "../../application/dto/transaction-dto.js";
 import type { TransactionRepository } from "../../application/gateway/transaction-repository.js";
-import { join } from "node:path";
+import { cosineSimilarity } from "./cosine-similarity.js";
+import { mkdirSync } from "node:fs";
 
 type FeatureExtractionPipeline = Awaited<ReturnType<typeof pipeline<"feature-extraction">>>;
 
 /** Pinned model version — changing this triggers automatic index rebuild. */
 const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
 
-/** Cosine similarity threshold below which no suggestion is made (inclusive: ≥ 0.3). */
+/** Cosine similarity threshold below which no suggestion is made (inclusive: >= 0.3). */
 const SIMILARITY_THRESHOLD = 0.3;
-
-function cosineSimilarity(vecA: Float32Array, vecB: Float32Array): number {
-  let dot = 0;
-  let normA = 0;
-  let normB = 0;
-  for (let idx = 0; idx < vecA.length; idx += 1) {
-    const ai = vecA[idx] ?? 0;
-    const bi = vecB[idx] ?? 0;
-    dot += ai * bi;
-    normA += ai * ai;
-    normB += bi * bi;
-  }
-  const denom = Math.sqrt(normA) * Math.sqrt(normB);
-  return denom === 0 ? 0 : dot / denom;
-}
 
 /**
  * Embedding-based category suggester using all-MiniLM-L6-v2 (43 MB, multilingual).
@@ -58,17 +43,9 @@ export class EmbeddingCategorySuggester implements CategorySuggester {
   }
 
   /**
-   * Returns true if the ONNX model files are present in the local cache directory.
-   * Used by the presentation layer to decide whether to show the consent prompt.
-   */
-  isModelCached(): boolean {
-    return existsSync(join(this.modelsDir, MODEL_ID));
-  }
-
-  /**
    * Initializes the suggester:
    * 1. Configures model cache directory
-   * 2. Loads the embedding model
+   * 2. Loads the embedding model (downloads on first run)
    * 3. Invalidates stored embeddings if model version changed
    * 4. Seeds the embedding index from existing categorized transactions if empty
    * 5. Loads all embeddings into memory for fast similarity search
@@ -115,24 +92,22 @@ export class EmbeddingCategorySuggester implements CategorySuggester {
     }
 
     for (const txn of transactions) {
-      if (txn.categoryId === undefined) {
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-      const embedding = await this.embed(txn.label);
-      this.labelEmbeddingRepository.upsert(txn.label, txn.categoryId, embedding, MODEL_ID);
-      // Update in-memory cache
-      const existingIdx = this.cachedEmbeddings.findIndex((rec) => rec.label === txn.label);
-      const record: LabelEmbeddingRecord = {
-        categoryId: txn.categoryId,
-        embedding,
-        label: txn.label,
-        modelId: MODEL_ID,
-      };
-      if (existingIdx === -1) {
-        this.cachedEmbeddings.push(record);
-      } else {
-        this.cachedEmbeddings[existingIdx] = record;
+      if (txn.categoryId !== undefined) {
+        const embedding = await this.embed(txn.label);
+        this.labelEmbeddingRepository.upsert(txn.label, txn.categoryId, embedding, MODEL_ID);
+        // Update in-memory cache
+        const existingIdx = this.cachedEmbeddings.findIndex((rec) => rec.label === txn.label);
+        const record: LabelEmbeddingRecord = {
+          categoryId: txn.categoryId,
+          embedding,
+          label: txn.label,
+          modelId: MODEL_ID,
+        };
+        if (existingIdx === -1) {
+          this.cachedEmbeddings.push(record);
+        } else {
+          this.cachedEmbeddings[existingIdx] = record;
+        }
       }
     }
   }
