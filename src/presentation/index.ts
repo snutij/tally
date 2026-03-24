@@ -6,7 +6,11 @@ import {
 import { VALID_FORMATS, createRenderer } from "./renderer/create-renderer.js";
 import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { existsSync, mkdirSync } from "node:fs";
-import { resolveModelPath, resolveModelsDir } from "../infrastructure/llm/default-model.js";
+import {
+  resolveModelPath,
+  resolveModelUri,
+  resolveModelsDir,
+} from "../infrastructure/llm/default-model.js";
 import { AddRule } from "../application/usecase/add-rule.js";
 import { ApplicationError } from "../application/error.js";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
@@ -116,14 +120,21 @@ const renderer = {
 
 program.addCommand(
   createInitCommand({
-    downloaderCallback: async () => {
+    downloaderCallback: async (onProgress) => {
       const { createModelDownloader } = await import("node-llama-cpp");
       mkdirSync(modelsDir, { recursive: true });
       const downloader = await createModelDownloader({
         dirPath: modelsDir,
-        modelUri: `hf:${DEFAULT_MODEL.huggingFaceRepo}@${DEFAULT_MODEL.revision}/${DEFAULT_MODEL.filename}`,
+        modelUri: resolveModelUri(),
       });
-      await downloader.download();
+      const interval = setInterval(() => {
+        onProgress(downloader.downloadedSize, downloader.totalSize);
+      }, 250);
+      try {
+        await downloader.download();
+      } finally {
+        clearInterval(interval);
+      }
     },
     modelPath: resolvedModelPath,
   }),

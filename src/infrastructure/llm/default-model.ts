@@ -3,16 +3,21 @@ import { homedir } from "node:os";
 
 export const DEFAULT_MODEL = {
   contextSize: 4096,
-  filename: "qwen2.5-3b-instruct-q4_k_m.gguf",
+  huggingFaceFilename: "qwen2.5-3b-instruct-q4_k_m.gguf",
   huggingFaceRepo: "Qwen/Qwen2.5-3B-Instruct-GGUF",
-  revision: "7dabda4d13d513e3e842b20f0d435c732f172cbe",
+  // node-llama-cpp prefixes "hf_{org}_" when saving HuggingFace models locally
+  localFilename: "hf_Qwen_qwen2.5-3b-instruct-q4_k_m.gguf",
 };
 
 export function resolveModelPath(): string {
   if (process.env["TALLY_LLM_MODEL"]) {
     return process.env["TALLY_LLM_MODEL"];
   }
-  return join(homedir(), ".local", "share", "tally", "models", DEFAULT_MODEL.filename);
+  return join(homedir(), ".local", "share", "tally", "models", DEFAULT_MODEL.localFilename);
+}
+
+export function resolveModelUri(): string {
+  return `hf:${DEFAULT_MODEL.huggingFaceRepo}/${DEFAULT_MODEL.huggingFaceFilename}`;
 }
 
 export function resolveModelsDir(): string {
