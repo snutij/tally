@@ -114,8 +114,11 @@ describe("createImportCommand", () => {
     it("calls onUncategorized callback", async () => {
       mockParser.parse.mockReturnValue([parsedTxn()]);
       mockImportCsvWorkflow.execute.mockImplementation(
-        (input: { onUncategorized?: (count: number) => void }) => {
-          input.onUncategorized?.(2);
+        (input: { onUncategorized?: (txns: { label: string; date: string }[]) => void }) => {
+          input.onUncategorized?.([
+            { date: "2026-02-01", label: "UNKNOWN MERCHANT" },
+            { date: "2026-02-15", label: "MYSTERY SHOP" },
+          ]);
           return Promise.resolve({ savedCount: 0 });
         },
       );

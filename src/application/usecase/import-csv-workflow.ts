@@ -44,7 +44,7 @@ export interface ImportCsvWorkflowInput {
   onAutoMatched?: (matchedCount: number, totalUncategorized: number) => void;
   onInvalidCategoryIds?: (count: number) => void;
   onLlmCategorized?: (count: number) => void;
-  onUncategorized?: (count: number) => void;
+  onUncategorized?: (transactions: TransactionDto[]) => void;
 }
 
 export interface ImportCsvResult {
@@ -109,7 +109,7 @@ export class ImportCsvWorkflow {
       onLlmCategorized?.(llmCategorized.length);
     }
     if (stillUncategorized.length > 0) {
-      onUncategorized?.(stillUncategorized.length);
+      onUncategorized?.(stillUncategorized);
     }
 
     const toSave = [...alreadyCategorized, ...matched, ...llmCategorized, ...stillUncategorized];

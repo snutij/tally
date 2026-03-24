@@ -2,8 +2,8 @@ repos:
   - repo: local
     hooks:
       - id: fmt
-        name: format check
-        entry: npm run fmt:check
+        name: format
+        entry: npm run fmt
         language: system
         pass_filenames: false
       - id: lint
