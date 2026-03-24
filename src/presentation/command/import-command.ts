@@ -73,8 +73,15 @@ export function createImportCommand(
             spinner.succeed(`AI categorized ${count} transactions.`);
             spinner.start("Categorizing transactions…");
           },
-          onUncategorized: (count) => {
-            spinner.warn(`${count} transactions could not be categorized automatically.`);
+          onUncategorized: (transactions) => {
+            const month = transactions[0]?.date.slice(0, 7) ?? "";
+            spinner.warn(
+              `${transactions.length} transaction(s) could not be categorized automatically:`,
+            );
+            for (const txn of transactions) {
+              console.log(`  · ${txn.label}`);
+            }
+            console.log(`\nRun: tally transactions categorize ${month}`);
           },
           transactions: parsed,
         });

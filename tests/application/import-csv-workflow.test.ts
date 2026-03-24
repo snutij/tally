@@ -95,7 +95,12 @@ describe("ImportCsvWorkflow", () => {
     // mockCategorizer returns empty (no categorizations)
     const onUncategorized = vi.fn();
     await workflow.execute({ onUncategorized, transactions: [dto("t1"), dto("t2")] });
-    expect(onUncategorized).toHaveBeenCalledWith(2);
+    expect(onUncategorized).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "t1" }),
+        expect.objectContaining({ id: "t2" }),
+      ]),
+    );
   });
 
   it("calls learnCategoryRules.learn only with LLM-categorized transactions", async () => {
