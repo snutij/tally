@@ -1,9 +1,17 @@
 import { Command } from "commander";
 import { existsSync } from "node:fs";
+import ora from "ora";
 
 export interface InitCommandDeps {
-  downloaderCallback: () => Promise<void>;
+  downloaderCallback: (onProgress: (downloaded: number, total: number) => void) => Promise<void>;
   modelPath: string;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1e9) {
+    return `${(bytes / 1e9).toFixed(1)} GB`;
+  }
+  return `${(bytes / 1e6).toFixed(0)} MB`;
 }
 
 export function createInitCommand(deps: InitCommandDeps): Command {
@@ -14,8 +22,16 @@ export function createInitCommand(deps: InitCommandDeps): Command {
         console.log("Already initialized.");
         return;
       }
-      console.log("Downloading AI model (this may take a while)...");
-      await deps.downloaderCallback();
-      console.log("Model downloaded successfully. You're all set!");
+      const spinner = ora("Downloading AI model…").start();
+      try {
+        await deps.downloaderCallback((downloaded, total) => {
+          const pct = total > 0 ? Math.round((downloaded / total) * 100) : 0;
+          spinner.text = `Downloading AI model… ${formatBytes(downloaded)} / ${formatBytes(total)} (${pct}%)`;
+        });
+        spinner.succeed("Model downloaded successfully. You're all set!");
+      } catch (error) {
+        spinner.fail("Download failed.");
+        throw error;
+      }
     });
 }
