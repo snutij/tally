@@ -1,48 +1,26 @@
-import type { ColumnField, CsvMappingConfig } from "../../application/dto/csv-mapping-config.js";
+import { ApplicationError } from "../../application/error.js";
+import type { CsvColumnMapper } from "../../application/gateway/csv-column-mapper.js";
 import type { CsvFormatDetector } from "../../application/gateway/csv-format-detector.js";
+import type { CsvMappingConfig } from "../../application/dto/csv-mapping-config.js";
 import { parse } from "csv-parse/sync";
-import select from "@inquirer/select";
-import { validateFields } from "./validate-column-mapping.js";
-
-const FIELD_CHOICES: { name: string; value: ColumnField }[] = [
-  { name: "date", value: "date" },
-  { name: "label", value: "label" },
-  { name: "amount (signed, positive = income)", value: "amount" },
-  { name: "expense (always negative)", value: "expense" },
-  { name: "income (always positive)", value: "income" },
-  { name: "category", value: "category" },
-  { name: "ignore", value: "ignore" },
-];
-
-const DATE_FORMAT_CHOICES = [
-  { name: "DD/MM/YYYY", value: "DD/MM/YYYY" },
-  { name: "MM/DD/YYYY", value: "MM/DD/YYYY" },
-  { name: "YYYY-MM-DD", value: "YYYY-MM-DD" },
-  { name: "DD-MM-YYYY", value: "DD-MM-YYYY" },
-];
-
-const DELIMITER_CHOICES = [
-  { name: "Semicolon (;)", value: ";" },
-  { name: "Comma (,)", value: "," },
-  { name: "Tab", value: "\t" },
-];
 
 export async function collectColumnMapping(
   filePath: string,
   detector: CsvFormatDetector,
+  csvColumnMapper: CsvColumnMapper,
 ): Promise<CsvMappingConfig> {
   const rawContent = detector.readFileContent(filePath);
   const lines = rawContent.split("\n").filter((line) => line.trim().length > 0);
 
-  // 1. Detect delimiter
+  // 1. Detect delimiter (throw ApplicationError if ambiguous)
   const delimResult = detector.detectDelimiter(lines);
-  const delimiter = delimResult.confident
-    ? delimResult.value
-    : await select({
-        choices: DELIMITER_CHOICES,
-        default: delimResult.value,
-        message: `Could not auto-detect delimiter (best guess: "${delimResult.value}"). Choose:`,
-      });
+  if (!delimResult.confident) {
+    throw new ApplicationError(
+      `Could not auto-detect CSV delimiter (best guess: "${delimResult.value}"). ` +
+        `Set it explicitly or check the file format.`,
+    );
+  }
+  const delimiter = delimResult.value;
 
   // 2. Parse header + first few data rows
   const allRows = parse(rawContent, {
@@ -55,62 +33,34 @@ export async function collectColumnMapping(
 
   const [headers, ...dataRows] = allRows;
   if (!headers || headers.length === 0) {
-    throw new Error("No headers found in CSV file.");
+    throw new ApplicationError("No headers found in CSV file.");
   }
-  const sampleRow = dataRows[0] ?? [];
 
-  // 3. Column mapping — loop until validation passes
-  let validationError: string | undefined = undefined;
-  do {
-    const fields: ColumnField[] = [];
-    for (let idx = 0; idx < headers.length; idx += 1) {
-      const header = headers[idx] ?? `col${idx + 1}`;
-      const sample = sampleRow[idx] ?? "";
-      const field = await select<ColumnField>({
-        choices: FIELD_CHOICES,
-        message: `Column ${idx + 1} (header: "${header}", sample: "${sample}") — assign to:`,
-      });
-      fields.push(field);
-    }
+  // 3. LLM column detection
+  const fields = await csvColumnMapper.detectColumns(headers, dataRows);
 
-    validationError = validateFields(fields);
-    if (validationError) {
-      console.error(`\n${validationError} Please re-map the columns.\n`);
-    } else {
-      // 4. Auto-detect date format from samples
-      const dateIdx = fields.indexOf("date");
-      const dateSamples = dataRows.map((row) => row[dateIdx] ?? "");
-      const dateFormatResult = detector.detectDateFormat(dateSamples);
-      const dateFormat = dateFormatResult.confident
-        ? dateFormatResult.value
-        : await select({
-            choices: DATE_FORMAT_CHOICES,
-            default: dateFormatResult.value,
-            message: `Detected date format "${dateFormatResult.value}" — correct? Choose:`,
-          });
+  // 4. Print detected mapping table
+  console.log("Detected column mapping:");
+  for (let idx = 0; idx < headers.length; idx += 1) {
+    const header = headers[idx] ?? `col${idx + 1}`;
+    const sample = dataRows[0]?.[idx] ?? "";
+    const field = fields[idx] ?? "ignore";
+    console.log(`  [${idx + 1}] "${header}" (e.g. "${sample}") → ${field}`);
+  }
 
-      // 5. Auto-detect decimal separator from amount column samples
-      const amountIdx = fields.findIndex(
-        (field) => field === "amount" || field === "expense" || field === "income",
-      );
-      const amountSamples = amountIdx === -1 ? [] : dataRows.map((row) => row[amountIdx] ?? "");
-      const decimalResult = detector.detectDecimalSeparator(amountSamples);
-      let decimalSeparator: "," | ".";
-      if (decimalResult.confident) {
-        decimalSeparator = decimalResult.value;
-      } else {
-        const answer = await select({
-          choices: [
-            { name: "Comma , (European: 1.234,56)", value: "," },
-            { name: "Dot . (Anglo-Saxon: 1,234.56)", value: "." },
-          ],
-          default: decimalResult.value,
-          message: "Could not detect decimal separator. Choose:",
-        });
-        decimalSeparator = answer as "," | ".";
-      }
+  // 5. Detect date format from samples (default to DD/MM/YYYY if not confident)
+  const dateIdx = fields.indexOf("date");
+  const dateSamples = dataRows.map((row) => row[dateIdx] ?? "");
+  const dateFormatResult = detector.detectDateFormat(dateSamples);
+  const dateFormat = dateFormatResult.confident ? dateFormatResult.value : "DD/MM/YYYY";
 
-      return { dateFormat, decimalSeparator, delimiter, fields };
-    }
-  } while (validationError);
+  // 6. Detect decimal separator from amount column samples
+  const amountIdx = fields.findIndex(
+    (field) => field === "amount" || field === "expense" || field === "income",
+  );
+  const amountSamples = amountIdx === -1 ? [] : dataRows.map((row) => row[amountIdx] ?? "");
+  const decimalResult = detector.detectDecimalSeparator(amountSamples);
+  const decimalSeparator = decimalResult.value;
+
+  return { dateFormat, decimalSeparator, delimiter, fields };
 }

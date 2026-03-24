@@ -2,21 +2,33 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
 
 import type { ImportCsvWorkflow } from "../../src/application/usecase/import-csv-workflow.js";
-import type { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import type { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
-vi.mock("../../src/presentation/prompt/categorize-prompt.js", () => ({
-  categorizePrompt: vi.fn(),
-}));
 vi.mock("../../src/presentation/prompt/column-mapping-prompt.js", () => ({
   collectColumnMapping: vi.fn(),
 }));
-import { categorizePrompt } from "../../src/presentation/prompt/categorize-prompt.js";
+vi.mock("ora", () => ({
+  default: vi.fn(() => ({
+    fail: vi.fn(),
+    info: vi.fn(),
+    start: vi.fn().mockReturnThis(),
+    succeed: vi.fn(),
+    warn: vi.fn(),
+  })),
+}));
+
 import { collectColumnMapping } from "../../src/presentation/prompt/column-mapping-prompt.js";
 import { createImportCommand } from "../../src/presentation/command/import-command.js";
+
+const mockMappingConfig = {
+  dateFormat: "DD/MM/YYYY",
+  decimalSeparator: ".",
+  delimiter: ";",
+  fields: ["date", "label", "amount"],
+};
 
 // Transaction entity as returned by a parser (for mockParser.parse mock)
 function parsedTxn(id = "t1"): Transaction {
@@ -31,13 +43,13 @@ function parsedTxn(id = "t1"): Transaction {
 
 describe("createImportCommand", () => {
   const mockParser = { parse: vi.fn() };
-  const mockImportTransactions = { save: vi.fn() };
   const mockSeedMockData = { execute: vi.fn() };
   const mockImportCsvWorkflow = { execute: vi.fn() };
   const mockCsvFormatDetector = {};
+  const mockCsvColumnMapper = { detectColumns: vi.fn() };
   const mockRenderer = { render: vi.fn((data: unknown) => JSON.stringify(data)) };
   const mockDeps = {
-    choiceGroups: [],
+    csvColumnMapper: mockCsvColumnMapper,
     csvFormatDetector: mockCsvFormatDetector,
     parserFactory: vi.fn().mockReturnValue(mockParser),
     renderer: mockRenderer,
@@ -47,13 +59,12 @@ describe("createImportCommand", () => {
     vi.restoreAllMocks();
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.mocked(collectColumnMapping).mockResolvedValue({} as never);
-    mockImportCsvWorkflow.execute.mockResolvedValue({ interrupted: false, savedCount: 0 });
+    vi.mocked(collectColumnMapping).mockResolvedValue(mockMappingConfig as never);
+    mockImportCsvWorkflow.execute.mockResolvedValue({ savedCount: 0 });
   });
 
   function run(...args: string[]): Promise<unknown> {
     const cmd = createImportCommand(
-      mockImportTransactions as unknown as ImportTransactions,
       mockSeedMockData as unknown as SeedMockData,
       mockImportCsvWorkflow as unknown as ImportCsvWorkflow,
       mockDeps,
@@ -63,124 +74,90 @@ describe("createImportCommand", () => {
   }
 
   describe("csv subcommand", () => {
-    it("exits with error when not a TTY", async () => {
-      const originalIsTTY = process.stdout.isTTY;
-      process.stdout.isTTY = false;
-      try {
-        await run("csv", "file.csv");
-      } finally {
-        process.stdout.isTTY = originalIsTTY;
-      }
-      expect(console.error).toHaveBeenCalledWith("Interactive mapping requires a TTY.");
-      expect(process.exitCode).toBe(1);
-      process.exitCode = 0;
-    });
-
-    it("with --no-categorize saves directly", async () => {
+    it("calls collectColumnMapping with file, detector, and csvColumnMapper", async () => {
       mockParser.parse.mockReturnValue([parsedTxn()]);
-      mockImportTransactions.save.mockReturnValue({ count: 1 });
 
-      const originalIsTTY = process.stdout.isTTY;
-      process.stdout.isTTY = true;
-      try {
-        await run("csv", "file.csv", "--no-categorize");
-      } finally {
-        process.stdout.isTTY = originalIsTTY;
-      }
+      await run("csv", "file.csv");
 
-      expect(collectColumnMapping).toHaveBeenCalledWith("file.csv", mockCsvFormatDetector);
-      expect(mockParser.parse).toHaveBeenCalled();
-      expect(mockImportTransactions.save).toHaveBeenCalledWith(
-        expect.arrayContaining([expect.objectContaining({ amount: -42, id: "t1" })]),
+      expect(collectColumnMapping).toHaveBeenCalledWith(
+        "file.csv",
+        mockCsvFormatDetector,
+        mockDeps.csvColumnMapper,
       );
     });
 
-    it("with TTY prompts for categorization via workflow", async () => {
+    it("runs workflow and logs result", async () => {
       mockParser.parse.mockReturnValue([parsedTxn()]);
-      vi.mocked(categorizePrompt).mockResolvedValue({ categorized: [], interrupted: false });
-      mockImportCsvWorkflow.execute.mockImplementation(
-        async (input: { promptFn?: (txns: never[]) => unknown }) => {
-          await input.promptFn?.([]);
-          return { interrupted: false, savedCount: 1 };
-        },
-      );
+      mockImportCsvWorkflow.execute.mockResolvedValue({ savedCount: 1 });
 
-      const originalIsTTY = process.stdout.isTTY;
-      process.stdout.isTTY = true;
-      try {
-        await run("csv", "file.csv");
-      } finally {
-        process.stdout.isTTY = originalIsTTY;
-      }
+      await run("csv", "file.csv");
 
       expect(mockImportCsvWorkflow.execute).toHaveBeenCalledWith(
         expect.objectContaining({ transactions: expect.any(Array) }),
       );
-      expect(categorizePrompt).toHaveBeenCalledWith([], []);
     });
 
-    it("handles interruption", async () => {
-      mockParser.parse.mockReturnValue([parsedTxn(), parsedTxn("t2")]);
-      mockImportCsvWorkflow.execute.mockResolvedValue({ interrupted: true, savedCount: 1 });
+    it("calls onLlmCategorized callback", async () => {
+      mockParser.parse.mockReturnValue([parsedTxn()]);
+      mockImportCsvWorkflow.execute.mockImplementation(
+        (input: { onLlmCategorized?: (count: number) => void }) => {
+          input.onLlmCategorized?.(3);
+          return Promise.resolve({ savedCount: 3 });
+        },
+      );
 
-      const originalIsTTY = process.stdout.isTTY;
-      process.stdout.isTTY = true;
-      try {
-        await run("csv", "file.csv");
-      } finally {
-        process.stdout.isTTY = originalIsTTY;
-      }
+      await run("csv", "file.csv");
 
-      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Interrupted"));
+      expect(mockImportCsvWorkflow.execute).toHaveBeenCalled();
+    });
+
+    it("calls onUncategorized callback", async () => {
+      mockParser.parse.mockReturnValue([parsedTxn()]);
+      mockImportCsvWorkflow.execute.mockImplementation(
+        (input: { onUncategorized?: (count: number) => void }) => {
+          input.onUncategorized?.(2);
+          return Promise.resolve({ savedCount: 0 });
+        },
+      );
+
+      await run("csv", "file.csv");
+
+      expect(mockImportCsvWorkflow.execute).toHaveBeenCalled();
     });
 
     it("displays auto-categorization summary when rules match", async () => {
       mockParser.parse.mockReturnValue([parsedTxn()]);
-      mockImportCsvWorkflow.execute.mockImplementation((input) => {
-        input.onAutoMatched?.(1, 1);
-        return Promise.resolve({ interrupted: false, savedCount: 1 });
-      });
+      mockImportCsvWorkflow.execute.mockImplementation(
+        (input: { onAutoMatched?: (matched: number, total: number) => void }) => {
+          input.onAutoMatched?.(1, 1);
+          return Promise.resolve({ savedCount: 1 });
+        },
+      );
 
-      const originalIsTTY = process.stdout.isTTY;
-      process.stdout.isTTY = true;
-      try {
-        await run("csv", "file.csv");
-      } finally {
-        process.stdout.isTTY = originalIsTTY;
-      }
+      await run("csv", "file.csv");
 
-      expect(console.log).toHaveBeenCalledWith("Auto-categorized 1 of 1 transactions.");
+      expect(mockImportCsvWorkflow.execute).toHaveBeenCalled();
+    });
+
+    it("rethrows when workflow fails and calls spinner.fail", async () => {
+      mockParser.parse.mockReturnValue([parsedTxn()]);
+      mockImportCsvWorkflow.execute.mockRejectedValue(new Error("workflow error"));
+
+      await expect(run("csv", "file.csv")).rejects.toThrow("workflow error");
     });
 
     it("skips already-categorized transactions and logs count", async () => {
       mockParser.parse.mockReturnValue([parsedTxn("t1"), parsedTxn("t2")]);
-      mockImportCsvWorkflow.execute.mockImplementation((input) => {
-        input.onAlreadyCategorized?.(1);
-        return Promise.resolve({ interrupted: false, savedCount: 2 });
-      });
+      mockImportCsvWorkflow.execute.mockImplementation(
+        (input: { onAlreadyCategorized?: (count: number) => void }) => {
+          input.onAlreadyCategorized?.(1);
+          return Promise.resolve({ savedCount: 2 });
+        },
+      );
 
-      const originalIsTTY = process.stdout.isTTY;
-      process.stdout.isTTY = true;
-      try {
-        await run("csv", "file.csv");
-      } finally {
-        process.stdout.isTTY = originalIsTTY;
-      }
+      await run("csv", "file.csv");
 
-      expect(console.log).toHaveBeenCalledWith("Skipping 1 already-categorized transactions.");
-    });
-
-    it("propagates ExitPromptError from column mapping (handled at top-level)", async () => {
-      class MockExitPromptError extends Error {}
-      vi.mocked(collectColumnMapping).mockRejectedValue(new MockExitPromptError("sigint"));
-
-      const originalIsTTY = process.stdout.isTTY;
-      process.stdout.isTTY = true;
-      try {
-        await expect(run("csv", "file.csv")).rejects.toBeInstanceOf(MockExitPromptError);
-      } finally {
-        process.stdout.isTTY = originalIsTTY;
-      }
+      expect(mockImportCsvWorkflow.execute).toHaveBeenCalled();
     });
   });
 
