@@ -1,8 +1,5 @@
-import type {
-  CategorizedResult,
-  TransactionCategorizer,
-} from "../gateway/transaction-categorizer.js";
 import type { Category } from "../../domain/value-object/category.js";
+import type { TransactionCategorizer } from "../gateway/transaction-categorizer.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
 import type { UnitOfWork } from "../gateway/unit-of-work.js";
 import { toCategoryDto } from "../dto/category-dto.js";
@@ -45,6 +42,7 @@ export interface ImportCsvWorkflowInput {
   transactions: TransactionDto[];
   onAlreadyCategorized?: (count: number) => void;
   onAutoMatched?: (matchedCount: number, totalUncategorized: number) => void;
+  onInvalidCategoryIds?: (count: number) => void;
   onLlmCategorized?: (count: number) => void;
   onUncategorized?: (count: number) => void;
 }
@@ -61,8 +59,14 @@ export class ImportCsvWorkflow {
   }
 
   async execute(input: ImportCsvWorkflowInput): Promise<ImportCsvResult> {
-    const { transactions, onAlreadyCategorized, onAutoMatched, onLlmCategorized, onUncategorized } =
-      input;
+    const {
+      transactions,
+      onAlreadyCategorized,
+      onAutoMatched,
+      onInvalidCategoryIds,
+      onLlmCategorized,
+      onUncategorized,
+    } = input;
 
     const { alreadyCategorized, uncategorized } =
       this.deps.importTransactions.splitByCategoryStatus(transactions);
@@ -79,7 +83,7 @@ export class ImportCsvWorkflow {
 
     // LLM categorization of unmatched transactions
     const categories = this.deps.categoryRegistry.allCategories().map((cat) => toCategoryDto(cat));
-    const categorizedResults: CategorizedResult[] =
+    const { invalidCount, results: categorizedResults } =
       await this.deps.transactionCategorizer.categorize(unmatched, categories);
 
     const categorizedIdMap = new Map<string, string>(
@@ -98,6 +102,9 @@ export class ImportCsvWorkflow {
       }
     }
 
+    if (invalidCount > 0) {
+      onInvalidCategoryIds?.(invalidCount);
+    }
     if (llmCategorized.length > 0) {
       onLlmCategorized?.(llmCategorized.length);
     }

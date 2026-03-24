@@ -40,7 +40,9 @@ describe("ImportCsvWorkflow", () => {
     const applyCategoryRules = new ApplyCategoryRules(ruleGateway);
     learnCategoryRules = new LearnCategoryRules(ruleGateway, [], stubIdGenerator, categoryRegistry);
     const unitOfWork = { runInTransaction: (fn: () => void): void => fn() };
-    mockCategorizer = { categorize: vi.fn().mockResolvedValue([]) };
+    mockCategorizer = {
+      categorize: vi.fn().mockResolvedValue({ invalidCount: 0, results: [] }),
+    };
     workflow = new ImportCsvWorkflow({
       applyCategoryRules,
       categoryRegistry,
@@ -80,9 +82,10 @@ describe("ImportCsvWorkflow", () => {
   });
 
   it("calls onLlmCategorized when LLM categorizes transactions", async () => {
-    vi.mocked(mockCategorizer.categorize).mockResolvedValue([
-      { categoryId: "n01", transactionId: "t1" },
-    ]);
+    vi.mocked(mockCategorizer.categorize).mockResolvedValue({
+      invalidCount: 0,
+      results: [{ categoryId: "n01", transactionId: "t1" }],
+    });
     const onLlmCategorized = vi.fn();
     await workflow.execute({ onLlmCategorized, transactions: [dto("t1")] });
     expect(onLlmCategorized).toHaveBeenCalledWith(1);
@@ -96,9 +99,10 @@ describe("ImportCsvWorkflow", () => {
   });
 
   it("calls learnCategoryRules.learn only with LLM-categorized transactions", async () => {
-    vi.mocked(mockCategorizer.categorize).mockResolvedValue([
-      { categoryId: "n01", transactionId: "t1" },
-    ]);
+    vi.mocked(mockCategorizer.categorize).mockResolvedValue({
+      invalidCount: 0,
+      results: [{ categoryId: "n01", transactionId: "t1" }],
+    });
     const learnSpy = vi.spyOn(learnCategoryRules, "learn");
 
     await workflow.execute({ transactions: [dto("t1"), dto("t2")] });
@@ -116,5 +120,27 @@ describe("ImportCsvWorkflow", () => {
     await workflow.execute({ transactions: [dto("t1"), dto("t2")] });
 
     expect(learnSpy).toHaveBeenCalledWith([]);
+  });
+
+  it("calls onInvalidCategoryIds when LLM returns invalid IDs, valid mappings still applied", async () => {
+    vi.mocked(mockCategorizer.categorize).mockResolvedValue({
+      invalidCount: 3,
+      results: [{ categoryId: "n01", transactionId: "t1" }],
+    });
+    const onInvalidCategoryIds = vi.fn();
+    const onLlmCategorized = vi.fn();
+    await workflow.execute({ onInvalidCategoryIds, onLlmCategorized, transactions: [dto("t1")] });
+    expect(onInvalidCategoryIds).toHaveBeenCalledWith(3);
+    expect(onLlmCategorized).toHaveBeenCalledWith(1);
+  });
+
+  it("does not call onInvalidCategoryIds when all LLM category IDs are valid", async () => {
+    vi.mocked(mockCategorizer.categorize).mockResolvedValue({
+      invalidCount: 0,
+      results: [{ categoryId: "n01", transactionId: "t1" }],
+    });
+    const onInvalidCategoryIds = vi.fn();
+    await workflow.execute({ onInvalidCategoryIds, transactions: [dto("t1")] });
+    expect(onInvalidCategoryIds).not.toHaveBeenCalled();
   });
 });

@@ -33,33 +33,36 @@ describe("LlmTransactionCategorizer", () => {
     const categorizer = new LlmTransactionCategorizer(mockLlm);
 
     const txns = [makeTxn("t1", "CARREFOUR"), makeTxn("t2", "SNCF")];
-    const results = await categorizer.categorize(txns, categories);
+    const { invalidCount, results } = await categorizer.categorize(txns, categories);
 
     expect(results).toHaveLength(2);
     expect(results).toContainEqual({ categoryId: "food", transactionId: "t1" });
     expect(results).toContainEqual({ categoryId: "transport", transactionId: "t2" });
+    expect(invalidCount).toBe(0);
   });
 
-  it("excludes transactions with invalid category IDs", async () => {
+  it("excludes transactions with invalid category IDs and reports count", async () => {
     const mockLlm: LlmGateway = {
       complete: vi.fn().mockResolvedValue({ CARREFOUR: "food", SNCF: "unknown-id" }),
     };
     const categorizer = new LlmTransactionCategorizer(mockLlm);
 
     const txns = [makeTxn("t1", "CARREFOUR"), makeTxn("t2", "SNCF")];
-    const results = await categorizer.categorize(txns, categories);
+    const { invalidCount, results } = await categorizer.categorize(txns, categories);
 
     expect(results).toHaveLength(1);
     expect(results[0]).toEqual({ categoryId: "food", transactionId: "t1" });
+    expect(invalidCount).toBe(1);
   });
 
-  it("returns empty array without calling LLM for empty transaction list", async () => {
+  it("returns empty results without calling LLM for empty transaction list", async () => {
     const mockLlm: LlmGateway = { complete: vi.fn() };
     const categorizer = new LlmTransactionCategorizer(mockLlm);
 
-    const results = await categorizer.categorize([], categories);
+    const { invalidCount, results } = await categorizer.categorize([], categories);
 
     expect(results).toEqual([]);
+    expect(invalidCount).toBe(0);
     expect(mockLlm.complete).not.toHaveBeenCalled();
   });
 
@@ -70,7 +73,7 @@ describe("LlmTransactionCategorizer", () => {
     const categorizer = new LlmTransactionCategorizer(mockLlm);
 
     const txns = [makeTxn("t1", "SPOTIFY"), makeTxn("t2", "SPOTIFY"), makeTxn("t3", "SPOTIFY")];
-    const results = await categorizer.categorize(txns, categories);
+    const { results } = await categorizer.categorize(txns, categories);
 
     expect(results).toHaveLength(3);
     expect(mockLlm.complete).toHaveBeenCalledOnce();
@@ -97,7 +100,7 @@ describe("LlmTransactionCategorizer", () => {
     };
     const categorizer = new LlmTransactionCategorizer(mockLlm);
 
-    const results = await categorizer.categorize(txns, categories);
+    const { results } = await categorizer.categorize(txns, categories);
 
     expect(mockLlm.complete).toHaveBeenCalledTimes(2);
     expect(results).toHaveLength(60);

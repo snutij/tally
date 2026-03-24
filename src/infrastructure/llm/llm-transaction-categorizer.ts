@@ -1,4 +1,5 @@
 import type {
+  CategorizationOutput,
   CategorizedResult,
   TransactionCategorizer,
 } from "../../application/gateway/transaction-categorizer.js";
@@ -37,9 +38,9 @@ export class LlmTransactionCategorizer implements TransactionCategorizer {
   async categorize(
     transactions: TransactionDto[],
     categories: CategoryDto[],
-  ): Promise<CategorizedResult[]> {
+  ): Promise<CategorizationOutput> {
     if (transactions.length === 0) {
-      return [];
+      return { invalidCount: 0, results: [] };
     }
 
     const validCategoryIds = new Set(categories.map((cat) => cat.id));
@@ -55,6 +56,7 @@ export class LlmTransactionCategorizer implements TransactionCategorizer {
 
     // Collect label → categoryId mappings from all batches
     const labelToCategory = new Map<string, string>();
+    let invalidCount = 0;
     for (const batch of batches) {
       const response = await this.llmGateway.complete<Record<string, string>>(
         SYSTEM_PROMPT,
@@ -64,6 +66,8 @@ export class LlmTransactionCategorizer implements TransactionCategorizer {
       for (const [label, categoryId] of Object.entries(response)) {
         if (validCategoryIds.has(categoryId)) {
           labelToCategory.set(label, categoryId);
+        } else {
+          invalidCount += 1;
         }
       }
     }
@@ -76,6 +80,6 @@ export class LlmTransactionCategorizer implements TransactionCategorizer {
         results.push({ categoryId, transactionId: txn.id });
       }
     }
-    return results;
+    return { invalidCount, results };
   }
 }

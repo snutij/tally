@@ -65,6 +65,10 @@ export function createImportCommand(
             spinner.info(`Auto-categorized ${matchedCount} of ${totalUncategorized} transactions.`);
             spinner.start("Categorizing transactions…");
           },
+          onInvalidCategoryIds: (count) => {
+            spinner.warn(`AI returned ${count} invalid category IDs (ignored).`);
+            spinner.start("Categorizing transactions…");
+          },
           onLlmCategorized: (count) => {
             spinner.succeed(`AI categorized ${count} transactions.`);
             spinner.start("Categorizing transactions…");

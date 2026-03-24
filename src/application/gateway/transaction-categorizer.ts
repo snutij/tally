@@ -6,9 +6,14 @@ export interface CategorizedResult {
   readonly transactionId: string;
 }
 
+export interface CategorizationOutput {
+  readonly results: CategorizedResult[];
+  readonly invalidCount: number;
+}
+
 export interface TransactionCategorizer {
   categorize(
     transactions: TransactionDto[],
     categories: CategoryDto[],
-  ): Promise<CategorizedResult[]>;
+  ): Promise<CategorizationOutput>;
 }

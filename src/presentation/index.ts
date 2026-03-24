@@ -6,6 +6,7 @@ import {
 import { VALID_FORMATS, createRenderer } from "./renderer/create-renderer.js";
 import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { existsSync, mkdirSync } from "node:fs";
+import { resolveModelPath, resolveModelsDir } from "../infrastructure/llm/default-model.js";
 import { AddRule } from "../application/usecase/add-rule.js";
 import { ApplicationError } from "../application/error.js";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
@@ -40,10 +41,7 @@ import { createReportCommand } from "./command/report-command.js";
 import { createRulesCommand } from "./command/rules-command.js";
 import { createTransactionsCommand } from "./command/transactions-command.js";
 import { createTrendCommand } from "./command/trend-command.js";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import { openDatabase } from "../infrastructure/persistence/sqlite-repository.js";
-import { resolveModelPath } from "../infrastructure/llm/default-model.js";
 
 // --- Data directory (XDG convention) ---
 if (!existsSync(dataDir)) {
@@ -51,7 +49,7 @@ if (!existsSync(dataDir)) {
 }
 
 // --- Model path resolution ---
-const modelsDir = join(homedir(), "Library", "Application Support", "tally", "models");
+const modelsDir = resolveModelsDir();
 const resolvedModelPath = resolveModelPath();
 
 // --- LLM infrastructure ---

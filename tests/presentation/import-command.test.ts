@@ -139,6 +139,20 @@ describe("createImportCommand", () => {
       expect(mockImportCsvWorkflow.execute).toHaveBeenCalled();
     });
 
+    it("calls onInvalidCategoryIds callback", async () => {
+      mockParser.parse.mockReturnValue([parsedTxn()]);
+      mockImportCsvWorkflow.execute.mockImplementation(
+        (input: { onInvalidCategoryIds?: (count: number) => void }) => {
+          input.onInvalidCategoryIds?.(2);
+          return Promise.resolve({ savedCount: 0 });
+        },
+      );
+
+      await run("csv", "file.csv");
+
+      expect(mockImportCsvWorkflow.execute).toHaveBeenCalled();
+    });
+
     it("rethrows when workflow fails and calls spinner.fail", async () => {
       mockParser.parse.mockReturnValue([parsedTxn()]);
       mockImportCsvWorkflow.execute.mockRejectedValue(new Error("workflow error"));
