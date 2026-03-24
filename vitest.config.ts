@@ -4,10 +4,8 @@ export default defineConfig({
   test: {
     coverage: {
       exclude: [
-        // Composition root: side effects (fs, db, process.exit), Commander + Inquirer wiring — no unit test value
+        // Composition root: side effects (fs, db, process.exit), Commander + node-llama-cpp wiring — no unit test value
         "src/presentation/index.ts",
-        // Interactive I/O via @inquirer/select — pure logic (validateFields) is extracted and tested separately
-        "src/presentation/prompt/column-mapping-prompt.ts",
       ],
       include: ["src/**/*.ts"],
       provider: "v8",

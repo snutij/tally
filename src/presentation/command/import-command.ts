@@ -1,25 +1,23 @@
-import type { CategoryChoiceGroup } from "../../application/category-choices.js";
 import { Command } from "commander";
+import type { CsvColumnMapper } from "../../application/gateway/csv-column-mapper.js";
 import type { CsvFormatDetector } from "../../application/gateway/csv-format-detector.js";
 import type { CsvMappingConfig } from "../../application/dto/csv-mapping-config.js";
 import type { ImportCsvWorkflow } from "../../application/usecase/import-csv-workflow.js";
-import type { ImportTransactions } from "../../application/usecase/import-transactions.js";
 import type { Renderer } from "../renderer/renderer.js";
 import type { SeedMockData } from "../../application/usecase/seed-mock-data.js";
 import type { TransactionParser } from "../../application/gateway/transaction-parser.js";
-import { categorizePrompt } from "../prompt/categorize-prompt.js";
 import { collectColumnMapping } from "../prompt/column-mapping-prompt.js";
+import ora from "ora";
 import { toTransactionDto } from "../../application/dto/transaction-dto.js";
 
-interface ImportCommandDeps {
-  choiceGroups: CategoryChoiceGroup[];
+export interface ImportCommandDeps {
+  csvColumnMapper: CsvColumnMapper;
   csvFormatDetector: CsvFormatDetector;
   parserFactory: (mapping: CsvMappingConfig) => TransactionParser;
   renderer: Renderer;
 }
 
 export function createImportCommand(
-  importTransactions: ImportTransactions,
   seedMockData: SeedMockData,
   importCsvWorkflow: ImportCsvWorkflow,
   deps: ImportCommandDeps,
@@ -46,40 +44,46 @@ export function createImportCommand(
     .command("csv")
     .description("Import transactions from any CSV file")
     .argument("<file>", "Path to CSV file")
-    .option("--no-categorize", "Skip interactive categorization")
-    .action(async (file: string, opts: { categorize: boolean }) => {
-      if (!process.stdout.isTTY) {
-        console.error("Interactive mapping requires a TTY.");
-        process.exitCode = 1;
-        return;
-      }
-
-      const mapping = await collectColumnMapping(file, deps.csvFormatDetector);
+    .action(async (file: string) => {
+      const mapping = await collectColumnMapping(
+        file,
+        deps.csvFormatDetector,
+        deps.csvColumnMapper,
+      );
       const parser = deps.parserFactory(mapping);
       const parsed = parser.parse(file).map((txn) => toTransactionDto(txn));
 
-      if (!opts.categorize) {
-        const result = importTransactions.save(parsed);
-        console.log(deps.renderer.render(result));
-        return;
+      const spinner = ora("Categorizing transactions…").start();
+      let result;
+      try {
+        result = await importCsvWorkflow.execute({
+          onAlreadyCategorized: (count) => {
+            spinner.info(`Skipping ${count} already-categorized transactions.`);
+            spinner.start("Categorizing transactions…");
+          },
+          onAutoMatched: (matchedCount, totalUncategorized) => {
+            spinner.info(`Auto-categorized ${matchedCount} of ${totalUncategorized} transactions.`);
+            spinner.start("Categorizing transactions…");
+          },
+          onInvalidCategoryIds: (count) => {
+            spinner.warn(`AI returned ${count} invalid category IDs (ignored).`);
+            spinner.start("Categorizing transactions…");
+          },
+          onLlmCategorized: (count) => {
+            spinner.succeed(`AI categorized ${count} transactions.`);
+            spinner.start("Categorizing transactions…");
+          },
+          onUncategorized: (count) => {
+            spinner.warn(`${count} transactions could not be categorized automatically.`);
+          },
+          transactions: parsed,
+        });
+      } catch (error) {
+        spinner.fail("Categorization failed.");
+        throw error;
       }
 
-      const result = await importCsvWorkflow.execute({
-        onAlreadyCategorized: (count) => {
-          console.log(`Skipping ${count} already-categorized transactions.`);
-        },
-        onAutoMatched: (matchedCount, totalUncategorized) => {
-          console.log(`Auto-categorized ${matchedCount} of ${totalUncategorized} transactions.`);
-        },
-        promptFn: (txns) => categorizePrompt(txns, deps.choiceGroups),
-        transactions: parsed,
-      });
-
-      if (result.interrupted) {
-        console.log(`\nInterrupted — saved ${result.savedCount} of ${parsed.length} transactions.`);
-      } else {
-        console.log(deps.renderer.render({ count: result.savedCount }));
-      }
+      console.log(deps.renderer.render({ count: result.savedCount }));
     });
 
   return cmd;

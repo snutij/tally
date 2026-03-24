@@ -1,5 +1,8 @@
+import type { Category } from "../../domain/value-object/category.js";
+import type { TransactionCategorizer } from "../gateway/transaction-categorizer.js";
 import type { TransactionDto } from "../dto/transaction-dto.js";
 import type { UnitOfWork } from "../gateway/unit-of-work.js";
+import { toCategoryDto } from "../dto/category-dto.js";
 
 // Structural interfaces — concrete use cases satisfy these without explicit `implements`
 
@@ -22,77 +25,103 @@ interface RuleLearner {
   learn(transactions: TransactionDto[]): void;
 }
 
-export interface CategorizeResult {
-  categorized: TransactionDto[];
-  interrupted: boolean;
+interface CategoryLister {
+  allCategories(): readonly Category[];
+}
+
+export interface ImportCsvWorkflowDeps {
+  applyCategoryRules: RuleMatcher;
+  categoryRegistry: CategoryLister;
+  importTransactions: TransactionImporter;
+  learnCategoryRules: RuleLearner;
+  transactionCategorizer: TransactionCategorizer;
+  unitOfWork: UnitOfWork;
 }
 
 export interface ImportCsvWorkflowInput {
   transactions: TransactionDto[];
-  promptFn?: (uncategorized: TransactionDto[]) => Promise<CategorizeResult>;
   onAlreadyCategorized?: (count: number) => void;
   onAutoMatched?: (matchedCount: number, totalUncategorized: number) => void;
+  onInvalidCategoryIds?: (count: number) => void;
+  onLlmCategorized?: (count: number) => void;
+  onUncategorized?: (count: number) => void;
 }
 
 export interface ImportCsvResult {
   readonly savedCount: number;
-  readonly interrupted: boolean;
 }
 
 export class ImportCsvWorkflow {
-  private readonly importTransactions: TransactionImporter;
-  private readonly applyCategoryRules: RuleMatcher;
-  private readonly learnCategoryRules: RuleLearner;
-  private readonly unitOfWork: UnitOfWork;
+  private readonly deps: ImportCsvWorkflowDeps;
 
-  constructor(
-    importTransactions: TransactionImporter,
-    applyCategoryRules: RuleMatcher,
-    learnCategoryRules: RuleLearner,
-    unitOfWork: UnitOfWork,
-  ) {
-    this.importTransactions = importTransactions;
-    this.applyCategoryRules = applyCategoryRules;
-    this.learnCategoryRules = learnCategoryRules;
-    this.unitOfWork = unitOfWork;
+  constructor(deps: ImportCsvWorkflowDeps) {
+    this.deps = deps;
   }
 
   async execute(input: ImportCsvWorkflowInput): Promise<ImportCsvResult> {
-    const { transactions, promptFn, onAlreadyCategorized, onAutoMatched } = input;
+    const {
+      transactions,
+      onAlreadyCategorized,
+      onAutoMatched,
+      onInvalidCategoryIds,
+      onLlmCategorized,
+      onUncategorized,
+    } = input;
 
     const { alreadyCategorized, uncategorized } =
-      this.importTransactions.splitByCategoryStatus(transactions);
+      this.deps.importTransactions.splitByCategoryStatus(transactions);
 
     if (alreadyCategorized.length > 0) {
       onAlreadyCategorized?.(alreadyCategorized.length);
     }
 
-    const { matched, unmatched } = this.applyCategoryRules.apply(uncategorized);
+    const { matched, unmatched } = this.deps.applyCategoryRules.apply(uncategorized);
 
     if (matched.length > 0) {
       onAutoMatched?.(matched.length, uncategorized.length);
     }
 
-    let manualCategorized: TransactionDto[] = [];
-    let interrupted = false;
+    // LLM categorization of unmatched transactions
+    const categories = this.deps.categoryRegistry.allCategories().map((cat) => toCategoryDto(cat));
+    const { invalidCount, results: categorizedResults } =
+      await this.deps.transactionCategorizer.categorize(unmatched, categories);
 
-    if (promptFn) {
-      const promptResult = await promptFn(unmatched);
-      manualCategorized = promptResult.categorized;
-      ({ interrupted } = promptResult);
+    const categorizedIdMap = new Map<string, string>(
+      categorizedResults.map((result) => [result.transactionId, result.categoryId]),
+    );
+
+    const llmCategorized: TransactionDto[] = [];
+    const stillUncategorized: TransactionDto[] = [];
+
+    for (const txn of unmatched) {
+      const categoryId = categorizedIdMap.get(txn.id);
+      if (categoryId) {
+        llmCategorized.push({ ...txn, categoryId });
+      } else {
+        stillUncategorized.push(txn);
+      }
     }
 
-    // When no promptFn, include unmatched as-is (no interactive categorization)
-    const remaining = promptFn ? manualCategorized : unmatched;
-    const toSave = [...alreadyCategorized, ...matched, ...remaining];
+    if (invalidCount > 0) {
+      onInvalidCategoryIds?.(invalidCount);
+    }
+    if (llmCategorized.length > 0) {
+      onLlmCategorized?.(llmCategorized.length);
+    }
+    if (stillUncategorized.length > 0) {
+      onUncategorized?.(stillUncategorized.length);
+    }
+
+    const toSave = [...alreadyCategorized, ...matched, ...llmCategorized, ...stillUncategorized];
     let savedCount = 0;
 
-    this.unitOfWork.runInTransaction(() => {
-      const result = this.importTransactions.save(toSave);
+    this.deps.unitOfWork.runInTransaction(() => {
+      const result = this.deps.importTransactions.save(toSave);
       savedCount = result.count;
-      this.learnCategoryRules.learn(remaining);
+      // Only learn from LLM-categorized transactions (not regex-matched, not uncategorized)
+      this.deps.learnCategoryRules.learn(llmCategorized);
     });
 
-    return { interrupted, savedCount };
+    return { savedCount };
   }
 }

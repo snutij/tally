@@ -1,3 +1,5 @@
+export type { CategoryDto } from "./category-dto.js";
+export { toCategoryDto } from "./category-dto.js";
 export type { CategoryRuleDto } from "./category-rule-dto.js";
 export { toCategoryRuleDto } from "./category-rule-dto.js";
 export type { MonthlyReportDto, GroupSummaryDto, ReportKpisDto } from "./report-dto.js";

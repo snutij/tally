@@ -15,10 +15,12 @@ import { ImportTransactions } from "../../src/application/usecase/import-transac
 import { LearnCategoryRules } from "../../src/application/usecase/learn-category-rules.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
+import type { TransactionCategorizer } from "../../src/application/gateway/transaction-categorizer.js";
 import type { TransactionDto } from "../../src/application/dto/transaction-dto.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
 const stubIdGenerator: IdGenerator = { fromPattern: (pat) => `id-${pat.slice(0, 28)}` };
+const categoryRegistry = new CategoryRegistry(DEFAULT_CATEGORIES);
 
 function dto(id: string, categoryId?: string): TransactionDto {
   return { amount: -10, categoryId, date: "2026-03-15", id, label: `txn-${id}`, source: "csv" };
@@ -27,6 +29,8 @@ function dto(id: string, categoryId?: string): TransactionDto {
 describe("ImportCsvWorkflow", () => {
   let txnGateway: InMemoryTransactionRepository;
   let ruleGateway: InMemoryRuleBookRepository;
+  let learnCategoryRules: LearnCategoryRules;
+  let mockCategorizer: TransactionCategorizer;
   let workflow: ImportCsvWorkflow;
 
   beforeEach(() => {
@@ -34,25 +38,24 @@ describe("ImportCsvWorkflow", () => {
     ruleGateway = new InMemoryRuleBookRepository();
     const importTransactions = new ImportTransactions(txnGateway);
     const applyCategoryRules = new ApplyCategoryRules(ruleGateway);
-    const learnCategoryRules = new LearnCategoryRules(
-      ruleGateway,
-      [],
-      stubIdGenerator,
-      new CategoryRegistry(DEFAULT_CATEGORIES),
-    );
+    learnCategoryRules = new LearnCategoryRules(ruleGateway, [], stubIdGenerator, categoryRegistry);
     const unitOfWork = { runInTransaction: (fn: () => void): void => fn() };
-    workflow = new ImportCsvWorkflow(
-      importTransactions,
+    mockCategorizer = {
+      categorize: vi.fn().mockResolvedValue({ invalidCount: 0, results: [] }),
+    };
+    workflow = new ImportCsvWorkflow({
       applyCategoryRules,
+      categoryRegistry,
+      importTransactions,
       learnCategoryRules,
+      transactionCategorizer: mockCategorizer,
       unitOfWork,
-    );
+    });
   });
 
   it("saves all transactions and returns count", async () => {
     const result = await workflow.execute({ transactions: [dto("t1"), dto("t2")] });
     expect(result.savedCount).toBe(2);
-    expect(result.interrupted).toBe(false);
   });
 
   it("calls onAlreadyCategorized callback when applicable", async () => {
@@ -71,28 +74,73 @@ describe("ImportCsvWorkflow", () => {
     expect(onAlreadyCategorized).toHaveBeenCalledWith(1);
   });
 
-  it("calls promptFn with unmatched transactions", async () => {
-    const promptFn = vi.fn().mockResolvedValue({ categorized: [], interrupted: false });
-    await workflow.execute({ promptFn, transactions: [dto("t1")] });
-    expect(promptFn).toHaveBeenCalledWith([dto("t1")]);
-  });
-
-  it("propagates interrupted flag from promptFn", async () => {
-    const promptFn = vi.fn().mockResolvedValue({ categorized: [], interrupted: true });
-    const result = await workflow.execute({ promptFn, transactions: [dto("t1")] });
-    expect(result.interrupted).toBe(true);
-  });
-
-  it("does not call promptFn when not provided", async () => {
-    const result = await workflow.execute({ transactions: [dto("t1")] });
-    expect(result.savedCount).toBe(1);
-  });
-
   it("calls onAutoMatched callback when rules match", async () => {
     ruleGateway.seed(CategoryRule.create("id-txn", String.raw`\btxn\b`, "n01", "default"));
     const onAutoMatched = vi.fn();
     await workflow.execute({ onAutoMatched, transactions: [dto("t1")] });
-    // dto label is "txn-t1" which matches \btxn\b
     expect(onAutoMatched).toHaveBeenCalledWith(1, 1);
+  });
+
+  it("calls onLlmCategorized when LLM categorizes transactions", async () => {
+    vi.mocked(mockCategorizer.categorize).mockResolvedValue({
+      invalidCount: 0,
+      results: [{ categoryId: "n01", transactionId: "t1" }],
+    });
+    const onLlmCategorized = vi.fn();
+    await workflow.execute({ onLlmCategorized, transactions: [dto("t1")] });
+    expect(onLlmCategorized).toHaveBeenCalledWith(1);
+  });
+
+  it("calls onUncategorized for transactions not categorized by LLM", async () => {
+    // mockCategorizer returns empty (no categorizations)
+    const onUncategorized = vi.fn();
+    await workflow.execute({ onUncategorized, transactions: [dto("t1"), dto("t2")] });
+    expect(onUncategorized).toHaveBeenCalledWith(2);
+  });
+
+  it("calls learnCategoryRules.learn only with LLM-categorized transactions", async () => {
+    vi.mocked(mockCategorizer.categorize).mockResolvedValue({
+      invalidCount: 0,
+      results: [{ categoryId: "n01", transactionId: "t1" }],
+    });
+    const learnSpy = vi.spyOn(learnCategoryRules, "learn");
+
+    await workflow.execute({ transactions: [dto("t1"), dto("t2")] });
+
+    expect(learnSpy).toHaveBeenCalledOnce();
+    const [[learnArg]] = learnSpy.mock.calls;
+    expect(learnArg).toHaveLength(1);
+    expect(learnArg?.[0]?.id).toBe("t1");
+  });
+
+  it("does not call learnCategoryRules.learn with uncategorized transactions", async () => {
+    // mockCategorizer returns empty — t1 and t2 remain uncategorized
+    const learnSpy = vi.spyOn(learnCategoryRules, "learn");
+
+    await workflow.execute({ transactions: [dto("t1"), dto("t2")] });
+
+    expect(learnSpy).toHaveBeenCalledWith([]);
+  });
+
+  it("calls onInvalidCategoryIds when LLM returns invalid IDs, valid mappings still applied", async () => {
+    vi.mocked(mockCategorizer.categorize).mockResolvedValue({
+      invalidCount: 3,
+      results: [{ categoryId: "n01", transactionId: "t1" }],
+    });
+    const onInvalidCategoryIds = vi.fn();
+    const onLlmCategorized = vi.fn();
+    await workflow.execute({ onInvalidCategoryIds, onLlmCategorized, transactions: [dto("t1")] });
+    expect(onInvalidCategoryIds).toHaveBeenCalledWith(3);
+    expect(onLlmCategorized).toHaveBeenCalledWith(1);
+  });
+
+  it("does not call onInvalidCategoryIds when all LLM category IDs are valid", async () => {
+    vi.mocked(mockCategorizer.categorize).mockResolvedValue({
+      invalidCount: 0,
+      results: [{ categoryId: "n01", transactionId: "t1" }],
+    });
+    const onInvalidCategoryIds = vi.fn();
+    await workflow.execute({ onInvalidCategoryIds, transactions: [dto("t1")] });
+    expect(onInvalidCategoryIds).not.toHaveBeenCalled();
   });
 });
