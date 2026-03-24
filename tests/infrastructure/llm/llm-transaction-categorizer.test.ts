@@ -28,7 +28,7 @@ const categories: CategoryDto[] = [
 describe("LlmTransactionCategorizer", () => {
   it("returns categorized results for valid response", async () => {
     const mockLlm: LlmGateway = {
-      complete: vi.fn().mockResolvedValue({ CARREFOUR: "food", SNCF: "transport" }),
+      complete: vi.fn().mockResolvedValue({ "1": "food", "2": "transport" }),
     };
     const categorizer = new LlmTransactionCategorizer(mockLlm);
 
@@ -43,7 +43,7 @@ describe("LlmTransactionCategorizer", () => {
 
   it("excludes transactions with invalid category IDs and reports count", async () => {
     const mockLlm: LlmGateway = {
-      complete: vi.fn().mockResolvedValue({ CARREFOUR: "food", SNCF: "unknown-id" }),
+      complete: vi.fn().mockResolvedValue({ "1": "food", "2": "unknown-id" }),
     };
     const categorizer = new LlmTransactionCategorizer(mockLlm);
 
@@ -68,7 +68,7 @@ describe("LlmTransactionCategorizer", () => {
 
   it("deduplicates labels and assigns same category to all matching transactions", async () => {
     const mockLlm: LlmGateway = {
-      complete: vi.fn().mockResolvedValue({ SPOTIFY: "streaming" }),
+      complete: vi.fn().mockResolvedValue({ "1": "streaming" }),
     };
     const categorizer = new LlmTransactionCategorizer(mockLlm);
 
@@ -86,10 +86,10 @@ describe("LlmTransactionCategorizer", () => {
     // 60 unique labels — should produce 2 LLM calls (50 + 10)
     const txns = Array.from({ length: 60 }, (_el, idx) => makeTxn(`t${idx}`, `LABEL_${idx}`));
     const firstBatchResponse = Object.fromEntries(
-      Array.from({ length: 50 }, (_el, idx) => [`LABEL_${idx}`, "food"]),
+      Array.from({ length: 50 }, (_el, idx) => [String(idx + 1), "food"]),
     );
     const secondBatchResponse = Object.fromEntries(
-      Array.from({ length: 10 }, (_el, idx) => [`LABEL_${idx + 50}`, "transport"]),
+      Array.from({ length: 10 }, (_el, idx) => [String(idx + 1), "transport"]),
     );
 
     const mockLlm: LlmGateway = {
@@ -104,5 +104,19 @@ describe("LlmTransactionCategorizer", () => {
 
     expect(mockLlm.complete).toHaveBeenCalledTimes(2);
     expect(results).toHaveLength(60);
+  });
+
+  it("ignores out-of-range indices in the response", async () => {
+    const mockLlm: LlmGateway = {
+      complete: vi.fn().mockResolvedValue({ "1": "food", "99": "transport" }),
+    };
+    const categorizer = new LlmTransactionCategorizer(mockLlm);
+
+    const txns = [makeTxn("t1", "CARREFOUR")];
+    const { invalidCount, results } = await categorizer.categorize(txns, categories);
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toEqual({ categoryId: "food", transactionId: "t1" });
+    expect(invalidCount).toBe(0);
   });
 });

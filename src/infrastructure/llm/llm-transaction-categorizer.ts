@@ -20,7 +20,7 @@ function buildUserPrompt(labels: string[], categories: CategoryDto[]): string {
 
   const labelList = labels.map((label, idx) => `${idx + 1}. ${label}`).join("\n");
 
-  return `Categories:\n${categoryList}\n\nTransaction labels to categorize:\n${labelList}\n\nRespond with a JSON object mapping each label to a category ID, e.g.: {"LABEL": "categoryId"}`;
+  return `Categories:\n${categoryList}\n\nTransaction labels to categorize:\n${labelList}\n\nRespond with a JSON object mapping each number to a category ID, e.g.: {"1": "categoryId", "2": "categoryId"}`;
 }
 
 const RESPONSE_SCHEMA = {
@@ -63,11 +63,15 @@ export class LlmTransactionCategorizer implements TransactionCategorizer {
         buildUserPrompt(batch, categories),
         RESPONSE_SCHEMA,
       );
-      for (const [label, categoryId] of Object.entries(response)) {
-        if (validCategoryIds.has(categoryId)) {
-          labelToCategory.set(label, categoryId);
-        } else {
-          invalidCount += 1;
+      for (const [key, categoryId] of Object.entries(response)) {
+        const idx = Number.parseInt(key, 10) - 1;
+        if (!Number.isNaN(idx) && idx >= 0 && idx < batch.length) {
+          const label = batch[idx];
+          if (validCategoryIds.has(categoryId)) {
+            labelToCategory.set(label, categoryId);
+          } else {
+            invalidCount += 1;
+          }
         }
       }
     }

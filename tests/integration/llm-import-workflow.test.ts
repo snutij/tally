@@ -71,9 +71,10 @@ describe("8.1: Full CSV import with mocked LLM responses", () => {
 
   it("categorizes unmatched transactions via LLM and saves all", async () => {
     // SPOTIFY has no mapping — will remain uncategorized
+    // CARREFOUR → index 1, SNCF → index 2 (SPOTIFY → index 3, no mapping)
     vi.mocked(mockLlm.complete).mockResolvedValue({
-      CARREFOUR: FOOD_CATEGORY_ID,
-      SNCF: FOOD_CATEGORY_ID,
+      "1": FOOD_CATEGORY_ID,
+      "2": FOOD_CATEGORY_ID,
     });
 
     const transactions = [dto("t1", "CARREFOUR"), dto("t2", "SNCF"), dto("t3", "SPOTIFY")];
@@ -140,9 +141,7 @@ describe("8.2: LLM categorization feeds into LearnCategoryRules", () => {
   });
 
   it("creates learned rules from LLM-categorized transactions", async () => {
-    vi.mocked(mockLlm.complete).mockResolvedValue({
-      "BOULANGERIE PAUL PARIS": FOOD_CATEGORY_ID,
-    });
+    vi.mocked(mockLlm.complete).mockResolvedValue({ "1": FOOD_CATEGORY_ID });
 
     await workflow.execute({
       transactions: [dto("t1", "BOULANGERIE PAUL PARIS")],
