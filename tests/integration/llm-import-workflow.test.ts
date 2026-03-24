@@ -70,6 +70,7 @@ describe("8.1: Full CSV import with mocked LLM responses", () => {
   });
 
   it("categorizes unmatched transactions via LLM and saves all", async () => {
+    // SPOTIFY has no mapping — will remain uncategorized
     vi.mocked(mockLlm.complete).mockResolvedValue({
       CARREFOUR: FOOD_CATEGORY_ID,
       SNCF: FOOD_CATEGORY_ID,
@@ -77,12 +78,6 @@ describe("8.1: Full CSV import with mocked LLM responses", () => {
 
     const transactions = [dto("t1", "CARREFOUR"), dto("t2", "SNCF"), dto("t3", "SPOTIFY")];
     const onLlmCategorized = vi.fn();
-
-    // SPOTIFY has no mapping — will remain uncategorized
-    vi.mocked(mockLlm.complete).mockResolvedValue({
-      CARREFOUR: FOOD_CATEGORY_ID,
-      SNCF: FOOD_CATEGORY_ID,
-    });
 
     const result = await workflow.execute({ onLlmCategorized, transactions });
 

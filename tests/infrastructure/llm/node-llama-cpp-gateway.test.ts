@@ -5,7 +5,10 @@ import { NodeLlamaCppGateway } from "../../../src/infrastructure/llm/node-llama-
 
 const mocks = vi.hoisted(() => {
   const mockSession = { prompt: vi.fn() };
-  const mockContext = { getSequence: vi.fn().mockReturnValue({}) };
+  const mockContext = {
+    dispose: vi.fn().mockResolvedValue(),
+    getSequence: vi.fn().mockReturnValue({}),
+  };
   const mockGrammar = { parse: vi.fn((raw: string) => JSON.parse(raw)) };
   const mockModel = { createContext: vi.fn().mockResolvedValue(mockContext) };
   const mockLlama = {
@@ -118,5 +121,23 @@ describe("NodeLlamaCppGateway", () => {
     await gateway.complete("system", "user prompt", schema);
 
     expect(mocks.mockLlama.loadModel).toHaveBeenCalledOnce();
+  });
+
+  it("disposes context after successful inference", async () => {
+    mocks.mockSession.prompt.mockResolvedValue(JSON.stringify({ result: "food" }));
+
+    await gateway.complete("system", "user prompt", schema);
+
+    expect(mocks.mockContext.dispose).toHaveBeenCalledOnce();
+  });
+
+  it("disposes context even when inference throws", async () => {
+    mocks.mockSession.prompt.mockRejectedValue(new Error("GPU error"));
+
+    await expect(gateway.complete("system", "user prompt", schema)).rejects.toThrow(
+      InfrastructureError,
+    );
+
+    expect(mocks.mockContext.dispose).toHaveBeenCalledOnce();
   });
 });

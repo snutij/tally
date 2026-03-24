@@ -71,4 +71,16 @@ describe("collectColumnMapping", () => {
       ApplicationError,
     );
   });
+
+  it("throws ApplicationError when LLM does not detect a date column", async () => {
+    const detector = makeDetector();
+    const mapper = makeMapper(["ignore", "label", "amount"]);
+
+    await expect(collectColumnMapping("bank.csv", detector, mapper)).rejects.toThrow(
+      ApplicationError,
+    );
+    await expect(collectColumnMapping("bank.csv", detector, mapper)).rejects.toThrow(
+      "LLM did not detect a date column",
+    );
+  });
 });

@@ -14,7 +14,6 @@ import { Command } from "commander";
 import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
 import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector-impl.js";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
-import { DEFAULT_MODEL } from "../infrastructure/llm/default-model.js";
 import { DomainError } from "../domain/error/index.js";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
@@ -44,6 +43,7 @@ import { createTrendCommand } from "./command/trend-command.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { openDatabase } from "../infrastructure/persistence/sqlite-repository.js";
+import { resolveModelPath } from "../infrastructure/llm/default-model.js";
 
 // --- Data directory (XDG convention) ---
 if (!existsSync(dataDir)) {
@@ -52,7 +52,7 @@ if (!existsSync(dataDir)) {
 
 // --- Model path resolution ---
 const modelsDir = join(homedir(), "Library", "Application Support", "tally", "models");
-const resolvedModelPath = process.env["TALLY_LLM_MODEL"] ?? join(modelsDir, DEFAULT_MODEL.filename);
+const resolvedModelPath = resolveModelPath();
 
 // --- LLM infrastructure ---
 const llmGateway = new NodeLlamaCppGateway();

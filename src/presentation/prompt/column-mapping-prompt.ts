@@ -50,6 +50,9 @@ export async function collectColumnMapping(
 
   // 5. Detect date format from samples (default to DD/MM/YYYY if not confident)
   const dateIdx = fields.indexOf("date");
+  if (dateIdx === -1) {
+    throw new ApplicationError("LLM did not detect a date column. Cannot determine date format.");
+  }
   const dateSamples = dataRows.map((row) => row[dateIdx] ?? "");
   const dateFormatResult = detector.detectDateFormat(dateSamples);
   const dateFormat = dateFormatResult.confident ? dateFormatResult.value : "DD/MM/YYYY";

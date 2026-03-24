@@ -67,6 +67,7 @@ export function createImportCommand(
           },
           onLlmCategorized: (count) => {
             spinner.succeed(`AI categorized ${count} transactions.`);
+            spinner.start("Categorizing transactions…");
           },
           onUncategorized: (count) => {
             spinner.warn(`${count} transactions could not be categorized automatically.`);
