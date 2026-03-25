@@ -71,18 +71,19 @@ describe("e2e: import → report (no budget step)", () => {
 
     importTxns.save(categorized);
 
-    // No budget.init step — report works directly
-    const report = generateReport.execute("2026-03");
+    const result = generateReport.execute();
+    expect(result.months).toHaveLength(1);
+    const month = result.months.at(0) as (typeof result.months)[0];
 
-    expect(report.transactionCount).toBe(4);
+    expect(month.transactionCount).toBe(4);
     let expectedNet = 0;
     for (const txn of parsed) {
       expectedNet += txn.amount.toEuros();
     }
-    expect(report.net).toBeCloseTo(expectedNet, 2);
-    expect(report.totalIncomeActual).toBe(2500); // 2500€ salary
-    expect(report.totalExpenseActual).toBeCloseTo(800 + 52.3 + 35.5, 1); // rent + grocery + restaurant
-    expect(report.uncategorized).toBe(0);
+    expect(month.net).toBeCloseTo(expectedNet, 2);
+    expect(month.totalIncomeActual).toBe(2500); // 2500€ salary
+    expect(month.totalExpenseActual).toBeCloseTo(800 + 52.3 + 35.5, 1); // rent + grocery + restaurant
+    expect(month.uncategorized).toBe(0);
   });
 
   it("group targets computed from actual income (50/30/20)", () => {
@@ -92,8 +93,9 @@ describe("e2e: import → report (no budget step)", () => {
     );
     importTxns.save(withSalary);
 
-    const report = generateReport.execute("2026-03");
-    const needs = report.groups.find((grp) => grp.group === "NEEDS");
+    const result = generateReport.execute();
+    const month = result.months.at(0) as (typeof result.months)[0];
+    const needs = month.groups.find((grp) => grp.group === "NEEDS");
     expect(needs?.budgeted).toBeCloseTo((2500 * DEFAULT_SPENDING_TARGETS.needs) / 100, 2);
   });
 
@@ -101,10 +103,11 @@ describe("e2e: import → report (no budget step)", () => {
     const parsed = parser.parse(CSV);
     importTxns.save(parsed.map((txn) => toTransactionDto(txn)));
 
-    const report = generateReport.execute("2026-03");
+    const result = generateReport.execute();
+    const month = result.months.at(0) as (typeof result.months)[0];
 
-    expect(report.transactionCount).toBe(4);
-    expect(report.uncategorized).toBeCloseTo(800 + 52.3 + 2500 + 35.5, 1);
+    expect(month.transactionCount).toBe(4);
+    expect(month.uncategorized).toBeCloseTo(800 + 52.3 + 2500 + 35.5, 1);
   });
 
   it("re-import preserves previously categorized transactions", () => {

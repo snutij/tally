@@ -1,15 +1,13 @@
 import {
   type GroupSummaryDto,
-  type MonthlyReportDto,
-  type ReportKpisDto,
-  isMonthlyReportDto,
-} from "../../application/dto/report-dto.js";
-import {
   type MonthOverMonthDeltaDto,
+  type MonthlyReportDto,
+  type ReportDto,
+  type ReportKpisDto,
   type SavingsRateEntryDto,
-  type TrendReportDto,
-  isTrendReportDto,
-} from "../../application/dto/trend-report-dto.js";
+  type TrendAnalyticsDto,
+  isReportDto,
+} from "../../application/dto/report-dto.js";
 import type { Renderer } from "./renderer.js";
 
 const MONTH_NAMES = [
@@ -99,34 +97,115 @@ function item(label: string, value: string, cls = ""): string {
 
 export class HtmlRenderer implements Renderer {
   render(data: unknown): string {
-    if (isMonthlyReportDto(data)) {
-      return HtmlRenderer.renderReport(data);
+    if (isReportDto(data)) {
+      return HtmlRenderer.renderUnified(data);
     }
-    if (isTrendReportDto(data)) {
-      return HtmlRenderer.renderTrend(data);
-    }
-    return HtmlRenderer.wrapHtml("Data", `<pre>${esc(JSON.stringify(data, undefined, 2))}</pre>`);
+    throw new Error(`HtmlRenderer: unexpected data type`);
   }
 
-  // ── Trend ──────────────────────────────────────────────
+  // ── Unified ────────────────────────────────────────────
 
-  private static renderTrend(dto: TrendReportDto): string {
-    const sections = [
-      HtmlRenderer.trendHeader(dto),
-      HtmlRenderer.savingsRateSection(dto.savingsRateSeries),
-      HtmlRenderer.overshootSection(dto),
-      HtmlRenderer.momDeltaSection(dto.monthOverMonthDeltas),
-      HtmlRenderer.monthlyBreakdownSection(dto.months),
-    ].filter(Boolean);
+  private static renderUnified(dto: ReportDto): string {
+    const title = HtmlRenderer.unifiedTitle(dto);
+    const sections: string[] = [HtmlRenderer.unifiedHeader(dto)];
 
-    return HtmlRenderer.wrapHtml(`Trend Report — ${dto.start} to ${dto.end}`, sections.join("\n"));
+    if (dto.trend === null) {
+      for (const month of dto.months) {
+        sections.push(HtmlRenderer.monthSection(month));
+      }
+      return HtmlRenderer.wrapHtml(title, sections.filter(Boolean).join("\n"));
+    }
+
+    sections.push(HtmlRenderer.filterBar(dto.months));
+    sections.push(HtmlRenderer.savingsRateSection(dto.trend.savingsRateSeries));
+    sections.push(HtmlRenderer.overshootSection(dto.trend));
+    sections.push(HtmlRenderer.momDeltaSection(dto.trend.monthOverMonthDeltas));
+    for (const month of dto.months) {
+      sections.push(HtmlRenderer.monthSection(month));
+    }
+    const body = sections.filter(Boolean).join("\n");
+    return HtmlRenderer.wrapHtml(title, body, HtmlRenderer.filterScript());
   }
 
-  private static trendHeader(dto: TrendReportDto): string {
+  private static unifiedTitle(dto: ReportDto): string {
+    if (dto.range === null) {
+      return "Financial Report";
+    }
+    if (dto.range.start === dto.range.end) {
+      return `Financial Report — ${dto.range.start}`;
+    }
+    return `Financial Report — ${dto.range.start} to ${dto.range.end}`;
+  }
+
+  private static unifiedHeader(dto: ReportDto): string {
+    const eyebrow = "Financial Report";
+    let heading: string;
+    if (dto.range === null) {
+      heading = "No Data";
+    } else if (dto.range.start === dto.range.end) {
+      const [year, monthNum] = dto.range.start.split("-") as [string, string];
+      const monthName = MONTH_NAMES[Number.parseInt(monthNum, 10) - 1] ?? monthNum;
+      heading = `${esc(monthName)} ${esc(year)}`;
+    } else {
+      heading = `${esc(dto.range.start)} → ${esc(dto.range.end)}`;
+    }
     return `<header class="hero">
-  <div class="hero-eyebrow">Spending Trend</div>
-  <h1 class="hero-month">${esc(dto.start)} → ${esc(dto.end)}</h1>
+  <div class="hero-eyebrow">${esc(eyebrow)}</div>
+  <h1 class="hero-month">${heading}</h1>
 </header>`;
+  }
+
+  private static filterBar(months: MonthlyReportDto[]): string {
+    if (months.length < 2) {
+      return "";
+    }
+    const options = months
+      .map((mo) => `<option value="${esc(mo.month)}">${esc(mo.month)}</option>`)
+      .join("");
+    return `<div class="filter-bar">
+  <label class="filter-label" for="month-from">From</label>
+  <select class="filter-select" id="month-from">
+    <option value="">All</option>${options}
+  </select>
+  <label class="filter-label" for="month-to">To</label>
+  <select class="filter-select" id="month-to">
+    <option value="">All</option>${options}
+  </select>
+</div>`;
+  }
+
+  private static monthSection(report: MonthlyReportDto): string {
+    const inner = [
+      HtmlRenderer.heroHeader(report, "Monthly Report"),
+      HtmlRenderer.kpiSection(report.kpis),
+      HtmlRenderer.groupTable(report.groups),
+      HtmlRenderer.insightsSection(report.kpis),
+      HtmlRenderer.uncategorizedSection(report.uncategorized),
+      HtmlRenderer.reportFooter(report),
+    ]
+      .filter(Boolean)
+      .join("\n");
+    return `<div class="month-section" data-month="${esc(report.month)}">${inner}</div>`;
+  }
+
+  private static filterScript(): string {
+    return `
+(function() {
+  const fromSel = document.getElementById('month-from');
+  const toSel   = document.getElementById('month-to');
+  function applyFilter() {
+    const from = fromSel.value;
+    const to   = toSel.value;
+    document.querySelectorAll('.month-section').forEach(function(el) {
+      const m = el.dataset.month;
+      const afterFrom  = !from || m >= from;
+      const beforeTo   = !to   || m <= to;
+      el.style.display = (afterFrom && beforeTo) ? '' : 'none';
+    });
+  }
+  fromSel.addEventListener('change', applyFilter);
+  toSel.addEventListener('change',   applyFilter);
+})();`;
   }
 
   private static savingsRateSection(series: SavingsRateEntryDto[]): string {
@@ -148,7 +227,7 @@ export class HtmlRenderer implements Renderer {
 </section>`;
   }
 
-  private static overshootSection(dto: TrendReportDto): string {
+  private static overshootSection(dto: TrendAnalyticsDto): string {
     if (dto.groupOvershootFrequency.length === 0) {
       return "";
     }
@@ -189,42 +268,7 @@ export class HtmlRenderer implements Renderer {
 </section>`;
   }
 
-  private static monthlyBreakdownSection(months: MonthlyReportDto[]): string {
-    if (months.length === 0) {
-      return "";
-    }
-    const cards = months
-      .map((report) => {
-        const netCls = deltaColor(report.net);
-        const savingsStr = fmtPct(report.kpis.savingsRate);
-        return `<div class="insight-card">
-  <h3>${esc(report.month)}</h3>
-  <div class="insight-item"><span class="insight-label">Net</span><span class="insight-value ${netCls}">${fmtCurrency.format(report.net)}</span></div>
-  <div class="insight-item"><span class="insight-label">Savings Rate</span><span class="insight-value">${savingsStr}</span></div>
-  <div class="insight-item"><span class="insight-label">Transactions</span><span class="insight-value">${report.transactionCount}</span></div>
-</div>`;
-      })
-      .join("\n");
-    return `<section>
-<h2>Monthly Summary</h2>
-<div class="insights-grid">${cards}</div>
-</section>`;
-  }
-
   // ── Report ─────────────────────────────────────────────
-
-  private static renderReport(report: MonthlyReportDto): string {
-    const sections = [
-      HtmlRenderer.heroHeader(report, "Financial Report"),
-      HtmlRenderer.kpiSection(report.kpis),
-      HtmlRenderer.groupTable(report.groups),
-      HtmlRenderer.insightsSection(report.kpis),
-      HtmlRenderer.uncategorizedSection(report.uncategorized),
-      HtmlRenderer.reportFooter(report),
-    ].filter(Boolean);
-
-    return HtmlRenderer.wrapHtml(`Monthly Report — ${report.month}`, sections.join("\n"));
-  }
 
   private static heroHeader(ref: { month: string }, eyebrow: string): string {
     const [year, monthNum] = ref.month.split("-") as [string, string];
@@ -355,7 +399,7 @@ export class HtmlRenderer implements Renderer {
 
   // ── Chrome ─────────────────────────────────────────────
 
-  private static wrapHtml(title: string, body: string): string {
+  private static wrapHtml(title: string, body: string, script = ""): string {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -374,11 +418,13 @@ ${HtmlRenderer.cssInsights()}
 ${HtmlRenderer.cssUncategorized()}
 ${HtmlRenderer.cssFooter()}
 ${HtmlRenderer.cssPre()}
+${HtmlRenderer.cssFilter()}
 ${HtmlRenderer.cssPrint()}
 </style>
 </head>
 <body>
 ${body}
+${script ? `<script>${script}</script>` : ""}
 </body>
 </html>`;
   }
@@ -786,6 +832,40 @@ tfoot th, tfoot td {
   line-height: 1.65;
   color: var(--text-secondary);
 }`;
+  }
+
+  private static cssFilter(): string {
+    return `/* ── Filter bar ── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.filter-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.filter-select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+}
+.filter-select:focus { outline: 1px solid var(--accent); }
+.month-section { margin-bottom: 3rem; }
+.month-section + .month-section { border-top: 1px solid var(--border); padding-top: 2.5rem; }`;
   }
 
   private static cssPrint(): string {

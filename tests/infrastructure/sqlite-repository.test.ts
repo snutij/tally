@@ -165,6 +165,55 @@ describe("SqliteRepository", () => {
   });
 
   describe("TransactionRepository", () => {
+    it("distinctMonths returns empty array when no transactions", () => {
+      expect(txnRepository.distinctMonths()).toEqual([]);
+    });
+
+    it("distinctMonths returns single month", () => {
+      txnRepository.saveAll([
+        Transaction.create({
+          amount: Money.fromEuros(-10),
+          date: Temporal.PlainDate.from("2026-03-01"),
+          id: TransactionId("tx-dm-1"),
+          label: "A",
+          source: "csv",
+        }),
+      ]);
+      const months = txnRepository.distinctMonths();
+      expect(months).toHaveLength(1);
+      expect(months[0]?.toString()).toBe("2026-03");
+    });
+
+    it("distinctMonths returns multiple months in chronological order", () => {
+      txnRepository.saveAll([
+        Transaction.create({
+          amount: Money.fromEuros(-10),
+          date: Temporal.PlainDate.from("2026-05-01"),
+          id: TransactionId("tx-dm-3"),
+          label: "C",
+          source: "csv",
+        }),
+        Transaction.create({
+          amount: Money.fromEuros(-10),
+          date: Temporal.PlainDate.from("2026-03-01"),
+          id: TransactionId("tx-dm-2"),
+          label: "B",
+          source: "csv",
+        }),
+        Transaction.create({
+          amount: Money.fromEuros(-10),
+          date: Temporal.PlainDate.from("2026-03-15"),
+          id: TransactionId("tx-dm-4"),
+          label: "D",
+          source: "csv",
+        }),
+      ]);
+      const months = txnRepository.distinctMonths();
+      expect(months).toHaveLength(2);
+      expect(months[0]?.toString()).toBe("2026-03");
+      expect(months[1]?.toString()).toBe("2026-05");
+    });
+
     it("saves and retrieves transactions by month", () => {
       txnRepository.saveAll([
         Transaction.create({

@@ -2,11 +2,11 @@ import {
   DEFAULT_SPENDING_TARGETS,
   type SpendingTargets,
 } from "../../domain/config/spending-targets.js";
-import { type MonthlyReportDto, toMonthlyReportDto } from "../dto/report-dto.js";
+import { type ReportDto, toMonthlyReportDto, toReportDto } from "../dto/report-dto.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
-import { InvalidMonth } from "../../domain/error/index.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
 import { computeMonthlyReport } from "../../domain/service/compute-monthly-report.js";
+import { computeTrendReport } from "../../domain/service/compute-trend-report.js";
 
 export class GenerateReport {
   private readonly txnRepository: TransactionRepository;
@@ -17,20 +17,30 @@ export class GenerateReport {
     this.registry = registry;
   }
 
-  execute(monthStr: string, targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): MonthlyReportDto {
-    let month: Temporal.PlainYearMonth;
-    try {
-      month = Temporal.PlainYearMonth.from(monthStr);
-    } catch {
-      throw new InvalidMonth(monthStr);
+  execute(targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): ReportDto {
+    const months = this.txnRepository.distinctMonths().toSorted(Temporal.PlainYearMonth.compare);
+
+    if (months.length === 0) {
+      return { _type: "ReportDto", months: [], range: null, trend: null };
     }
-    const transactions = this.txnRepository.findByMonth(month);
-    const report = computeMonthlyReport(
-      month,
-      targets,
-      transactions,
-      this.registry.categoryToGroupMap(),
-    );
-    return toMonthlyReportDto(report);
+
+    const categoryMap = this.registry.categoryToGroupMap();
+    const monthlyReports = months.map((month) => {
+      const transactions = this.txnRepository.findByMonth(month);
+      return computeMonthlyReport(month, targets, transactions, categoryMap);
+    });
+
+    const monthDtos = monthlyReports.map((report) => toMonthlyReportDto(report));
+
+    if (monthlyReports.length < 2) {
+      return toReportDto(months, null, monthDtos);
+    }
+
+    const range = {
+      end: months.at(-1) as Temporal.PlainYearMonth,
+      start: months.at(0) as Temporal.PlainYearMonth,
+    };
+    const trendReport = computeTrendReport(range, monthlyReports);
+    return toReportDto(months, trendReport, monthDtos);
   }
 }

@@ -62,4 +62,17 @@ export class InMemoryTransactionRepository implements TransactionRepository {
     const prefix = month.toString();
     return this.saved.filter((txn) => txn.date.toString().startsWith(prefix));
   }
+
+  distinctMonths(): Temporal.PlainYearMonth[] {
+    const seen = new Set<string>();
+    const result: Temporal.PlainYearMonth[] = [];
+    for (const txn of this.saved) {
+      const key = txn.date.toPlainYearMonth().toString();
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(txn.date.toPlainYearMonth());
+      }
+    }
+    return result.toSorted(Temporal.PlainYearMonth.compare);
+  }
 }

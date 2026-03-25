@@ -2,10 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
-
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
-import { InvalidMonth } from "../../src/domain/error/index.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
@@ -30,53 +28,84 @@ describe("GenerateReport", () => {
     useCase = new GenerateReport(txnGateway, new CategoryRegistry(DEFAULT_CATEGORIES));
   });
 
-  it("generates report with transactions (no budget needed)", () => {
+  it("returns empty report when no transactions exist", () => {
+    const result = useCase.execute();
+    expect(result._type).toBe("ReportDto");
+    expect(result.months).toHaveLength(0);
+    expect(result.range).toBeNull();
+    expect(result.trend).toBeNull();
+  });
+
+  it("returns single-month report with trend null", () => {
     txnGateway.saveAll([
       makeTxn("1", 3000, "2026-03-01", "inc01"),
       makeTxn("2", -800, "2026-03-05", "n01"),
     ]);
-
-    const report = useCase.execute("2026-03");
-    expect(report.totalIncomeActual).toBe(3000);
-    expect(report.totalExpenseActual).toBe(800);
-    expect(report.transactionCount).toBe(2);
+    const result = useCase.execute();
+    expect(result.months).toHaveLength(1);
+    expect(result.range?.start).toBe("2026-03");
+    expect(result.range?.end).toBe("2026-03");
+    expect(result.trend).toBeNull();
+    expect(result.months[0]?.totalIncomeActual).toBe(3000);
+    expect(result.months[0]?.totalExpenseActual).toBe(800);
   });
 
-  it("returns empty report when no transactions exist", () => {
-    const report = useCase.execute("2026-03");
-    expect(report.totalExpenseActual).toBe(0);
-    expect(report.transactionCount).toBe(0);
-  });
-
-  it("only includes transactions from the requested month", () => {
+  it("returns multi-month report with trend analytics", () => {
     txnGateway.saveAll([
-      makeTxn("1", -800, "2026-03-01", "n01"),
-      makeTxn("2", -800, "2026-04-01", "n01"),
+      makeTxn("1", 3000, "2026-01-01", "inc01"),
+      makeTxn("2", -900, "2026-01-10", "n01"),
+      makeTxn("3", 3000, "2026-02-01", "inc01"),
+      makeTxn("4", -600, "2026-02-10", "n01"),
+      makeTxn("5", 3000, "2026-03-01", "inc01"),
+      makeTxn("6", -750, "2026-03-10", "n01"),
     ]);
-
-    const report = useCase.execute("2026-03");
-    expect(report.transactionCount).toBe(1);
-    expect(report.totalExpenseActual).toBe(800);
+    const result = useCase.execute();
+    expect(result.months).toHaveLength(3);
+    expect(result.range?.start).toBe("2026-01");
+    expect(result.range?.end).toBe("2026-03");
+    expect(result.trend).not.toBeNull();
+    expect(result.trend?.savingsRateSeries).toHaveLength(3);
+    expect(result.trend?.monthOverMonthDeltas).toHaveLength(2);
+    expect(result.trend?.groupOvershootFrequency.length).toBeGreaterThan(0);
   });
 
-  it("handles uncategorized transactions gracefully", () => {
-    txnGateway.saveAll([makeTxn("1", -50, "2026-03-15")]);
-
-    const report = useCase.execute("2026-03");
-    expect(report.transactionCount).toBe(1);
-    expect(report.uncategorized).toBe(50);
-    expect(report.totalExpenseActual).toBe(0);
+  it("months are ordered chronologically", () => {
+    txnGateway.saveAll([
+      makeTxn("3", -100, "2026-03-01", "n01"),
+      makeTxn("1", -100, "2026-01-01", "n01"),
+      makeTxn("2", -100, "2026-02-01", "n01"),
+    ]);
+    const result = useCase.execute();
+    expect(result.months.map((mo) => mo.month)).toEqual(["2026-01", "2026-02", "2026-03"]);
   });
 
-  it("throws InvalidMonth for invalid month string", () => {
-    expect(() => useCase.execute("not-a-month")).toThrow(InvalidMonth);
+  it("sorts months chronologically even when the repository returns them unsorted", () => {
+    txnGateway.saveAll([
+      makeTxn("1", -100, "2026-01-01", "n01"),
+      makeTxn("2", -100, "2026-02-01", "n01"),
+      makeTxn("3", -100, "2026-03-01", "n01"),
+    ]);
+    // Wrap the repository to return months in reverse order, simulating an unsorted source
+    const unsortedRepo = {
+      distinctMonths: (): Temporal.PlainYearMonth[] => txnGateway.distinctMonths().toReversed(),
+      findByIds: (ids: TransactionId[]): Transaction[] => txnGateway.findByIds(ids),
+      findByMonth: (month: Temporal.PlainYearMonth): Transaction[] => txnGateway.findByMonth(month),
+      saveAll: (txns: Transaction[]): void => txnGateway.saveAll(txns),
+    };
+    const uc = new GenerateReport(unsortedRepo, new CategoryRegistry(DEFAULT_CATEGORIES));
+    const result = uc.execute();
+    expect(result.months.map((mo) => mo.month)).toEqual(["2026-01", "2026-02", "2026-03"]);
   });
 
-  it("accepts custom spending targets", () => {
-    txnGateway.saveAll([makeTxn("1", 2000, "2026-03-01", "inc01")]);
-
-    const report = useCase.execute("2026-03", { invest: 10, needs: 60, wants: 30 });
-    const needs = report.groups.find((grp) => grp.group === "NEEDS");
-    expect(needs?.budgeted).toBe(1200); // 2000 × 60%
+  it("applies custom spending targets across all months", () => {
+    txnGateway.saveAll([
+      makeTxn("1", 2000, "2026-01-01", "inc01"),
+      makeTxn("2", 2000, "2026-02-01", "inc01"),
+    ]);
+    const result = useCase.execute({ invest: 10, needs: 60, wants: 30 });
+    for (const month of result.months) {
+      const needs = month.groups.find((grp) => grp.group === "NEEDS");
+      expect(needs?.budgeted).toBeCloseTo(1200, 2); // 2000 * 60%
+    }
   });
 });
