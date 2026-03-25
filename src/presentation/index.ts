@@ -14,6 +14,7 @@ import {
 import { AddRule } from "../application/usecase/add-rule.js";
 import { ApplicationError } from "../application/error.js";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
+import { AskQuestionUseCase } from "../application/usecase/ask-question.js";
 import { CategoryRegistry } from "../domain/service/category-registry.js";
 import { Command } from "commander";
 import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
@@ -30,13 +31,17 @@ import { LearnCategoryRules } from "../application/usecase/learn-category-rules.
 import { ListRules } from "../application/usecase/list-rules.js";
 import { ListTransactions } from "../application/usecase/list-transactions.js";
 import { LlmCsvColumnMapper } from "../infrastructure/llm/llm-csv-column-mapper.js";
+import { LlmQuestionAnswerer } from "../infrastructure/llm/llm-question-answerer.js";
 import { LlmTransactionCategorizer } from "../infrastructure/llm/llm-transaction-categorizer.js";
 import { NodeLlamaCppGateway } from "../infrastructure/llm/node-llama-cpp-gateway.js";
 import { RemoveRule } from "../application/usecase/remove-rule.js";
 import { SaveCategorizedTransactions } from "../application/usecase/save-categorized-transactions.js";
 import { SeedMockData } from "../application/usecase/seed-mock-data.js";
 import { Sha256IdGenerator } from "../infrastructure/id/sha256-id-generator.js";
+import { SqliteQueryRunner } from "../infrastructure/persistence/sqlite-query-runner.js";
+import { SqliteSchemaIntrospector } from "../infrastructure/persistence/sqlite-schema-introspector.js";
 import { buildCategoryChoices } from "../application/category-choices.js";
+import { createAskCommand } from "./command/ask-command.js";
 import { createDbCommand } from "./command/db-command.js";
 import { createImportCommand } from "./command/import-command.js";
 import { createInitCommand } from "./command/init-command.js";
@@ -97,6 +102,10 @@ const saveCategorizedTransactions = new SaveCategorizedTransactions(
 const listRules = new ListRules(ruleBookRepository, categoryRegistry);
 const addRule = new AddRule(ruleBookRepository, idGenerator, categoryRegistry);
 const removeRule = new RemoveRule(ruleBookRepository);
+const sqlQueryRunner = new SqliteQueryRunner(dbPath);
+const schemaIntrospector = new SqliteSchemaIntrospector(dbPath);
+const questionAnswerer = new LlmQuestionAnswerer(llmGateway, sqlQueryRunner, schemaIntrospector);
+const askQuestion = new AskQuestionUseCase(questionAnswerer);
 
 // --- CLI ---
 const program = new Command();
@@ -156,6 +165,7 @@ program.addCommand(
 );
 program.addCommand(createRulesCommand(listRules, addRule, removeRule, renderer));
 program.addCommand(createDbCommand(dbPath));
+program.addCommand(createAskCommand(askQuestion));
 
 try {
   await program.parseAsync();
