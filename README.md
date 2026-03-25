@@ -3,9 +3,18 @@
 [![CI](https://github.com/snutij/tally/actions/workflows/ci.yml/badge.svg)](https://github.com/snutij/tally/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Track where your money actually goes. Import bank CSVs, categorize transactions, and get a budget vs. actual breakdown — all from the terminal.
+Personal finance CLI powered by a local AI model. Import bank CSVs, let the AI categorize your transactions, and get a budget vs. actual breakdown — all from the terminal. No cloud, no API keys, no data leaving your machine.
 
-No cloud, no subscriptions, no dashboards. Just a local SQLite database and a CLI.
+## How it works
+
+```
+tally init          →   Download the AI model (one-time, ~2GB)
+tally import csv    →   AI maps your CSV columns + categorizes transactions
+tally transactions  →   Review and fix any uncategorized items
+tally report        →   Budget vs. actual across all your data
+```
+
+The AI runs locally using [Qwen 2.5 3B Instruct](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF) via [node-llama-cpp](https://github.com/withcatai/node-llama-cpp). After the initial model download, tally works entirely offline. No API key required. Nothing is ever sent to a server.
 
 ## Quick Start
 
@@ -13,54 +22,67 @@ No cloud, no subscriptions, no dashboards. Just a local SQLite database and a CL
 npm install
 npm link
 
-# Import mock data to explore
-tally import mock
+# Step 1: Download the AI model (~2GB, one-time)
+tally init
 
-# Or import a real CSV
-tally import csv statement.csv
+# Step 2: Seed 6 months of demo data to explore
+tally import demo
 
-# Budget vs actual for the current month
-tally report 2026-03
+# Step 3: View your budget vs. actual report
+tally report
+```
+
+Or import your real bank data:
+
+```bash
+tally import csv statement.csv   # AI maps columns + categorizes automatically
 ```
 
 ## Commands
 
-### `tally report <month>`
+### `tally init`
 
-Generate a budget vs. actual spending report for a given month.
-
-```bash
-tally report 2026-03
-tally report 2026-03 --needs 50 --wants 30 --invest 20
-```
-
-Output is JSON — pipe to `jq` for slicing. For an HTML report, redirect to a file:
+Download the AI model for local inference. Run once before using `tally import csv`.
 
 ```bash
-tally --format html report 2026-03 > report.html && open report.html
+tally init
 ```
 
-### `tally trend <start> <end>`
-
-Compare budget vs. actual across multiple months. Surfaces savings rate evolution, group overshoot frequency, and month-over-month spending deltas.
-
-```bash
-tally trend 2026-01 2026-03
-tally trend 2026-01 2026-03 --needs 50 --wants 30 --invest 20
-tally --format html trend 2026-01 2026-03 > trend.html && open trend.html
-```
+The model is stored at `~/.local/share/tally/models/`. Override with `TALLY_LLM_MODEL`.
 
 ### `tally import`
 
 ```bash
-tally import csv <file>          # Import any CSV (interactive column mapping)
-tally import csv <file> --no-categorize  # Skip categorization prompt
-tally import mock [month]        # Seed pre-categorized mock data
+tally import csv <file>    # AI-assisted: auto-detects columns, categorizes transactions
+tally import demo          # Seed 6 months of pre-categorized demo data (Jan–Jun 2026)
+tally import mock [month]  # Seed a single month of minimal test data
 ```
 
-### `tally transactions <month>`
+**`tally import csv`** is AI-assisted:
 
-List transactions for a month, with optional interactive categorization.
+1. The LLM detects which CSV columns map to date, label, and amount — no manual column mapping needed
+2. Auto-categorization rules run first (fast regex matches)
+3. Remaining uncategorized transactions go to the LLM for classification
+4. Any the AI can't resolve are listed for manual review via `tally transactions`
+
+### `tally report`
+
+Generate a budget vs. actual report across all available transaction data.
+
+```bash
+tally report
+tally report --needs 50 --wants 30 --invest 20   # custom 50/30/20 targets
+```
+
+Output is JSON — pipe to `jq` for slicing. For an HTML report:
+
+```bash
+tally --format html report > report.html && open report.html
+```
+
+### `tally transactions`
+
+List and categorize transactions for a given month.
 
 ```bash
 tally transactions 2026-03
@@ -68,7 +90,7 @@ tally transactions 2026-03
 
 ### `tally rules`
 
-Manage auto-categorization rules (pattern → category mappings).
+Manage auto-categorization rules (pattern → category). Rules run before the AI, so common merchants get categorized instantly without LLM inference.
 
 ```bash
 tally rules list
@@ -83,13 +105,16 @@ tally db path    # Print the database file path
 tally db reset   # Delete the local database and start fresh
 ```
 
-## Data
+## Privacy & Data
 
-- SQLite database at `~/.local/share/tally/tally.db` (XDG convention, outside project tree)
-- Bank CSVs and DB files are gitignored — only synthetic test fixtures are committed
+| What         | Where                                     |
+| ------------ | ----------------------------------------- |
+| AI model     | `~/.local/share/tally/models/`            |
+| Database     | `~/.local/share/tally/tally.db`           |
+| Custom model | Set `TALLY_LLM_MODEL=/path/to/model.gguf` |
+
+After `tally init`, everything runs on-device. Bank CSVs and the database are gitignored — only synthetic fixtures are committed.
 
 ## Disclaimer
 
-This is a personal project, provided as-is with no warranty. It is not financial software — it does not give financial advice, validate tax data, or guarantee accuracy. Use at your own risk. The author is not responsible for any data loss, incorrect calculations, or decisions made based on its output.
-
-Never commit real bank statements or financial data to version control.
+Personal project, provided as-is with no warranty. Not financial software — does not give financial advice, validate tax data, or guarantee accuracy. Use at your own risk. Never commit real bank statements to version control.

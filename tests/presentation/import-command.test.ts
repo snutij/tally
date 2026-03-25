@@ -43,7 +43,7 @@ function parsedTxn(id = "t1"): Transaction {
 
 describe("createImportCommand", () => {
   const mockParser = { parse: vi.fn() };
-  const mockSeedMockData = { execute: vi.fn() };
+  const mockSeedDemoData = { execute: vi.fn() };
   const mockImportCsvWorkflow = { execute: vi.fn() };
   const mockCsvFormatDetector = {};
   const mockCsvColumnMapper = { detectColumns: vi.fn() };
@@ -65,7 +65,7 @@ describe("createImportCommand", () => {
 
   function run(...args: string[]): Promise<unknown> {
     const cmd = createImportCommand(
-      mockSeedMockData as unknown as SeedMockData,
+      mockSeedDemoData as unknown as SeedMockData,
       mockImportCsvWorkflow as unknown as ImportCsvWorkflow,
       mockDeps,
     );
@@ -178,18 +178,12 @@ describe("createImportCommand", () => {
     });
   });
 
-  describe("mock subcommand", () => {
-    it("seeds data with explicit month", async () => {
-      mockSeedMockData.execute.mockReturnValue({ transactionCount: 17 });
-      await run("mock", "2026-03");
-      expect(mockSeedMockData.execute).toHaveBeenCalled();
+  describe("demo subcommand", () => {
+    it("seeds all demo months and logs total count", async () => {
+      mockSeedDemoData.execute.mockReturnValue({ transactionCount: 20 });
+      await run("demo");
+      expect(mockSeedDemoData.execute).toHaveBeenCalled();
       expect(console.log).toHaveBeenCalled();
-    });
-
-    it("defaults to current month", async () => {
-      mockSeedMockData.execute.mockReturnValue({ transactionCount: 17 });
-      await run("mock");
-      expect(mockSeedMockData.execute).toHaveBeenCalled();
     });
   });
 });

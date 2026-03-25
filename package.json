@@ -23,7 +23,7 @@
   "scripts": {
     "build": "tsdown",
     "db:reset": "tally db reset",
-    "db:seed": "tally import mock",
+    "db:seed": "tally import demo",
     "fmt": "oxfmt --write",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",
