@@ -104,6 +104,70 @@ describe("HtmlRenderer", () => {
     });
   });
 
+  describe("render(ReportDto) — uncategorized ratio warn branch", () => {
+    it("shows warn status when uncategorizedRatio is between 0 and 15", () => {
+      const base = toMonthlyReportDto(
+        computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, txns, categoryMap),
+      );
+      const html = renderer.render(
+        makeReportDto([{ ...base, kpis: { ...base.kpis, uncategorizedRatio: 10 } }]),
+      );
+      expect(html).toContain("Needs review");
+    });
+  });
+
+  describe("render(ReportDto) — allocation bar labels", () => {
+    it("shows wants and investments bar labels when each exceeds 8%", () => {
+      // income 3000, needs -300 (10%), wants -400 (13%), investments -500 (17%)
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(
+          Temporal.PlainYearMonth.from("2026-03"),
+          targets,
+          [
+            makeTxn("inc", 3000, "2026-03-01", "inc01"),
+            makeTxn("n", -300, "2026-03-02", "n01"),
+            makeTxn("w", -400, "2026-03-03", "w01"),
+            makeTxn("inv", -500, "2026-03-04", "i01"),
+          ],
+          categoryMap,
+        ),
+      );
+      const html = renderer.render(makeReportDto([report]));
+      expect(html).toContain("Wants");
+      expect(html).toContain("Invest");
+    });
+  });
+
+  describe("render(ReportDto) — low savings rate KPI", () => {
+    it("shows warn badge when savings rate is between 10 and 20 percent", () => {
+      // income 1000, expense -850 → savings 150, rate 15%
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(
+          Temporal.PlainYearMonth.from("2026-03"),
+          targets,
+          [makeTxn("i1", 1000, "2026-03-01", "inc01"), makeTxn("e1", -850, "2026-03-02", "n01")],
+          categoryMap,
+        ),
+      );
+      const html = renderer.render(makeReportDto([report]));
+      expect(html).toContain("Below target");
+    });
+
+    it("shows bad badge when savings rate is below 10 percent", () => {
+      // income 1000, expense -950 → savings 50, rate 5%
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(
+          Temporal.PlainYearMonth.from("2026-03"),
+          targets,
+          [makeTxn("i2", 1000, "2026-03-01", "inc01"), makeTxn("e2", -950, "2026-03-02", "n01")],
+          categoryMap,
+        ),
+      );
+      const html = renderer.render(makeReportDto([report]));
+      expect(html).toContain("Needs work");
+    });
+  });
+
   describe("render(ReportDto) — no transactions", () => {
     it("omits insights section when there are no expense transactions", () => {
       const report = toMonthlyReportDto(
@@ -256,6 +320,20 @@ describe("HtmlRenderer", () => {
       expect(out).not.toContain("Savings Rate Evolution");
     });
 
+    it("applies low-rate styling when a savings rate entry is below 20%", () => {
+      const out = renderer.render({
+        ...dto,
+        trend: {
+          ...trend,
+          savingsRateSeries: [
+            { month: "2026-01", rate: 15 },
+            { month: "2026-02", rate: 25 },
+          ],
+        },
+      });
+      expect(out).toContain("sr-val-low");
+    });
+
     it("omits overshoot section when frequency list is empty", () => {
       const out = renderer.render({ ...dto, trend: { ...trend, groupOvershootFrequency: [] } });
       expect(out).not.toContain("Group Overshoot Frequency");
@@ -263,6 +341,15 @@ describe("HtmlRenderer", () => {
 
     it("omits month-over-month section when no deltas", () => {
       const out = renderer.render({ ...dto, trend: { ...trend, monthOverMonthDeltas: [] } });
+      expect(out).not.toContain("Month-over-Month Net");
+    });
+
+    it("omits trend pair section when both overshoot and deltas are empty", () => {
+      const out = renderer.render({
+        ...dto,
+        trend: { ...trend, groupOvershootFrequency: [], monthOverMonthDeltas: [] },
+      });
+      expect(out).not.toContain("Group Overshoot Frequency");
       expect(out).not.toContain("Month-over-Month Net");
     });
 
