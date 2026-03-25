@@ -31,7 +31,6 @@ import { ListRules } from "../application/usecase/list-rules.js";
 import { ListTransactions } from "../application/usecase/list-transactions.js";
 import { LlmCsvColumnMapper } from "../infrastructure/llm/llm-csv-column-mapper.js";
 import { LlmTransactionCategorizer } from "../infrastructure/llm/llm-transaction-categorizer.js";
-import { MockDataGeneratorImpl } from "../infrastructure/mock/mock-data-generator-impl.js";
 import { NodeLlamaCppGateway } from "../infrastructure/llm/node-llama-cpp-gateway.js";
 import { RemoveRule } from "../application/usecase/remove-rule.js";
 import { SaveCategorizedTransactions } from "../application/usecase/save-categorized-transactions.js";
@@ -69,12 +68,10 @@ const { txnRepository, ruleBookRepository, categoryRepository, unitOfWork } = op
 const categoryRegistry = new CategoryRegistry(categoryRepository.findAll());
 const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories());
 
-const mockDataGenerator = new MockDataGeneratorImpl();
 const demoDataGenerator = new DemoDataGeneratorImpl();
 const csvFormatDetector = new CsvFormatDetectorImpl();
 const importTransactions = new ImportTransactions(txnRepository);
 const generateReport = new GenerateReport(txnRepository, categoryRegistry);
-const seedMockData = new SeedMockData(txnRepository, mockDataGenerator);
 const seedDemoData = new SeedMockData(txnRepository, demoDataGenerator);
 const applyCategoryRules = new ApplyCategoryRules(ruleBookRepository);
 const learnCategoryRules = new LearnCategoryRules(
@@ -140,7 +137,7 @@ program.addCommand(
   }),
 );
 program.addCommand(
-  createImportCommand(seedMockData, seedDemoData, importCsvWorkflow, {
+  createImportCommand(seedDemoData, importCsvWorkflow, {
     csvColumnMapper,
     csvFormatDetector,
     parserFactory: (params) => new CsvTransactionParser(new CsvColumnMapping(params)),

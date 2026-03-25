@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
+import { DemoDataGeneratorImpl } from "../../src/infrastructure/mock/demo-data-generator-impl.js";
 import { InvalidMonth } from "../../src/domain/error/index.js";
-import { MockDataGeneratorImpl } from "../../src/infrastructure/mock/mock-data-generator-impl.js";
 import { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { join } from "node:path";
@@ -20,7 +20,7 @@ describe("SeedMockData", () => {
       new Sha256IdGenerator(),
     );
     close = closeDb;
-    seedMockData = new SeedMockData(txnRepository, new MockDataGeneratorImpl());
+    seedMockData = new SeedMockData(txnRepository, new DemoDataGeneratorImpl());
   });
 
   afterEach(() => {

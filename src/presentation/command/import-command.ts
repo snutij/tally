@@ -27,7 +27,6 @@ const DEMO_MONTHS: [number, number][] = [
 ];
 
 export function createImportCommand(
-  seedMockData: SeedMockData,
   seedDemoData: SeedMockData,
   importCsvWorkflow: ImportCsvWorkflow,
   deps: ImportCommandDeps,
@@ -44,22 +43,6 @@ export function createImportCommand(
         total += seedDemoData.execute(monthStr).transactionCount;
       }
       console.log(deps.renderer.render({ demo: true, transactionCount: total }));
-    });
-
-  cmd
-    .command("mock")
-    .description("Seed DB with pre-categorized mock data for testing")
-    .argument("[month]", "Month in YYYY-MM format (defaults to current month)")
-    .action((monthStr?: string) => {
-      const monthValue = monthStr ?? new Date().toISOString().slice(0, 7);
-      const result = seedMockData.execute(monthValue);
-      console.log(
-        deps.renderer.render({
-          mock: true,
-          month: monthValue,
-          transactionCount: result.transactionCount,
-        }),
-      );
     });
 
   cmd
