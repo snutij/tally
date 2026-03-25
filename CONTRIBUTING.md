@@ -263,15 +263,3 @@ This is checked automatically on every `npm run test` run.
 ### New category
 
 Categories are part of the domain configuration. Adding one means assigning it a permanent ID (following the existing `n__`, `w__`, `i__`, `inc__` scheme), a group, and a default locale name. The ID is stored in the database — it must be chosen carefully and never changed afterward.
-
----
-
-## Spec-driven development
-
-Non-trivial features go through an [OpenSpec](https://github.com/snutij/openspec) workflow before implementation:
-
-```
-propose → design → tasks → implement → verify → archive
-```
-
-Specs live under `openspec/` and use BDD-style scenarios (WHEN / THEN). Completed changes are archived; active changes sit in `openspec/changes/`. Specs describe behavior, not implementation — they stay valid as the code evolves.
