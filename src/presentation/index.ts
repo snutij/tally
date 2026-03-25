@@ -19,6 +19,7 @@ import { Command } from "commander";
 import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
 import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector-impl.js";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
+import { DemoDataGeneratorImpl } from "../infrastructure/mock/demo-data-generator-impl.js";
 import { DomainError } from "../domain/error/index.js";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
@@ -69,10 +70,12 @@ const categoryRegistry = new CategoryRegistry(categoryRepository.findAll());
 const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories());
 
 const mockDataGenerator = new MockDataGeneratorImpl();
+const demoDataGenerator = new DemoDataGeneratorImpl();
 const csvFormatDetector = new CsvFormatDetectorImpl();
 const importTransactions = new ImportTransactions(txnRepository);
 const generateReport = new GenerateReport(txnRepository, categoryRegistry);
 const seedMockData = new SeedMockData(txnRepository, mockDataGenerator);
+const seedDemoData = new SeedMockData(txnRepository, demoDataGenerator);
 const applyCategoryRules = new ApplyCategoryRules(ruleBookRepository);
 const learnCategoryRules = new LearnCategoryRules(
   ruleBookRepository,
@@ -137,7 +140,7 @@ program.addCommand(
   }),
 );
 program.addCommand(
-  createImportCommand(seedMockData, importCsvWorkflow, {
+  createImportCommand(seedMockData, seedDemoData, importCsvWorkflow, {
     csvColumnMapper,
     csvFormatDetector,
     parserFactory: (params) => new CsvTransactionParser(new CsvColumnMapping(params)),

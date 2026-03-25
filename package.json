@@ -24,6 +24,7 @@
     "build": "tsdown",
     "db:reset": "tally db reset",
     "db:seed": "tally import mock",
+    "db:seed:demo": "tally import demo",
     "fmt": "oxfmt --write",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",

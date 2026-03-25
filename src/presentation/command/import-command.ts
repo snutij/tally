@@ -17,12 +17,34 @@ export interface ImportCommandDeps {
   renderer: Renderer;
 }
 
+const DEMO_MONTHS: [number, number][] = [
+  [2026, 1],
+  [2026, 2],
+  [2026, 3],
+  [2026, 4],
+  [2026, 5],
+  [2026, 6],
+];
+
 export function createImportCommand(
   seedMockData: SeedMockData,
+  seedDemoData: SeedMockData,
   importCsvWorkflow: ImportCsvWorkflow,
   deps: ImportCommandDeps,
 ): Command {
   const cmd = new Command("import").description("Import bank transactions");
+
+  cmd
+    .command("demo")
+    .description("Seed DB with a 6-month pre-categorized demo dataset (Jan–Jun 2026)")
+    .action(() => {
+      let total = 0;
+      for (const [year, month] of DEMO_MONTHS) {
+        const monthStr = `${year}-${String(month).padStart(2, "0")}`;
+        total += seedDemoData.execute(monthStr).transactionCount;
+      }
+      console.log(deps.renderer.render({ demo: true, transactionCount: total }));
+    });
 
   cmd
     .command("mock")
