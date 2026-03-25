@@ -4,7 +4,7 @@ import type {
   SavingsRateEntry,
   TrendReport,
 } from "../../domain/read-model/trend-report.js";
-import { type MonthlyReportDto, toMonthlyReportDto } from "./report-dto.js";
+import type { MonthlyReportDto } from "./report-dto.js";
 
 export interface SavingsRateEntryDto {
   readonly month: string;
@@ -28,21 +28,24 @@ export interface MonthOverMonthDeltaDto {
   readonly groupDeltas: GroupDeltaDto[];
 }
 
-export interface TrendReportDto {
-  readonly _type: "TrendReportDto";
-  readonly start: string;
-  readonly end: string;
-  readonly months: MonthlyReportDto[];
+export interface TrendAnalyticsDto {
   readonly savingsRateSeries: SavingsRateEntryDto[];
   readonly groupOvershootFrequency: GroupOvershootFrequencyDto[];
   readonly monthOverMonthDeltas: MonthOverMonthDeltaDto[];
 }
 
-export function isTrendReportDto(data: unknown): data is TrendReportDto {
+export interface UnifiedReportDto {
+  readonly _type: "UnifiedReportDto";
+  readonly range: { readonly start: string; readonly end: string } | null;
+  readonly months: MonthlyReportDto[];
+  readonly trend: TrendAnalyticsDto | null;
+}
+
+export function isUnifiedReportDto(data: unknown): data is UnifiedReportDto {
   return (
     typeof data === "object" &&
     data !== null &&
-    (data as { _type?: unknown })._type === "TrendReportDto"
+    (data as { _type?: unknown })._type === "UnifiedReportDto"
   );
 }
 
@@ -65,14 +68,31 @@ function toMonthOverMonthDeltaDto(delta: MonthOverMonthDelta): MonthOverMonthDel
   };
 }
 
-export function toTrendReportDto(report: TrendReport): TrendReportDto {
+export function toTrendAnalyticsDto(report: TrendReport): TrendAnalyticsDto {
   return {
-    _type: "TrendReportDto",
-    end: report.range.end.toString(),
     groupOvershootFrequency: report.groupOvershootFrequency.map(toGroupOvershootFrequencyDto),
     monthOverMonthDeltas: report.monthOverMonthDeltas.map(toMonthOverMonthDeltaDto),
-    months: report.months.map(toMonthlyReportDto),
     savingsRateSeries: report.savingsRateSeries.map(toSavingsRateEntryDto),
-    start: report.range.start.toString(),
+  };
+}
+
+export function toUnifiedReportDto(
+  months: Temporal.PlainYearMonth[],
+  trendReport: TrendReport | null,
+  monthDtos: MonthlyReportDto[],
+): UnifiedReportDto {
+  const range =
+    months.length > 0
+      ? {
+          end: (months.at(-1) as Temporal.PlainYearMonth).toString(),
+          start: (months.at(0) as Temporal.PlainYearMonth).toString(),
+        }
+      : null;
+
+  return {
+    _type: "UnifiedReportDto",
+    months: monthDtos,
+    range,
+    trend: trendReport === null ? null : toTrendAnalyticsDto(trendReport),
   };
 }

@@ -5,7 +5,7 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
-import { GenerateReport } from "../../src/application/usecase/generate-report.js";
+import { GenerateUnifiedReport } from "../../src/application/usecase/generate-unified-report.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { join } from "node:path";
@@ -25,7 +25,7 @@ describe("e2e: import → report (no budget step)", () => {
   let tmpDir: string;
   let close: () => void;
   let importTxns: ImportTransactions;
-  let generateReport: GenerateReport;
+  let generateReport: GenerateUnifiedReport;
 
   const CSV = join(import.meta.dirname, "../fixtures/credit-mutuel-sample.csv");
   const parser = new CsvTransactionParser(CSV_MAPPING);
@@ -41,7 +41,7 @@ describe("e2e: import → report (no budget step)", () => {
 
     const registry = new CategoryRegistry(categoryRepository.findAll());
     importTxns = new ImportTransactions(txnRepository);
-    generateReport = new GenerateReport(txnRepository, registry);
+    generateReport = new GenerateUnifiedReport(txnRepository, registry);
   });
 
   afterEach(() => {
@@ -71,18 +71,19 @@ describe("e2e: import → report (no budget step)", () => {
 
     importTxns.save(categorized);
 
-    // No budget.init step — report works directly
-    const report = generateReport.execute("2026-03");
+    const result = generateReport.execute();
+    expect(result.months).toHaveLength(1);
+    const month = result.months.at(0) as (typeof result.months)[0];
 
-    expect(report.transactionCount).toBe(4);
+    expect(month.transactionCount).toBe(4);
     let expectedNet = 0;
     for (const txn of parsed) {
       expectedNet += txn.amount.toEuros();
     }
-    expect(report.net).toBeCloseTo(expectedNet, 2);
-    expect(report.totalIncomeActual).toBe(2500); // 2500€ salary
-    expect(report.totalExpenseActual).toBeCloseTo(800 + 52.3 + 35.5, 1); // rent + grocery + restaurant
-    expect(report.uncategorized).toBe(0);
+    expect(month.net).toBeCloseTo(expectedNet, 2);
+    expect(month.totalIncomeActual).toBe(2500); // 2500€ salary
+    expect(month.totalExpenseActual).toBeCloseTo(800 + 52.3 + 35.5, 1); // rent + grocery + restaurant
+    expect(month.uncategorized).toBe(0);
   });
 
   it("group targets computed from actual income (50/30/20)", () => {
@@ -92,8 +93,9 @@ describe("e2e: import → report (no budget step)", () => {
     );
     importTxns.save(withSalary);
 
-    const report = generateReport.execute("2026-03");
-    const needs = report.groups.find((grp) => grp.group === "NEEDS");
+    const result = generateReport.execute();
+    const month = result.months.at(0) as (typeof result.months)[0];
+    const needs = month.groups.find((grp) => grp.group === "NEEDS");
     expect(needs?.budgeted).toBeCloseTo((2500 * DEFAULT_SPENDING_TARGETS.needs) / 100, 2);
   });
 
@@ -101,10 +103,11 @@ describe("e2e: import → report (no budget step)", () => {
     const parsed = parser.parse(CSV);
     importTxns.save(parsed.map((txn) => toTransactionDto(txn)));
 
-    const report = generateReport.execute("2026-03");
+    const result = generateReport.execute();
+    const month = result.months.at(0) as (typeof result.months)[0];
 
-    expect(report.transactionCount).toBe(4);
-    expect(report.uncategorized).toBeCloseTo(800 + 52.3 + 2500 + 35.5, 1);
+    expect(month.transactionCount).toBe(4);
+    expect(month.uncategorized).toBeCloseTo(800 + 52.3 + 2500 + 35.5, 1);
   });
 
   it("re-import preserves previously categorized transactions", () => {

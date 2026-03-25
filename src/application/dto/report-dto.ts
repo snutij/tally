@@ -43,7 +43,6 @@ export interface ReportKpisDto {
 }
 
 export interface MonthlyReportDto {
-  readonly _type: "MonthlyReportDto";
   readonly groups: GroupSummaryDto[];
   readonly kpis: ReportKpisDto;
   readonly month: string;
@@ -53,14 +52,6 @@ export interface MonthlyReportDto {
   readonly totalIncomeActual: number;
   readonly transactionCount: number;
   readonly uncategorized: number;
-}
-
-export function isMonthlyReportDto(data: unknown): data is MonthlyReportDto {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    (data as { _type?: unknown })._type === "MonthlyReportDto"
-  );
 }
 
 function toGroupSummaryDto(grp: GroupSummary): GroupSummaryDto {
@@ -105,7 +96,6 @@ function toReportKpisDto(kpis: ReportKpis): ReportKpisDto {
 
 export function toMonthlyReportDto(report: MonthlyReport): MonthlyReportDto {
   return {
-    _type: "MonthlyReportDto",
     groups: report.groups.map((grp) => toGroupSummaryDto(grp)),
     kpis: toReportKpisDto(report.kpis),
     month: report.month.toString(),
