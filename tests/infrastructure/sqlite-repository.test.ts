@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import type { CategoryRepository } from "../../src/application/gateway/category-repository.js";
 import { CategoryRule } from "../../src/domain/entity/category-rule.js";
@@ -109,6 +109,29 @@ describe("SqliteRepository", () => {
 
     it("findByPattern returns undefined for unknown pattern", () => {
       expect(ruleBookRepository.load().findByPattern(String.raw`\bnonexistent\b`)).toBeUndefined();
+    });
+
+    it("filters out rules with invalid regex on load and logs a warning", async () => {
+      const dbPath = join(tmpDir, "test.db");
+
+      // Insert a row with an invalid regex pattern directly, bypassing domain validation
+      const { default: BetterSqlite3 } = await import("better-sqlite3");
+      const rawDb = new BetterSqlite3(dbPath);
+      rawDb
+        .prepare(
+          `INSERT INTO category_rules (id, pattern, category_id, source) VALUES (?, ?, ?, ?)`,
+        )
+        .run("corrupt-id-xxx", "[unclosed", "n01", "default");
+      rawDb.close();
+
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      try {
+        const loaded = ruleBookRepository.load();
+        expect(loaded.findByPattern("[unclosed")).toBeUndefined();
+        expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("[unclosed"));
+      } finally {
+        warnSpy.mockRestore();
+      }
     });
 
     it("removeByPattern deletes the rule", () => {

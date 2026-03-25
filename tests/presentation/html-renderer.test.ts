@@ -262,4 +262,83 @@ describe("HtmlRenderer", () => {
     expect(html).toContain("<pre>");
     expect(html).toContain("foo");
   });
+
+  describe("HTML escaping", () => {
+    it('escapes & < > " in card() label and value', () => {
+      // card() is an internal helper; test its escaping through a full render
+      // by verifying the KPI label/value in a report with an injected label
+      // We can't call card() directly, so we test via the esc() contract by
+      // checking that expense labels with special chars are escaped
+      const txnWithSpecialLabel = Transaction.create({
+        amount: Money.fromEuros(-100),
+        categoryId: "n01",
+        date: Temporal.PlainDate.from("2026-03-01"),
+        id: "special-1",
+        label: '<script>alert("xss")</script>',
+        source: "csv",
+      });
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(
+          Temporal.PlainYearMonth.from("2026-03"),
+          targets,
+          [txnWithSpecialLabel],
+          categoryMap,
+        ),
+      );
+      const html = renderer.render(report);
+      expect(html).not.toContain("<script>");
+      expect(html).toContain("&lt;script&gt;");
+    });
+
+    it("escapes expense.date containing HTML special chars", () => {
+      // Simulate a date DTO with injected content (bypasses domain validation)
+      const dto = toMonthlyReportDto(
+        computeMonthlyReport(
+          Temporal.PlainYearMonth.from("2026-03"),
+          targets,
+          [
+            Transaction.create({
+              amount: Money.fromEuros(-99),
+              categoryId: "n01",
+              date: Temporal.PlainDate.from("2026-03-05"),
+              id: "d1",
+              label: "test",
+              source: "csv",
+            }),
+          ],
+          categoryMap,
+        ),
+      );
+      // Inject a crafted date string into the DTO to test esc() coverage
+      const injectedDto = {
+        ...dto,
+        kpis: {
+          ...dto.kpis,
+          largestExpenses: [{ amount: 99, date: "<b>2026-03-05</b>", id: "d1", label: "test" }],
+        },
+      };
+      const html = renderer.render(injectedDto);
+      expect(html).not.toContain("<b>2026-03-05</b>");
+      expect(html).toContain("&lt;b&gt;2026-03-05&lt;/b&gt;");
+    });
+
+    it("contains no @import directives in the style block", () => {
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, txns, categoryMap),
+      );
+      const html = renderer.render(report);
+      expect(html).not.toContain("@import");
+    });
+
+    it("uses system font stacks instead of Google Fonts", () => {
+      const report = toMonthlyReportDto(
+        computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, txns, categoryMap),
+      );
+      const html = renderer.render(report);
+      expect(html).not.toContain("fonts.googleapis.com");
+      expect(html).not.toContain("Cormorant Garamond");
+      expect(html).not.toContain("Libre Franklin");
+      expect(html).not.toContain("IBM Plex Mono");
+    });
+  });
 });

@@ -156,14 +156,20 @@ class SqliteRuleBookRepository implements RuleBookRepository {
     const rows = this.db
       .prepare(`SELECT id, pattern, category_id, source FROM category_rules`)
       .all() as { id: string; pattern: string; category_id: string; source: string }[];
-    const rules = rows.map((row) =>
-      CategoryRule.reconstitute(
+    const rules: CategoryRule[] = [];
+    for (const row of rows) {
+      const rule = CategoryRule.reconstitute(
         row.id,
         row.pattern,
         row.category_id,
         row.source as CategoryRule["source"],
-      ),
-    );
+      );
+      if (rule === undefined) {
+        console.warn(`[tally] Skipping rule with invalid regex pattern: "${row.pattern}"`);
+      } else {
+        rules.push(rule);
+      }
+    }
     return new RuleBook(rules);
   }
 

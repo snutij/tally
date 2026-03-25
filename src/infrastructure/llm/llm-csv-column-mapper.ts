@@ -11,11 +11,15 @@ Available fields: ${AVAILABLE_FIELDS.join(", ")}.
 Use "ignore" for columns that do not map to any semantic field (e.g. balance, reference number, value date).
 Respond with a JSON array of exactly the same length as the number of columns, e.g.: ["date", "label", "amount", "ignore"]`;
 
+function escapeQuotes(str: string): string {
+  return str.replaceAll('"', String.raw`\"`);
+}
+
 function buildUserPrompt(headers: string[], sampleRows: string[][]): string {
-  const headerLine = headers.map((header, idx) => `${idx}: "${header}"`).join(", ");
+  const headerLine = headers.map((header, idx) => `${idx}: "${escapeQuotes(header)}"`).join(", ");
   const sampleLines = sampleRows
     .slice(0, 5)
-    .map((row) => `  [${row.map((val) => `"${val}"`).join(", ")}]`)
+    .map((row) => `  [${row.map((val) => `"${escapeQuotes(val)}"`).join(", ")}]`)
     .join("\n");
 
   return `Headers: ${headerLine}\nSample rows:\n${sampleLines}`;

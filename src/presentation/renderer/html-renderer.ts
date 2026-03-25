@@ -90,11 +90,11 @@ function card(label: string, value: string, highlight = false): string {
   const tooltipHtml = tooltip
     ? `<span class="kpi-help-wrap"><button class="kpi-help" aria-label="About ${esc(label)}" type="button">?</button><div class="kpi-tooltip" role="tooltip"><strong>${esc(tooltip.purpose)}</strong><br>${esc(tooltip.target)}<br><em>${esc(tooltip.tip)}</em></div></span>`
     : "";
-  return `<div class="kpi${highlight ? " kpi-highlight" : ""}">${tooltipHtml}<div class="kpi-value">${value}</div><div class="kpi-label">${label}</div></div>`;
+  return `<div class="kpi${highlight ? " kpi-highlight" : ""}">${tooltipHtml}<div class="kpi-value">${esc(value)}</div><div class="kpi-label">${esc(label)}</div></div>`;
 }
 
 function item(label: string, value: string, cls = ""): string {
-  return `<div class="total-item"><span class="total-label">${label}</span><span class="total-value${cls ? ` ${cls}` : ""}">${value}</span></div>`;
+  return `<div class="total-item"><span class="total-label">${esc(label)}</span><span class="total-value${cls ? ` ${cls}` : ""}">${esc(value)}</span></div>`;
 }
 
 export class HtmlRenderer implements Renderer {
@@ -315,7 +315,7 @@ export class HtmlRenderer implements Renderer {
       ? `<div class="insight-card"><h3>Largest Expenses</h3>${kpis.largestExpenses
           .map(
             (expense, idx) =>
-              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(expense.label)}<span class="insight-date">${expense.date}</span></span><span class="insight-value">${fmtCurrency.format(expense.amount)}</span></div>`,
+              `<div class="insight-item"><span class="insight-rank">${idx + 1}</span><span class="insight-label">${esc(expense.label)}<span class="insight-date">${esc(expense.date)}</span></span><span class="insight-value">${fmtCurrency.format(expense.amount)}</span></div>`,
           )
           .join("")}</div>`
       : "";
@@ -384,14 +384,12 @@ ${body}
   }
 
   private static cssBase(): string {
-    return `@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@300;400;500;600&display=swap');
-
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    return `*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  --font-body: 'Libre Franklin', 'Helvetica Neue', Helvetica, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SF Mono', 'Fira Code', Consolas, monospace;
+  --font-display: Georgia, 'Times New Roman', serif;
+  --font-body: -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', Consolas, monospace;
   --bg: #0d1017;
   --bg-card: #151a24;
   --bg-hover: #181d28;

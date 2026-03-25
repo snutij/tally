@@ -78,4 +78,24 @@ describe("LlmCsvColumnMapper", () => {
       ApplicationError,
     );
   });
+
+  it("escapes embedded double quotes in headers and sample values before sending to LLM", async () => {
+    let capturedPrompt = "";
+    const mockLlm: LlmGateway = {
+      complete: vi.fn().mockImplementation((_sys, userPrompt) => {
+        capturedPrompt = userPrompt as string;
+        return Promise.resolve(["date", "label", "amount"]);
+      }),
+    };
+    const mapper = new LlmCsvColumnMapper(mockLlm);
+
+    await mapper.detectColumns(
+      ['Date "opération"', "Libellé", "Montant"],
+      [["15/03/2026", 'CARTE CB "AUCHAN"', "-45,90"]],
+    );
+
+    expect(capturedPrompt).toContain(String.raw`\"opération\"`);
+    expect(capturedPrompt).toContain(String.raw`\"AUCHAN\"`);
+    expect(capturedPrompt).not.toMatch(/(?<!\\)(?:\\\\)*"opération"(?<!\\)/);
+  });
 });

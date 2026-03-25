@@ -46,14 +46,21 @@ export class CategoryRule {
 
   /**
    * Factory for reconstituting rules from persistent storage.
-   * Skips all validation — the database is trusted via FK constraints.
+   * Validates regex syntax — returns undefined if the pattern is invalid so
+   * callers can filter corrupt rows without crashing. CategoryId is still
+   * trusted via DB FK constraints and is not re-validated here.
    */
   static reconstitute(
     id: string,
     pattern: string,
     categoryId: string,
     source: CategoryRuleSource,
-  ): CategoryRule {
+  ): CategoryRule | undefined {
+    try {
+      new RegExp(pattern, "i").test("");
+    } catch {
+      return undefined;
+    }
     return new CategoryRule(CategoryRuleId(id), pattern, CategoryId(categoryId), source);
   }
 
