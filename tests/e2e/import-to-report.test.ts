@@ -5,7 +5,7 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
-import { GenerateUnifiedReport } from "../../src/application/usecase/generate-unified-report.js";
+import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { join } from "node:path";
@@ -25,7 +25,7 @@ describe("e2e: import → report (no budget step)", () => {
   let tmpDir: string;
   let close: () => void;
   let importTxns: ImportTransactions;
-  let generateReport: GenerateUnifiedReport;
+  let generateReport: GenerateReport;
 
   const CSV = join(import.meta.dirname, "../fixtures/credit-mutuel-sample.csv");
   const parser = new CsvTransactionParser(CSV_MAPPING);
@@ -41,7 +41,7 @@ describe("e2e: import → report (no budget step)", () => {
 
     const registry = new CategoryRegistry(categoryRepository.findAll());
     importTxns = new ImportTransactions(txnRepository);
-    generateReport = new GenerateUnifiedReport(txnRepository, registry);
+    generateReport = new GenerateReport(txnRepository, registry);
   });
 
   afterEach(() => {

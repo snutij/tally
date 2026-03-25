@@ -1,4 +1,8 @@
-import { type MonthlyReportDto, toMonthlyReportDto } from "../../src/application/dto/report-dto.js";
+import {
+  type MonthlyReportDto,
+  type ReportDto,
+  toMonthlyReportDto,
+} from "../../src/application/dto/report-dto.js";
 import { describe, expect, it } from "vitest";
 import { CategoryGroup } from "../../src/domain/value-object/category-group.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
@@ -7,7 +11,6 @@ import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targe
 import { JsonRenderer } from "../../src/presentation/renderer/json-renderer.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
-import type { UnifiedReportDto } from "../../src/application/dto/unified-report-dto.js";
 import { computeMonthlyReport } from "../../src/domain/service/compute-monthly-report.js";
 
 const targets = DEFAULT_SPENDING_TARGETS;
@@ -24,10 +27,7 @@ function makeTxn(id: string, amount: number, date: string, categoryId?: string):
   });
 }
 
-function makeUnifiedDto(
-  monthDtos: MonthlyReportDto[],
-  extra: Partial<UnifiedReportDto> = {},
-): UnifiedReportDto {
+function makeReportDto(monthDtos: MonthlyReportDto[], extra: Partial<ReportDto> = {}): ReportDto {
   const range =
     monthDtos.length > 0
       ? {
@@ -35,17 +35,17 @@ function makeUnifiedDto(
           start: (monthDtos.at(0) as MonthlyReportDto).month,
         }
       : null;
-  return { _type: "UnifiedReportDto", months: monthDtos, range, trend: null, ...extra };
+  return { _type: "ReportDto", months: monthDtos, range, trend: null, ...extra };
 }
 
 describe("JsonRenderer", () => {
   const renderer = new JsonRenderer();
 
-  it("serializes a single-month UnifiedReportDto", () => {
+  it("serializes a single-month ReportDto", () => {
     const monthDto = toMonthlyReportDto(
       computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, [], categoryMap),
     );
-    const dto = makeUnifiedDto([monthDto]);
+    const dto = makeReportDto([monthDto]);
     const parsed = JSON.parse(renderer.render(dto));
 
     expect(parsed.range.start).toBe("2026-03");
@@ -66,7 +66,7 @@ describe("JsonRenderer", () => {
         categoryMap,
       ),
     );
-    const parsed = JSON.parse(renderer.render(makeUnifiedDto([monthDto])));
+    const parsed = JSON.parse(renderer.render(makeReportDto([monthDto])));
 
     expect(parsed.months[0].totalExpenseTarget).toBe(3000);
     expect("_type" in parsed.months[0]).toBe(false);
@@ -82,7 +82,7 @@ describe("JsonRenderer", () => {
         categoryMap,
       ),
     );
-    const parsed = JSON.parse(renderer.render(makeUnifiedDto([monthDto])));
+    const parsed = JSON.parse(renderer.render(makeReportDto([monthDto])));
     const [firstMonth] = parsed.months;
     const { kpis } = firstMonth;
 
@@ -93,9 +93,9 @@ describe("JsonRenderer", () => {
     expect("adherenceRate" in kpis).toBe(false);
   });
 
-  it("serializes multi-month UnifiedReportDto with trend", () => {
-    const dto: UnifiedReportDto = {
-      _type: "UnifiedReportDto",
+  it("serializes multi-month ReportDto with trend", () => {
+    const dto: ReportDto = {
+      _type: "ReportDto",
       months: [
         toMonthlyReportDto(
           computeMonthlyReport(Temporal.PlainYearMonth.from("2026-01"), targets, [], categoryMap),

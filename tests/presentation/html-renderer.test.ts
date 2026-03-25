@@ -1,8 +1,9 @@
-import { type MonthlyReportDto, toMonthlyReportDto } from "../../src/application/dto/report-dto.js";
-import type {
-  TrendAnalyticsDto,
-  UnifiedReportDto,
-} from "../../src/application/dto/unified-report-dto.js";
+import {
+  type MonthlyReportDto,
+  type ReportDto,
+  type TrendAnalyticsDto,
+  toMonthlyReportDto,
+} from "../../src/application/dto/report-dto.js";
 import { describe, expect, it } from "vitest";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
@@ -26,10 +27,10 @@ function makeTxn(id: string, amount: number, date: string, categoryId?: string):
   });
 }
 
-function makeUnifiedDto(
+function makeReportDto(
   months: MonthlyReportDto[],
   trend: TrendAnalyticsDto | null = null,
-): UnifiedReportDto {
+): ReportDto {
   const range =
     months.length > 0
       ? {
@@ -37,7 +38,7 @@ function makeUnifiedDto(
           start: (months.at(0) as MonthlyReportDto).month,
         }
       : null;
-  return { _type: "UnifiedReportDto", months, range, trend };
+  return { _type: "ReportDto", months, range, trend };
 }
 
 const txns = [makeTxn("1", 3000, "2026-03-01", "inc01"), makeTxn("2", -750, "2026-03-02", "n01")];
@@ -45,11 +46,11 @@ const txns = [makeTxn("1", 3000, "2026-03-01", "inc01"), makeTxn("2", -750, "202
 describe("HtmlRenderer", () => {
   const renderer = new HtmlRenderer();
 
-  describe("render(UnifiedReportDto single month)", () => {
+  describe("render(ReportDto single month)", () => {
     const report = toMonthlyReportDto(
       computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, txns, categoryMap),
     );
-    const html = renderer.render(makeUnifiedDto([report]));
+    const html = renderer.render(makeReportDto([report]));
 
     it("produces a valid HTML5 document", () => {
       expect(html).toMatch(/^<!DOCTYPE html>/);
@@ -103,19 +104,19 @@ describe("HtmlRenderer", () => {
     });
   });
 
-  describe("render(UnifiedReportDto) — no transactions", () => {
+  describe("render(ReportDto) — no transactions", () => {
     it("omits insights section when there are no expense transactions", () => {
       const report = toMonthlyReportDto(
         computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, [], categoryMap),
       );
-      const html = renderer.render(makeUnifiedDto([report]));
+      const html = renderer.render(makeReportDto([report]));
       const [, body] = html.split("<body>");
       expect(body).not.toContain("Top Spending");
       expect(body).not.toContain("Largest Expenses");
     });
   });
 
-  describe("render(UnifiedReportDto) — insights edge cases", () => {
+  describe("render(ReportDto) — insights edge cases", () => {
     it("shows largest expenses but no top spending when all uncategorized", () => {
       const report = toMonthlyReportDto(
         computeMonthlyReport(
@@ -125,7 +126,7 @@ describe("HtmlRenderer", () => {
           categoryMap,
         ),
       );
-      const html = renderer.render(makeUnifiedDto([report]));
+      const html = renderer.render(makeReportDto([report]));
       const [, body] = html.split("<body>");
       expect(body).toContain("Largest Expenses");
       expect(body).not.toContain("Top Spending");
@@ -140,14 +141,14 @@ describe("HtmlRenderer", () => {
           categoryMap,
         ),
       );
-      const html = renderer.render(makeUnifiedDto([report]));
+      const html = renderer.render(makeReportDto([report]));
       const [, body] = html.split("<body>");
       expect(body).toContain("Top Spending");
       expect(body).not.toContain("Largest Expenses");
     });
   });
 
-  describe("render(UnifiedReportDto) — uncategorized", () => {
+  describe("render(ReportDto) — uncategorized", () => {
     it("shows uncategorized section when non-zero", () => {
       const report = toMonthlyReportDto(
         computeMonthlyReport(
@@ -157,7 +158,7 @@ describe("HtmlRenderer", () => {
           categoryMap,
         ),
       );
-      const html = renderer.render(makeUnifiedDto([report]));
+      const html = renderer.render(makeReportDto([report]));
       expect(html).toContain("Uncategorized");
       expect(html).toContain("100,00\u00A0€");
     });
@@ -166,12 +167,12 @@ describe("HtmlRenderer", () => {
       const report = toMonthlyReportDto(
         computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, txns, categoryMap),
       );
-      const html = renderer.render(makeUnifiedDto([report]));
+      const html = renderer.render(makeReportDto([report]));
       expect(html).not.toContain('class="uncategorized"');
     });
   });
 
-  describe("render(UnifiedReportDto multi-month)", () => {
+  describe("render(ReportDto multi-month)", () => {
     const monthDto = toMonthlyReportDto(
       computeMonthlyReport(Temporal.PlainYearMonth.from("2026-01"), targets, txns, categoryMap),
     );
@@ -200,8 +201,8 @@ describe("HtmlRenderer", () => {
         { month: "2026-02", rate: null },
       ],
     };
-    const dto: UnifiedReportDto = {
-      _type: "UnifiedReportDto",
+    const dto: ReportDto = {
+      _type: "ReportDto",
       months: [monthDto, monthDto2],
       range: { end: "2026-02", start: "2026-01" },
       trend,
@@ -286,7 +287,7 @@ describe("HtmlRenderer", () => {
 
   it("renders empty report when range is null", () => {
     const html = renderer.render({
-      _type: "UnifiedReportDto",
+      _type: "ReportDto",
       months: [],
       range: null,
       trend: null,
@@ -296,10 +297,8 @@ describe("HtmlRenderer", () => {
     expect(html).toContain("No Data");
   });
 
-  it("passes through plain objects as JSON pre block", () => {
-    const html = renderer.render({ foo: "bar" });
-    expect(html).toContain("<pre>");
-    expect(html).toContain("foo");
+  it("throws for unexpected data types", () => {
+    expect(() => renderer.render({ foo: "bar" })).toThrow("HtmlRenderer: unexpected data type");
   });
 
   describe("HTML escaping", () => {
@@ -320,7 +319,7 @@ describe("HtmlRenderer", () => {
           categoryMap,
         ),
       );
-      const html = renderer.render(makeUnifiedDto([report]));
+      const html = renderer.render(makeReportDto([report]));
       expect(html).not.toContain("<script>");
       expect(html).toContain("&lt;script&gt;");
     });
@@ -343,7 +342,7 @@ describe("HtmlRenderer", () => {
           categoryMap,
         ),
       );
-      const injectedDto = makeUnifiedDto([
+      const injectedDto = makeReportDto([
         {
           ...baseDto,
           kpis: {
@@ -361,7 +360,7 @@ describe("HtmlRenderer", () => {
       const report = toMonthlyReportDto(
         computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, txns, categoryMap),
       );
-      const html = renderer.render(makeUnifiedDto([report]));
+      const html = renderer.render(makeReportDto([report]));
       expect(html).not.toContain("@import");
     });
 
@@ -369,7 +368,7 @@ describe("HtmlRenderer", () => {
       const report = toMonthlyReportDto(
         computeMonthlyReport(Temporal.PlainYearMonth.from("2026-03"), targets, txns, categoryMap),
       );
-      const html = renderer.render(makeUnifiedDto([report]));
+      const html = renderer.render(makeReportDto([report]));
       expect(html).not.toContain("fonts.googleapis.com");
       expect(html).not.toContain("Cormorant Garamond");
       expect(html).not.toContain("Libre Franklin");

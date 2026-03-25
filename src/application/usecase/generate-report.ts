@@ -2,14 +2,13 @@ import {
   DEFAULT_SPENDING_TARGETS,
   type SpendingTargets,
 } from "../../domain/config/spending-targets.js";
-import { type UnifiedReportDto, toUnifiedReportDto } from "../dto/unified-report-dto.js";
+import { type ReportDto, toMonthlyReportDto, toReportDto } from "../dto/report-dto.js";
 import type { CategoryRegistry } from "../../domain/service/category-registry.js";
 import type { TransactionRepository } from "../gateway/transaction-repository.js";
 import { computeMonthlyReport } from "../../domain/service/compute-monthly-report.js";
 import { computeTrendReport } from "../../domain/service/compute-trend-report.js";
-import { toMonthlyReportDto } from "../dto/report-dto.js";
 
-export class GenerateUnifiedReport {
+export class GenerateReport {
   private readonly txnRepository: TransactionRepository;
   private readonly registry: CategoryRegistry;
 
@@ -18,11 +17,11 @@ export class GenerateUnifiedReport {
     this.registry = registry;
   }
 
-  execute(targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): UnifiedReportDto {
-    const months = this.txnRepository.distinctMonths();
+  execute(targets: SpendingTargets = DEFAULT_SPENDING_TARGETS): ReportDto {
+    const months = this.txnRepository.distinctMonths().toSorted(Temporal.PlainYearMonth.compare);
 
     if (months.length === 0) {
-      return { _type: "UnifiedReportDto", months: [], range: null, trend: null };
+      return { _type: "ReportDto", months: [], range: null, trend: null };
     }
 
     const categoryMap = this.registry.categoryToGroupMap();
@@ -34,7 +33,7 @@ export class GenerateUnifiedReport {
     const monthDtos = monthlyReports.map((report) => toMonthlyReportDto(report));
 
     if (monthlyReports.length < 2) {
-      return toUnifiedReportDto(months, null, monthDtos);
+      return toReportDto(months, null, monthDtos);
     }
 
     const range = {
@@ -42,6 +41,6 @@ export class GenerateUnifiedReport {
       start: months.at(0) as Temporal.PlainYearMonth,
     };
     const trendReport = computeTrendReport(range, monthlyReports);
-    return toUnifiedReportDto(months, trendReport, monthDtos);
+    return toReportDto(months, trendReport, monthDtos);
   }
 }

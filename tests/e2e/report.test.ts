@@ -4,7 +4,7 @@ import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
-import { GenerateUnifiedReport } from "../../src/application/usecase/generate-unified-report.js";
+import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { JsonRenderer } from "../../src/presentation/renderer/json-renderer.js";
@@ -21,17 +21,17 @@ const CSV_MAPPING = new CsvColumnMapping({
   fields: ["date", "ignore", "amount", "label", "ignore"],
 });
 
-describe("e2e: unified report", () => {
+describe("e2e: report", () => {
   let tmpDir: string;
   let close: () => void;
   let importTxns: ImportTransactions;
-  let generateReport: GenerateUnifiedReport;
+  let generateReport: GenerateReport;
 
   const CSV = join(import.meta.dirname, "../fixtures/credit-mutuel-sample.csv");
   const parser = new CsvTransactionParser(CSV_MAPPING);
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "tally-e2e-unified-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "tally-e2e-report-"));
     const {
       close: closeDb,
       txnRepository,
@@ -41,7 +41,7 @@ describe("e2e: unified report", () => {
 
     const registry = new CategoryRegistry(categoryRepository.findAll());
     importTxns = new ImportTransactions(txnRepository);
-    generateReport = new GenerateUnifiedReport(txnRepository, registry);
+    generateReport = new GenerateReport(txnRepository, registry);
   });
 
   afterEach(() => {
@@ -51,7 +51,7 @@ describe("e2e: unified report", () => {
 
   it("returns empty report with no data", () => {
     const result = generateReport.execute();
-    expect(result._type).toBe("UnifiedReportDto");
+    expect(result._type).toBe("ReportDto");
     expect(result.months).toHaveLength(0);
     expect(result.range).toBeNull();
     expect(result.trend).toBeNull();

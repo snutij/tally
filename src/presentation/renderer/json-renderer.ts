@@ -1,8 +1,8 @@
 import {
-  type UnifiedReportDto,
-  isUnifiedReportDto,
-} from "../../application/dto/unified-report-dto.js";
-import type { MonthlyReportDto } from "../../application/dto/report-dto.js";
+  type MonthlyReportDto,
+  type ReportDto,
+  isReportDto,
+} from "../../application/dto/report-dto.js";
 import type { Renderer } from "./renderer.js";
 
 export class JsonRenderer implements Renderer {
@@ -11,7 +11,7 @@ export class JsonRenderer implements Renderer {
   }
 
   private static serialize(data: unknown): unknown {
-    if (isUnifiedReportDto(data)) {
+    if (isReportDto(data)) {
       return JsonRenderer.serializeUnified(data);
     }
     return data;
@@ -31,7 +31,7 @@ export class JsonRenderer implements Renderer {
     };
   }
 
-  private static serializeUnified(dto: UnifiedReportDto): Record<string, unknown> {
+  private static serializeUnified(dto: ReportDto): Record<string, unknown> {
     return {
       months: dto.months.map((mo) => JsonRenderer.serializeReport(mo)),
       range: dto.range,

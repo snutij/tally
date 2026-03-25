@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import type { GenerateUnifiedReport } from "../../application/usecase/generate-unified-report.js";
+import type { GenerateReport } from "../../application/usecase/generate-report.js";
 import type { Renderer } from "../renderer/renderer.js";
 import { resolveSpendingTargets } from "./spending-targets-option.js";
 
@@ -9,10 +9,7 @@ interface ReportOptions {
   wants?: number;
 }
 
-export function createReportCommand(
-  generateUnifiedReport: GenerateUnifiedReport,
-  renderer: Renderer,
-): Command {
+export function createReportCommand(generateReport: GenerateReport, renderer: Renderer): Command {
   return new Command("report")
     .description("Generate a comprehensive financial report across all available data")
     .option("--needs <pct>", "Percentage target for Needs (0-100)", Number.parseInt)
@@ -23,7 +20,7 @@ export function createReportCommand(
       if (targets === undefined) {
         return;
       }
-      const result = generateUnifiedReport.execute(targets);
+      const result = generateReport.execute(targets);
       console.log(renderer.render(result));
     });
 }

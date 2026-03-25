@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
 import { DEFAULT_SPENDING_TARGETS } from "../../src/domain/config/spending-targets.js";
-import type { GenerateUnifiedReport } from "../../src/application/usecase/generate-unified-report.js";
+import type { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { createReportCommand } from "../../src/presentation/command/report-command.js";
 
 describe("createReportCommand", () => {
@@ -14,7 +14,7 @@ describe("createReportCommand", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     process.exitCode = 0;
     mockGenerateReport.execute.mockReturnValue({
-      _type: "UnifiedReportDto",
+      _type: "ReportDto",
       months: [],
       range: null,
       trend: null,
@@ -22,10 +22,7 @@ describe("createReportCommand", () => {
   });
 
   function run(...args: string[]): Promise<unknown> {
-    const cmd = createReportCommand(
-      mockGenerateReport as unknown as GenerateUnifiedReport,
-      mockRenderer,
-    );
+    const cmd = createReportCommand(mockGenerateReport as unknown as GenerateReport, mockRenderer);
     return new Command().addCommand(cmd).parseAsync(["node", "tally", "report", ...args]);
   }
 
@@ -46,6 +43,20 @@ describe("createReportCommand", () => {
     await run("--needs", "50", "--wants", "30", "--invest", "30");
 
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining("sum to 100"));
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("errors when a flag value is negative", async () => {
+    await run("--needs", "-10", "--wants", "60", "--invest", "50");
+
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("between 0 and 100"));
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("errors when a flag value exceeds 100", async () => {
+    await run("--needs", "110", "--wants", "0", "--invest", "0");
+
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("between 0 and 100"));
     expect(process.exitCode).toBe(1);
   });
 

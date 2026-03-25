@@ -1,15 +1,13 @@
-import type {
-  GroupSummaryDto,
-  MonthlyReportDto,
-  ReportKpisDto,
-} from "../../application/dto/report-dto.js";
 import {
+  type GroupSummaryDto,
   type MonthOverMonthDeltaDto,
+  type MonthlyReportDto,
+  type ReportDto,
+  type ReportKpisDto,
   type SavingsRateEntryDto,
   type TrendAnalyticsDto,
-  type UnifiedReportDto,
-  isUnifiedReportDto,
-} from "../../application/dto/unified-report-dto.js";
+  isReportDto,
+} from "../../application/dto/report-dto.js";
 import type { Renderer } from "./renderer.js";
 
 const MONTH_NAMES = [
@@ -99,15 +97,15 @@ function item(label: string, value: string, cls = ""): string {
 
 export class HtmlRenderer implements Renderer {
   render(data: unknown): string {
-    if (isUnifiedReportDto(data)) {
+    if (isReportDto(data)) {
       return HtmlRenderer.renderUnified(data);
     }
-    return HtmlRenderer.wrapHtml("Data", `<pre>${esc(JSON.stringify(data, undefined, 2))}</pre>`);
+    throw new Error(`HtmlRenderer: unexpected data type`);
   }
 
   // ── Unified ────────────────────────────────────────────
 
-  private static renderUnified(dto: UnifiedReportDto): string {
+  private static renderUnified(dto: ReportDto): string {
     const title = HtmlRenderer.unifiedTitle(dto);
     const sections: string[] = [HtmlRenderer.unifiedHeader(dto)];
 
@@ -129,7 +127,7 @@ export class HtmlRenderer implements Renderer {
     return HtmlRenderer.wrapHtml(title, body, HtmlRenderer.filterScript());
   }
 
-  private static unifiedTitle(dto: UnifiedReportDto): string {
+  private static unifiedTitle(dto: ReportDto): string {
     if (dto.range === null) {
       return "Financial Report";
     }
@@ -139,7 +137,7 @@ export class HtmlRenderer implements Renderer {
     return `Financial Report — ${dto.range.start} to ${dto.range.end}`;
   }
 
-  private static unifiedHeader(dto: UnifiedReportDto): string {
+  private static unifiedHeader(dto: ReportDto): string {
     const eyebrow = "Financial Report";
     let heading: string;
     if (dto.range === null) {

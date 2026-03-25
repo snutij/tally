@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { CategoryId } from "../../src/domain/value-object/category-id.js";
 import { CategoryRegistry } from "../../src/domain/service/category-registry.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
-import { GenerateUnifiedReport } from "../../src/application/usecase/generate-unified-report.js";
+import { GenerateReport } from "../../src/application/usecase/generate-report.js";
 import { InMemoryTransactionRepository } from "../helpers/in-memory-repositories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
@@ -19,18 +19,18 @@ function makeTxn(id: string, amount: number, date: string, categoryId?: string):
   });
 }
 
-describe("GenerateUnifiedReport", () => {
+describe("GenerateReport", () => {
   let txnGateway: InMemoryTransactionRepository;
-  let useCase: GenerateUnifiedReport;
+  let useCase: GenerateReport;
 
   beforeEach(() => {
     txnGateway = new InMemoryTransactionRepository();
-    useCase = new GenerateUnifiedReport(txnGateway, new CategoryRegistry(DEFAULT_CATEGORIES));
+    useCase = new GenerateReport(txnGateway, new CategoryRegistry(DEFAULT_CATEGORIES));
   });
 
   it("returns empty report when no transactions exist", () => {
     const result = useCase.execute();
-    expect(result._type).toBe("UnifiedReportDto");
+    expect(result._type).toBe("ReportDto");
     expect(result.months).toHaveLength(0);
     expect(result.range).toBeNull();
     expect(result.trend).toBeNull();
@@ -76,6 +76,24 @@ describe("GenerateUnifiedReport", () => {
       makeTxn("2", -100, "2026-02-01", "n01"),
     ]);
     const result = useCase.execute();
+    expect(result.months.map((mo) => mo.month)).toEqual(["2026-01", "2026-02", "2026-03"]);
+  });
+
+  it("sorts months chronologically even when the repository returns them unsorted", () => {
+    txnGateway.saveAll([
+      makeTxn("1", -100, "2026-01-01", "n01"),
+      makeTxn("2", -100, "2026-02-01", "n01"),
+      makeTxn("3", -100, "2026-03-01", "n01"),
+    ]);
+    // Wrap the repository to return months in reverse order, simulating an unsorted source
+    const unsortedRepo = {
+      distinctMonths: (): Temporal.PlainYearMonth[] => txnGateway.distinctMonths().toReversed(),
+      findByIds: (ids: TransactionId[]): Transaction[] => txnGateway.findByIds(ids),
+      findByMonth: (month: Temporal.PlainYearMonth): Transaction[] => txnGateway.findByMonth(month),
+      saveAll: (txns: Transaction[]): void => txnGateway.saveAll(txns),
+    };
+    const uc = new GenerateReport(unsortedRepo, new CategoryRegistry(DEFAULT_CATEGORIES));
+    const result = uc.execute();
     expect(result.months.map((mo) => mo.month)).toEqual(["2026-01", "2026-02", "2026-03"]);
   });
 

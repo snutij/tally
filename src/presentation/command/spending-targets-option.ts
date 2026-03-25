@@ -24,6 +24,18 @@ export function resolveSpendingTargets(opts: SpendingTargetOpts): SpendingTarget
     return;
   }
 
+  for (const [flag, val] of [
+    ["--needs", needs],
+    ["--wants", wants],
+    ["--invest", invest],
+  ] as [string, number][]) {
+    if (!Number.isInteger(val) || val < 0 || val > 100) {
+      console.error(`${flag} must be an integer between 0 and 100 (got ${val}).`);
+      process.exitCode = 1;
+      return;
+    }
+  }
+
   const sum = needs + wants + invest;
   if (sum !== 100) {
     console.error(`Percentages must sum to 100 (got ${sum}).`);

@@ -21,7 +21,7 @@ import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
 import { DomainError } from "../domain/error/index.js";
 import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
-import { GenerateUnifiedReport } from "../application/usecase/generate-unified-report.js";
+import { GenerateReport } from "../application/usecase/generate-report.js";
 import { ImportCsvWorkflow } from "../application/usecase/import-csv-workflow.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { InfrastructureError } from "../infrastructure/error.js";
@@ -71,7 +71,7 @@ const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories
 const mockDataGenerator = new MockDataGeneratorImpl();
 const csvFormatDetector = new CsvFormatDetectorImpl();
 const importTransactions = new ImportTransactions(txnRepository);
-const generateUnifiedReport = new GenerateUnifiedReport(txnRepository, categoryRegistry);
+const generateReport = new GenerateReport(txnRepository, categoryRegistry);
 const seedMockData = new SeedMockData(txnRepository, mockDataGenerator);
 const applyCategoryRules = new ApplyCategoryRules(ruleBookRepository);
 const learnCategoryRules = new LearnCategoryRules(
@@ -144,7 +144,7 @@ program.addCommand(
     renderer,
   }),
 );
-program.addCommand(createReportCommand(generateUnifiedReport, renderer));
+program.addCommand(createReportCommand(generateReport, renderer));
 program.addCommand(
   createTransactionsCommand(
     listTransactions,
