@@ -24,17 +24,6 @@ tally is a terminal tool that turns raw bank exports into a clear picture of whe
 
 The AI is [Qwen 2.5 3B Instruct](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF) via [node-llama-cpp](https://github.com/withcatai/node-llama-cpp). One-time 2GB download. Fully offline after that.
 
-## How
-
-```
-tally init          →   Download the AI model (once, ~2GB)
-tally import csv    →   AI reads your bank CSV, categorizes every transaction
-tally report        →   Budget vs. actual breakdown, by category
-tally ask           →   "How much did I spend on restaurants last month?"
-```
-
----
-
 ## Quick Start
 
 ```bash
