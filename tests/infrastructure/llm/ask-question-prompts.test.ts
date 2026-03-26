@@ -1,8 +1,23 @@
 import {
   buildNarrationUserPrompt,
+  buildSqlGenerationSystemPrompt,
   buildSqlRetryUserPrompt,
 } from "../../../src/infrastructure/llm/ask-question-prompts.js";
 import { describe, expect, it } from "vitest";
+
+describe("buildSqlGenerationSystemPrompt", () => {
+  it("injects today, this month, and last month into the prompt", () => {
+    const prompt = buildSqlGenerationSystemPrompt("## Schema", "2026-03-26");
+    expect(prompt).toContain("Today is 2026-03-26");
+    expect(prompt).toContain("This month is 2026-03");
+    expect(prompt).toContain("Last month is 2026-02");
+  });
+
+  it("handles January correctly (last month wraps to previous year)", () => {
+    const prompt = buildSqlGenerationSystemPrompt("## Schema", "2026-01-15");
+    expect(prompt).toContain("Last month is 2025-12");
+  });
+});
 
 describe("buildNarrationUserPrompt", () => {
   it("uses 'No results found.' when rows array is empty", () => {

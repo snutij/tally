@@ -73,6 +73,17 @@ describe("LlmQuestionAnswerer", () => {
     expect(result).toBe("I found no transactions matching that query.");
   });
 
+  it("returns no-data message when SQL returns only null values (e.g. SUM of no rows)", async () => {
+    vi.mocked(llmGateway.complete).mockResolvedValueOnce({
+      explanation: "sum",
+      sql: "SELECT SUM(amount_cents) / 100.0 AS total FROM transactions WHERE category_id = 'nonexistent'",
+    });
+    vi.mocked(sqlQueryRunner.executeReadOnly).mockResolvedValue([{ total: null }]);
+
+    const result = await answerer.answer("How much on food?");
+    expect(result).toBe("I found no transactions matching that query.");
+  });
+
   it("retries once when first SQL fails and retry succeeds", async () => {
     vi.mocked(llmGateway.complete)
       .mockResolvedValueOnce({ explanation: "bad", sql: "SELECT bad syntax" })

@@ -36,7 +36,8 @@ export class LlmQuestionAnswerer implements QuestionAnswerer {
 
   async answer(question: string): Promise<string> {
     const schemaContext = await this.schemaIntrospector.getSchemaContext();
-    const systemPrompt = buildSqlGenerationSystemPrompt(schemaContext);
+    const today = Temporal.Now.plainDateISO().toString();
+    const systemPrompt = buildSqlGenerationSystemPrompt(schemaContext, today);
 
     // First attempt
     let rows: Record<string, unknown>[] | undefined;
@@ -81,7 +82,8 @@ export class LlmQuestionAnswerer implements QuestionAnswerer {
       }
     }
 
-    if (rows.length === 0) {
+    const hasData = rows.some((row) => Object.values(row).some((val) => val !== null));
+    if (!hasData) {
       return NO_DATA_MESSAGE;
     }
 
