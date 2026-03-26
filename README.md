@@ -3,13 +3,9 @@
 [![CI](https://github.com/snutij/tally/actions/workflows/ci.yml/badge.svg)](https://github.com/snutij/tally/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Your bank CSV. A local AI. A budget that never leaves your machine.**
-
----
-
 ## Why
 
-Every finance app wants something from you — your bank credentials, a monthly subscription, or blind trust that your transaction history is safe in someone else's cloud.
+Every finance app wants something from you - your bank credentials, a monthly subscription, or blind trust that your transaction history is safe in someone else's cloud.
 
 tally wants your CSV and nothing else. Export it from your bank, drop it in. A small AI model running on your own hardware categorizes every transaction. The result is a SQLite file on your disk. No account. No API key. No connection required after setup.
 
@@ -42,8 +38,6 @@ tally report | jq
 # 4. Ask anything
 tally ask "What did I spend the most on last month?"
 ```
-
----
 
 ## Commands
 
@@ -81,8 +75,6 @@ tally ask "What are my top 5 spending categories this year?"
 
 Natural language queries against your transaction history. Answered locally by the AI.
 
----
-
 ## Privacy
 
 | What         | Where                                 |
@@ -92,7 +84,5 @@ Natural language queries against your transaction history. Answered locally by t
 | Custom model | `TALLY_LLM_MODEL=/path/to/model.gguf` |
 
 After `tally init`, everything runs on-device. Bank CSVs are never stored — only categorized transactions land in the database.
-
----
 
 > Personal project, provided as-is. Not financial advice. Use at your own risk. Never commit real bank statements to version control.
