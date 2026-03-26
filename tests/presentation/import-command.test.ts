@@ -3,7 +3,6 @@ import { Command } from "commander";
 
 import type { ImportCsvWorkflow } from "../../src/application/usecase/import-csv-workflow.js";
 import { Money } from "../../src/domain/value-object/money.js";
-import type { SeedMockData } from "../../src/application/usecase/seed-mock-data.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 
@@ -30,7 +29,6 @@ const mockMappingConfig = {
   fields: ["date", "label", "amount"],
 };
 
-// Transaction entity as returned by a parser (for mockParser.parse mock)
 function parsedTxn(id = "t1"): Transaction {
   return Transaction.create({
     amount: Money.fromEuros(-42),
@@ -43,7 +41,6 @@ function parsedTxn(id = "t1"): Transaction {
 
 describe("createImportCommand", () => {
   const mockParser = { parse: vi.fn() };
-  const mockSeedDemoData = { execute: vi.fn() };
   const mockImportCsvWorkflow = { execute: vi.fn() };
   const mockCsvFormatDetector = {};
   const mockCsvColumnMapper = { detectColumns: vi.fn() };
@@ -65,7 +62,6 @@ describe("createImportCommand", () => {
 
   function run(...args: string[]): Promise<unknown> {
     const cmd = createImportCommand(
-      mockSeedDemoData as unknown as SeedMockData,
       mockImportCsvWorkflow as unknown as ImportCsvWorkflow,
       mockDeps,
     );
@@ -103,23 +99,6 @@ describe("createImportCommand", () => {
         (input: { onLlmCategorized?: (count: number) => void }) => {
           input.onLlmCategorized?.(3);
           return Promise.resolve({ savedCount: 3 });
-        },
-      );
-
-      await run("csv", "file.csv");
-
-      expect(mockImportCsvWorkflow.execute).toHaveBeenCalled();
-    });
-
-    it("calls onUncategorized callback", async () => {
-      mockParser.parse.mockReturnValue([parsedTxn()]);
-      mockImportCsvWorkflow.execute.mockImplementation(
-        (input: { onUncategorized?: (txns: { label: string; date: string }[]) => void }) => {
-          input.onUncategorized?.([
-            { date: "2026-02-01", label: "UNKNOWN MERCHANT" },
-            { date: "2026-02-15", label: "MYSTERY SHOP" },
-          ]);
-          return Promise.resolve({ savedCount: 0 });
         },
       );
 
@@ -175,15 +154,6 @@ describe("createImportCommand", () => {
       await run("csv", "file.csv");
 
       expect(mockImportCsvWorkflow.execute).toHaveBeenCalled();
-    });
-  });
-
-  describe("demo subcommand", () => {
-    it("seeds all demo months and logs total count", async () => {
-      mockSeedDemoData.execute.mockReturnValue({ transactionCount: 20 });
-      await run("demo");
-      expect(mockSeedDemoData.execute).toHaveBeenCalled();
-      expect(console.log).toHaveBeenCalled();
     });
   });
 });

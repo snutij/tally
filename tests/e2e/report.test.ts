@@ -5,10 +5,8 @@ import { CategoryRegistry } from "../../src/domain/service/category-registry.js"
 import { CsvColumnMapping } from "../../src/infrastructure/csv/csv-column-mapping.js";
 import { CsvTransactionParser } from "../../src/infrastructure/csv/csv-transaction-parser.js";
 import { GenerateReport } from "../../src/application/usecase/generate-report.js";
-import { HtmlRenderer } from "../../src/presentation/renderer/html-renderer.js";
 import { ImportTransactions } from "../../src/application/usecase/import-transactions.js";
 import { JsonRenderer } from "../../src/presentation/renderer/json-renderer.js";
-import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
@@ -36,7 +34,7 @@ describe("e2e: report", () => {
       close: closeDb,
       txnRepository,
       categoryRepository,
-    } = openDatabase(join(tmpDir, "test.db"), new Sha256IdGenerator());
+    } = openDatabase(join(tmpDir, "test.db"));
     close = closeDb;
 
     const registry = new CategoryRegistry(categoryRepository.findAll());
@@ -89,26 +87,5 @@ describe("e2e: report", () => {
     expect(json.range).toBeDefined();
     expect(json.months).toHaveLength(1);
     expect(json.trend).toBeNull();
-  });
-
-  it("HTML output is valid for single-month report", () => {
-    const parsed = parser.parse(CSV);
-    importTxns.save(
-      parsed.map((txn) =>
-        txn.label.includes("SALARY")
-          ? toTransactionDto(txn.categorize(CategoryId("inc01")))
-          : toTransactionDto(txn),
-      ),
-    );
-
-    const result = generateReport.execute();
-    const html = new HtmlRenderer().render(result);
-
-    expect(html).toMatch(/^<!DOCTYPE html>/);
-    expect(html).toContain("Financial Report");
-    expect(html).toContain("Key Indicators");
-    expect(html).toContain("Group Summary");
-    expect(html).toContain("€");
-    expect(html).not.toContain('id="month-from"');
   });
 });

@@ -1,4 +1,3 @@
-import { DEFAULT_LOCALE, getDefaultRulesForLocale } from "../config/category-rules/index.js";
 import type { Category } from "../../domain/value-object/category.js";
 import type { CategoryGroup } from "../../domain/value-object/category-group.js";
 import { CategoryId } from "../../domain/value-object/category-id.js";
@@ -6,7 +5,6 @@ import type { CategoryRepository } from "../../application/gateway/category-repo
 import { CategoryRule } from "../../domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../domain/default-categories.js";
 import Database from "better-sqlite3";
-import type { IdGenerator } from "../../application/gateway/id-generator.js";
 import { Money } from "../../domain/value-object/money.js";
 import { RuleBook } from "../../domain/aggregate/rule-book.js";
 import type { RuleBookRepository } from "../../application/gateway/rule-book-repository.js";
@@ -75,21 +73,12 @@ function migrateSchema(db: Database.Database): void {
   }
 }
 
-function seedDefaults(db: Database.Database, idGenerator: IdGenerator): void {
+function seedDefaults(db: Database.Database): void {
   const upsertCat = db.prepare(
     `INSERT OR REPLACE INTO categories (id, name, "group") VALUES (?, ?, ?)`,
   );
   for (const cat of DEFAULT_CATEGORIES) {
     upsertCat.run(cat.id, cat.name, cat.group);
-  }
-
-  const insertRule = db.prepare(
-    `INSERT OR IGNORE INTO category_rules (id, pattern, category_id, source) VALUES (?, ?, ?, ?)`,
-  );
-  for (const entry of getDefaultRulesForLocale(DEFAULT_LOCALE)) {
-    const id = idGenerator.fromPattern(entry.pattern);
-    const rule = CategoryRule.create(id, entry.pattern, entry.categoryId, "default");
-    insertRule.run(rule.id, rule.pattern, rule.categoryId, rule.source);
   }
 }
 
@@ -216,10 +205,7 @@ class SqliteCategoryRepository implements CategoryRepository {
   }
 }
 
-export function openDatabase(
-  dbPath: string,
-  idGenerator: IdGenerator,
-): {
+export function openDatabase(dbPath: string): {
   txnRepository: TransactionRepository;
   ruleBookRepository: RuleBookRepository;
   categoryRepository: CategoryRepository;
@@ -230,7 +216,7 @@ export function openDatabase(
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   migrateSchema(db);
-  seedDefaults(db, idGenerator);
+  seedDefaults(db);
   return {
     categoryRepository: new SqliteCategoryRepository(db),
     close: () => db.close(),

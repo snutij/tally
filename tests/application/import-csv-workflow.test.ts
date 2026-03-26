@@ -38,7 +38,7 @@ describe("ImportCsvWorkflow", () => {
     ruleGateway = new InMemoryRuleBookRepository();
     const importTransactions = new ImportTransactions(txnGateway);
     const applyCategoryRules = new ApplyCategoryRules(ruleGateway);
-    learnCategoryRules = new LearnCategoryRules(ruleGateway, [], stubIdGenerator, categoryRegistry);
+    learnCategoryRules = new LearnCategoryRules(ruleGateway, stubIdGenerator, categoryRegistry);
     const unitOfWork = { runInTransaction: (fn: () => void): void => fn() };
     mockCategorizer = {
       categorize: vi.fn().mockResolvedValue({ invalidCount: 0, results: [] }),
