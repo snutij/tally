@@ -3,39 +3,22 @@
 [![CI](https://github.com/snutij/tally/actions/workflows/ci.yml/badge.svg)](https://github.com/snutij/tally/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Drop your bank CSV. Get a budget breakdown. Nothing leaves your machine.**
-
----
-
 ## Why
 
-Every personal finance tool wants something from you — your bank login, a monthly fee, or blind trust that your transaction history is safe on their servers.
+Every finance app wants something from you - your bank credentials, a monthly subscription, or blind trust that your transaction history is safe in someone else's cloud.
 
-tally wants nothing. Just a CSV export from your bank.
-
-A local AI model categorizes your transactions automatically. Your data lives in a SQLite file on your disk. No cloud. No account. No API key. Pull the plug and it still works.
+tally wants your CSV and nothing else. Export it from your bank, drop it in. A small AI model running on your own hardware categorizes every transaction. The result is a SQLite file on your disk. No account. No API key. No connection required after setup.
 
 ## What
 
-tally is a terminal tool that turns raw bank exports into a budget vs. actual breakdown:
+tally is a terminal tool that turns raw bank exports into a clear picture of where your money goes:
 
-- **Auto-import** — AI detects your CSV's column layout automatically, no mapping required
-- **Auto-categorize** — regex rules for known merchants, LLM fallback for everything else
-- **Budget report** — spending vs. targets across needs / wants / investments
-- **Full control** — review uncategorized transactions, tweak rules, export to HTML or JSON
+- **Auto-detect** — AI reads your CSV's column layout automatically, no manual mapping
+- **Auto-categorize** — known merchants match instantly via regex rules; AI handles the rest
+- **Budget breakdown** — spending vs. targets across needs / wants / investments
+- **Natural language queries** — ask anything in plain English, get a direct answer from your own data
 
-The AI is [Qwen 2.5 3B Instruct](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF) running via [node-llama-cpp](https://github.com/withcatai/node-llama-cpp). One-time 2GB download. After that, fully offline.
-
-## How
-
-```
-tally init          →   Download the AI model (once, ~2GB)
-tally import csv    →   AI reads your CSV, categorizes transactions
-tally transactions  →   Review and fix anything it missed
-tally report        →   Budget vs. actual — terminal or HTML
-```
-
----
+The AI is [Qwen 2.5 3B Instruct](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF) via [node-llama-cpp](https://github.com/withcatai/node-llama-cpp). One-time 2GB download. Fully offline after that.
 
 ## Quick Start
 
@@ -46,75 +29,51 @@ npm link
 # 1. Download the AI model (~2GB, one-time)
 tally init
 
-# 2. Try it with 6 months of demo data
-tally import demo
-tally report
-
-# 3. Or import your actual bank statement
+# 2. Import your bank statement
 tally import csv statement.csv
-```
 
----
+# 3. Get your budget breakdown
+tally report | jq
+
+# 4. Ask anything
+tally ask "What did I spend the most on last month?"
+```
 
 ## Commands
 
 ### `tally init`
 
-Downloads the AI model to `~/.local/share/tally/models/`. Run once before importing real CSVs. Override the model path with `TALLY_LLM_MODEL`.
+Downloads the AI model to `~/.local/share/tally/models/`. Run once before importing. Override the model path with `TALLY_LLM_MODEL`.
 
-### `tally import`
+### `tally import csv <file>`
 
 ```bash
-tally import csv <file>    # AI auto-detects columns, categorizes transactions
-tally import demo          # 6 months of pre-categorized demo data (Jan–Jun 2026)
-tally import mock [month]  # Single month of minimal test data
+tally import csv statement.csv
 ```
 
-`tally import csv` pipeline:
+Import pipeline:
 
-1. LLM detects which columns are date, label, amount — no manual mapping
-2. Regex rules categorize known merchants instantly (no LLM call)
-3. LLM classifies remaining transactions
-4. Anything unresolved surfaces in `tally transactions` for manual review
+1. AI detects which columns are date, label, and amount — no manual mapping
+2. Known merchants match instantly via regex rules (no AI call)
+3. AI classifies the rest
 
 ### `tally report`
 
 ```bash
 tally report
-tally report --needs 50 --wants 30 --invest 20   # custom targets
-
-# HTML output
-tally --format html report > report.html && open report.html
+tally report | jq '.summary'
 ```
 
-Default output is JSON — pipe to `jq` for slicing and filtering.
+Outputs JSON. Pipe to `jq` for slicing and filtering.
 
-### `tally transactions`
-
-Review and manually categorize transactions for a given month.
+### `tally ask <question>`
 
 ```bash
-tally transactions 2026-03
+tally ask "How much did I spend on Uber last month?"
+tally ask "What are my top 5 spending categories this year?"
 ```
 
-### `tally rules`
-
-Regex rules that run before the AI — fast, free, deterministic. Add rules for merchants you see every month.
-
-```bash
-tally rules list
-tally rules add
-tally rules remove
-```
-
-### `tally db`
-
-```bash
-tally db path    # Where is the database?
-tally db reset   # Wipe everything and start fresh
-```
-
----
+Natural language queries against your transaction history. Answered locally by the AI.
 
 ## Privacy
 
@@ -124,8 +83,6 @@ tally db reset   # Wipe everything and start fresh
 | Database     | `~/.local/share/tally/tally.db`       |
 | Custom model | `TALLY_LLM_MODEL=/path/to/model.gguf` |
 
-After `tally init`, everything runs on-device. Bank CSVs and the database are gitignored — only synthetic fixtures are committed to this repo.
-
----
+After `tally init`, everything runs on-device. Bank CSVs are never stored — only categorized transactions land in the database.
 
 > Personal project, provided as-is. Not financial advice. Use at your own risk. Never commit real bank statements to version control.
