@@ -5,7 +5,6 @@ import { CategoryRule } from "../../src/domain/entity/category-rule.js";
 import { DEFAULT_CATEGORIES } from "../../src/domain/default-categories.js";
 import { Money } from "../../src/domain/value-object/money.js";
 import type { RuleBookRepository } from "../../src/application/gateway/rule-book-repository.js";
-import { Sha256IdGenerator } from "../../src/infrastructure/id/sha256-id-generator.js";
 import { Transaction } from "../../src/domain/entity/transaction.js";
 import { TransactionId } from "../../src/domain/value-object/transaction-id.js";
 import type { TransactionRepository } from "../../src/application/gateway/transaction-repository.js";
@@ -13,8 +12,6 @@ import type { UnitOfWork } from "../../src/application/gateway/unit-of-work.js";
 import { join } from "node:path";
 import { openDatabase } from "../../src/infrastructure/persistence/sqlite-repository.js";
 import { tmpdir } from "node:os";
-
-const idGenerator = new Sha256IdGenerator();
 
 function makeTestRule(
   pattern: string,
@@ -31,7 +28,7 @@ describe("SqliteCategoryRepository", () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-cat-test-"));
-    ({ close, categoryRepository } = openDatabase(join(tmpDir, "test.db"), idGenerator));
+    ({ close, categoryRepository } = openDatabase(join(tmpDir, "test.db")));
   });
 
   afterEach(() => {
@@ -68,7 +65,6 @@ describe("SqliteRepository", () => {
     tmpDir = mkdtempSync(join(tmpdir(), "tally-test-"));
     ({ close, txnRepository, ruleBookRepository, unitOfWork } = openDatabase(
       join(tmpDir, "test.db"),
-      idGenerator,
     ));
   });
 
@@ -78,10 +74,9 @@ describe("SqliteRepository", () => {
   });
 
   describe("RuleBookRepository", () => {
-    it("seeds default rules on open", () => {
+    it("starts with an empty rule book on a new database", () => {
       const rules = ruleBookRepository.load().allRules();
-      expect(rules.length).toBeGreaterThan(0);
-      expect(rules.every((rule) => rule.source === "default")).toBe(true);
+      expect(rules).toHaveLength(0);
     });
 
     it("saves and retrieves a learned rule", () => {
@@ -95,12 +90,15 @@ describe("SqliteRepository", () => {
       expect(found?.source).toBe("learned");
     });
 
-    it("upserts an existing rule (learned overrides default)", () => {
-      // \bspotify\b is a seeded default rule → w06; override with learned → w01
+    it("upserts a learned rule (same pattern, new category)", () => {
       const ruleBook = ruleBookRepository.load();
-      ruleBook.removeByPattern(String.raw`\bspotify\b`);
-      ruleBook.addRule(makeTestRule(String.raw`\bspotify\b`, "w01", "learned"));
+      ruleBook.addRule(makeTestRule(String.raw`\bspotify\b`, "w06", "learned"));
       ruleBookRepository.save(ruleBook);
+
+      const ruleBook2 = ruleBookRepository.load();
+      ruleBook2.removeByPattern(String.raw`\bspotify\b`);
+      ruleBook2.addRule(makeTestRule(String.raw`\bspotify\b`, "w01", "learned"));
+      ruleBookRepository.save(ruleBook2);
 
       const found = ruleBookRepository.load().findByPattern(String.raw`\bspotify\b`);
       expect(found?.source).toBe("learned");
@@ -114,7 +112,6 @@ describe("SqliteRepository", () => {
     it("filters out rules with invalid regex on load and logs a warning", async () => {
       const dbPath = join(tmpDir, "test.db");
 
-      // Insert a row with an invalid regex pattern directly, bypassing domain validation
       const { default: BetterSqlite3 } = await import("better-sqlite3");
       const rawDb = new BetterSqlite3(dbPath);
       rawDb
@@ -146,17 +143,15 @@ describe("SqliteRepository", () => {
       expect(ruleBookRepository.load().findByPattern(String.raw`\btoremove\b`)).toBeUndefined();
     });
 
-    it("re-opening DB does not overwrite learned rule with default", () => {
+    it("re-opening DB preserves learned rules", () => {
       const dbPath = join(tmpDir, "test.db");
 
-      // Override \bcarrefour\b (default n02) with a learned rule → w02
       const ruleBook = ruleBookRepository.load();
-      ruleBook.removeByPattern(String.raw`\bcarrefour\b`);
       ruleBook.addRule(makeTestRule(String.raw`\bcarrefour\b`, "w02", "learned"));
       ruleBookRepository.save(ruleBook);
       close();
 
-      const result2 = openDatabase(dbPath, idGenerator);
+      const result2 = openDatabase(dbPath);
       const found = result2.ruleBookRepository.load().findByPattern(String.raw`\bcarrefour\b`);
       expect(found?.source).toBe("learned");
       expect(found?.categoryId).toBe("w02");

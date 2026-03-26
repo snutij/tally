@@ -1,9 +1,4 @@
 import "temporal-polyfill/global";
-import {
-  DEFAULT_LOCALE,
-  getDefaultPrefixesForLocale,
-} from "../infrastructure/config/category-rules/index.js";
-import { VALID_FORMATS, createRenderer } from "./renderer/create-renderer.js";
 import { dataDir, dbPath } from "../infrastructure/persistence/data-dir.js";
 import { existsSync, mkdirSync } from "node:fs";
 import {
@@ -11,7 +6,6 @@ import {
   resolveModelUri,
   resolveModelsDir,
 } from "../infrastructure/llm/default-model.js";
-import { AddRule } from "../application/usecase/add-rule.js";
 import { ApplicationError } from "../application/error.js";
 import { ApplyCategoryRules } from "../application/usecase/apply-category-rules.js";
 import { AskQuestionUseCase } from "../application/usecase/ask-question.js";
@@ -20,34 +14,24 @@ import { Command } from "commander";
 import { CsvColumnMapping } from "../infrastructure/csv/csv-column-mapping.js";
 import { CsvFormatDetectorImpl } from "../infrastructure/csv/csv-format-detector-impl.js";
 import { CsvTransactionParser } from "../infrastructure/csv/csv-transaction-parser.js";
-import { DemoDataGeneratorImpl } from "../infrastructure/mock/demo-data-generator-impl.js";
 import { DomainError } from "../domain/error/index.js";
-import { FindUncategorizedTransactions } from "../application/usecase/find-uncategorized-transactions.js";
 import { GenerateReport } from "../application/usecase/generate-report.js";
 import { ImportCsvWorkflow } from "../application/usecase/import-csv-workflow.js";
 import { ImportTransactions } from "../application/usecase/import-transactions.js";
 import { InfrastructureError } from "../infrastructure/error.js";
 import { LearnCategoryRules } from "../application/usecase/learn-category-rules.js";
-import { ListRules } from "../application/usecase/list-rules.js";
-import { ListTransactions } from "../application/usecase/list-transactions.js";
 import { LlmCsvColumnMapper } from "../infrastructure/llm/llm-csv-column-mapper.js";
 import { LlmQuestionAnswerer } from "../infrastructure/llm/llm-question-answerer.js";
 import { LlmTransactionCategorizer } from "../infrastructure/llm/llm-transaction-categorizer.js";
 import { NodeLlamaCppGateway } from "../infrastructure/llm/node-llama-cpp-gateway.js";
-import { RemoveRule } from "../application/usecase/remove-rule.js";
-import { SaveCategorizedTransactions } from "../application/usecase/save-categorized-transactions.js";
-import { SeedMockData } from "../application/usecase/seed-mock-data.js";
 import { Sha256IdGenerator } from "../infrastructure/id/sha256-id-generator.js";
 import { SqliteQueryRunner } from "../infrastructure/persistence/sqlite-query-runner.js";
 import { SqliteSchemaIntrospector } from "../infrastructure/persistence/sqlite-schema-introspector.js";
-import { buildCategoryChoices } from "../application/category-choices.js";
 import { createAskCommand } from "./command/ask-command.js";
-import { createDbCommand } from "./command/db-command.js";
 import { createImportCommand } from "./command/import-command.js";
 import { createInitCommand } from "./command/init-command.js";
+import { createRenderer } from "./renderer/create-renderer.js";
 import { createReportCommand } from "./command/report-command.js";
-import { createRulesCommand } from "./command/rules-command.js";
-import { createTransactionsCommand } from "./command/transactions-command.js";
 import { openDatabase } from "../infrastructure/persistence/sqlite-repository.js";
 
 // --- Data directory (XDG convention) ---
@@ -66,22 +50,15 @@ const csvColumnMapper = new LlmCsvColumnMapper(llmGateway);
 
 // --- Composition root ---
 const idGenerator = new Sha256IdGenerator();
-const { txnRepository, ruleBookRepository, categoryRepository, unitOfWork } = openDatabase(
-  dbPath,
-  idGenerator,
-);
+const { txnRepository, ruleBookRepository, categoryRepository, unitOfWork } = openDatabase(dbPath);
 const categoryRegistry = new CategoryRegistry(categoryRepository.findAll());
-const categoryChoiceGroups = buildCategoryChoices(categoryRegistry.allCategories());
 
-const demoDataGenerator = new DemoDataGeneratorImpl();
 const csvFormatDetector = new CsvFormatDetectorImpl();
 const importTransactions = new ImportTransactions(txnRepository);
 const generateReport = new GenerateReport(txnRepository, categoryRegistry);
-const seedDemoData = new SeedMockData(txnRepository, demoDataGenerator);
 const applyCategoryRules = new ApplyCategoryRules(ruleBookRepository);
 const learnCategoryRules = new LearnCategoryRules(
   ruleBookRepository,
-  getDefaultPrefixesForLocale(DEFAULT_LOCALE),
   idGenerator,
   categoryRegistry,
 );
@@ -93,36 +70,20 @@ const importCsvWorkflow = new ImportCsvWorkflow({
   transactionCategorizer,
   unitOfWork,
 });
-const listTransactions = new ListTransactions(txnRepository);
-const findUncategorizedTransactions = new FindUncategorizedTransactions(txnRepository);
-const saveCategorizedTransactions = new SaveCategorizedTransactions(
-  txnRepository,
-  categoryRegistry,
-);
-const listRules = new ListRules(ruleBookRepository, categoryRegistry);
-const addRule = new AddRule(ruleBookRepository, idGenerator, categoryRegistry);
-const removeRule = new RemoveRule(ruleBookRepository);
 const sqlQueryRunner = new SqliteQueryRunner(dbPath);
 const schemaIntrospector = new SqliteSchemaIntrospector(dbPath);
 const questionAnswerer = new LlmQuestionAnswerer(llmGateway, sqlQueryRunner, schemaIntrospector);
 const askQuestion = new AskQuestionUseCase(questionAnswerer);
+
+// --- Renderer ---
+const renderer = createRenderer();
 
 // --- CLI ---
 const program = new Command();
 program
   .name("tally")
   .description("Personal finance CLI — budget tracking & reporting")
-  .version("0.1.0")
-  .option("--format <type>", `Output format (${VALID_FORMATS.join(", ")})`, "json");
-
-// Lazy renderer — resolved after Commander parses --format
-let _renderer: ReturnType<typeof createRenderer> | undefined;
-const renderer = {
-  render(data: unknown): string {
-    _renderer ??= createRenderer(program.opts()["format"]);
-    return _renderer.render(data);
-  },
-};
+  .version("0.1.0");
 
 program.addCommand(
   createInitCommand({
@@ -146,7 +107,7 @@ program.addCommand(
   }),
 );
 program.addCommand(
-  createImportCommand(seedDemoData, importCsvWorkflow, {
+  createImportCommand(importCsvWorkflow, {
     csvColumnMapper,
     csvFormatDetector,
     parserFactory: (params) => new CsvTransactionParser(new CsvColumnMapping(params)),
@@ -154,17 +115,6 @@ program.addCommand(
   }),
 );
 program.addCommand(createReportCommand(generateReport, renderer));
-program.addCommand(
-  createTransactionsCommand(
-    listTransactions,
-    findUncategorizedTransactions,
-    saveCategorizedTransactions,
-    renderer,
-    categoryChoiceGroups,
-  ),
-);
-program.addCommand(createRulesCommand(listRules, addRule, removeRule, renderer));
-program.addCommand(createDbCommand(dbPath));
 program.addCommand(createAskCommand(askQuestion));
 
 try {

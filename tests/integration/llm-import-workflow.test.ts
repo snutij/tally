@@ -50,12 +50,7 @@ describe("8.1: Full CSV import with mocked LLM responses", () => {
 
     const importTransactions = new ImportTransactions(txnRepo);
     const applyCategoryRules = new ApplyCategoryRules(ruleRepo);
-    const learnCategoryRules = new LearnCategoryRules(
-      ruleRepo,
-      [],
-      stubIdGenerator,
-      categoryRegistry,
-    );
+    const learnCategoryRules = new LearnCategoryRules(ruleRepo, stubIdGenerator, categoryRegistry);
     const transactionCategorizer = new LlmTransactionCategorizer(mockLlm);
     const unitOfWork = { runInTransaction: (fn: () => void): void => fn() };
 
@@ -121,12 +116,7 @@ describe("8.2: LLM categorization feeds into LearnCategoryRules", () => {
 
     const importTransactions = new ImportTransactions(txnRepo);
     const applyCategoryRules = new ApplyCategoryRules(ruleRepo);
-    const learnCategoryRules = new LearnCategoryRules(
-      ruleRepo,
-      [],
-      stubIdGenerator,
-      categoryRegistry,
-    );
+    const learnCategoryRules = new LearnCategoryRules(ruleRepo, stubIdGenerator, categoryRegistry);
     const transactionCategorizer = new LlmTransactionCategorizer(mockLlm);
     const unitOfWork = { runInTransaction: (fn: () => void): void => fn() };
 

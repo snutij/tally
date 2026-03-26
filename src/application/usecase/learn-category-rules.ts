@@ -8,18 +8,15 @@ import { extractPattern } from "../../domain/service/extract-pattern.js";
 
 export class LearnCategoryRules {
   private readonly ruleBookRepository: RuleBookRepository;
-  private readonly bankPrefixes: string[];
   private readonly idGenerator: IdGenerator;
   private readonly registry: CategoryRegistry;
 
   constructor(
     ruleBookRepository: RuleBookRepository,
-    bankPrefixes: string[],
     idGenerator: IdGenerator,
     registry: CategoryRegistry,
   ) {
     this.ruleBookRepository = ruleBookRepository;
-    this.bankPrefixes = bankPrefixes;
     this.idGenerator = idGenerator;
     this.registry = registry;
   }
@@ -38,7 +35,7 @@ export class LearnCategoryRules {
 
     for (const txn of relevant) {
       const { categoryId } = txn;
-      const pattern = extractPattern(txn.label, this.bankPrefixes);
+      const pattern = extractPattern(txn.label);
       if (pattern) {
         const brandedCategoryId = CategoryId(categoryId);
         const existing = ruleBook.findByPattern(pattern);

@@ -9,36 +9,27 @@ const TRAILING_PUNCT = /[*\-.,]+$/;
  * Returns `undefined` if no meaningful merchant name can be extracted.
  *
  * @example
- * extractPattern("CARTE CB CARREFOUR CITY PARIS 15/03", prefixes) → "\\bcarrefour\\s+city\\b"
- * extractPattern("PRLV SEPA FREE MOBILE 123456", prefixes)         → "\\bfree\\s+mobile\\b"
- * extractPattern("SPOTIFY", [])                                     → "\\bspotify\\b"
- * extractPattern("VIR 15/03/2026 CB*1234", prefixes)               → undefined
+ * extractPattern("CARTE CB CARREFOUR CITY PARIS 15/03") → "\\bcarte\\s+cb\\b"
+ * extractPattern("SPOTIFY")                             → "\\bspotify\\b"
+ * extractPattern("VIR 15/03/2026 CB*1234")              → undefined
  */
-export function extractPattern(rawLabel: string, bankPrefixes: string[]): string | undefined {
+export function extractPattern(rawLabel: string): string | undefined {
   let label = rawLabel.toUpperCase().trim();
 
-  // 1. Strip the first matching bank prefix
-  for (const prefix of bankPrefixes) {
-    if (label.startsWith(prefix)) {
-      label = label.slice(prefix.length).trim();
-      break;
-    }
-  }
-
-  // 2. Strip trailing noise
+  // 1. Strip trailing noise
   label = label.replace(TRAILING_DATE, "").trim();
   label = label.replace(TRAILING_CARD_REF, "").trim();
   label = label.replace(TRAILING_ID, "").trim();
   label = label.replace(TRAILING_PUNCT, "").trim();
 
-  // 3. Collect words: at least 2 chars, contains a letter
+  // 2. Collect words: at least 2 chars, contains a letter
   const words = label.split(/\s+/).filter((word) => word.length >= 2 && /[A-Z]/.test(word));
 
   if (words.length === 0) {
     return undefined;
   }
 
-  // 4. Take first 2 significant words and build a case-insensitive word-bounded pattern
+  // 3. Take first 2 significant words and build a case-insensitive word-bounded pattern
   const patternWords = words.slice(0, 2).map((word) => word.toLowerCase());
   const inner = patternWords.length === 1 ? patternWords[0] : patternWords.join(String.raw`\s+`);
   return `\\b${inner}\\b`;
