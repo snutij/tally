@@ -9,9 +9,9 @@ const TRAILING_PUNCT = /[*\-.,]+$/;
  * Returns `undefined` if no meaningful merchant name can be extracted.
  *
  * @example
- * extractPattern("CARTE CB CARREFOUR CITY PARIS 15/03") → "\\bcarte\\s+cb\\b"
- * extractPattern("SPOTIFY")                             → "\\bspotify\\b"
- * extractPattern("VIR 15/03/2026 CB*1234")              → undefined
+ * extractPattern("CARREFOUR CITY PARIS 15/03") → "\\bcarrefour\\s+city\\b"
+ * extractPattern("SPOTIFY")                    → "\\bspotify\\b"
+ * extractPattern("VIR 15/03/2026 CB*1234")     → undefined
  */
 export function extractPattern(rawLabel: string): string | undefined {
   let label = rawLabel.toUpperCase().trim();

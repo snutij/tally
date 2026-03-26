@@ -76,7 +76,7 @@ describe("LearnCategoryRules", () => {
     expect(ruleBookRepo.allRules()).toHaveLength(1);
   });
 
-  it("upserts a learned rule over an existing default rule for the same extracted pattern", () => {
+  it("upserts a learned rule over any pre-existing rule for the same extracted pattern", () => {
     ruleBookRepo.seed(makeRule(String.raw`\bcarrefour\s+city\b`, "n02", "default"));
     useCase.learn([txn("CARREFOUR CITY", "w02")]);
     const rule = ruleBookRepo.findByPattern(String.raw`\bcarrefour\s+city\b`);
