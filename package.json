@@ -22,8 +22,8 @@
   "type": "module",
   "scripts": {
     "build": "tsdown",
-    "db:reset": "tally db reset",
-    "db:seed": "tally import demo",
+    "db:reset": "rm -f ~/.local/share/tally/tally.db",
+    "db:seed": "tally import csv tests/fixtures/demo.csv",
     "fmt": "oxfmt --write",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",
