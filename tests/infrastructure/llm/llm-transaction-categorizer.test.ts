@@ -83,12 +83,15 @@ describe("LlmTransactionCategorizer", () => {
   });
 
   it("chunks large batches and merges results", async () => {
-    // 60 unique labels — should produce 2 LLM calls (50 + 10)
-    const txns = Array.from({ length: 60 }, (_el, idx) => makeTxn(`t${idx}`, `LABEL_${idx}`));
+    // 50 unique labels — should produce 3 LLM calls (20 + 20 + 10)
+    const txns = Array.from({ length: 50 }, (_el, idx) => makeTxn(`t${idx}`, `LABEL_${idx}`));
     const firstBatchResponse = Object.fromEntries(
-      Array.from({ length: 50 }, (_el, idx) => [String(idx + 1), "food"]),
+      Array.from({ length: 20 }, (_el, idx) => [String(idx + 1), "food"]),
     );
     const secondBatchResponse = Object.fromEntries(
+      Array.from({ length: 20 }, (_el, idx) => [String(idx + 1), "food"]),
+    );
+    const thirdBatchResponse = Object.fromEntries(
       Array.from({ length: 10 }, (_el, idx) => [String(idx + 1), "transport"]),
     );
 
@@ -96,14 +99,15 @@ describe("LlmTransactionCategorizer", () => {
       complete: vi
         .fn()
         .mockResolvedValueOnce(firstBatchResponse)
-        .mockResolvedValueOnce(secondBatchResponse),
+        .mockResolvedValueOnce(secondBatchResponse)
+        .mockResolvedValueOnce(thirdBatchResponse),
     };
     const categorizer = new LlmTransactionCategorizer(mockLlm);
 
     const { results } = await categorizer.categorize(txns, categories);
 
-    expect(mockLlm.complete).toHaveBeenCalledTimes(2);
-    expect(results).toHaveLength(60);
+    expect(mockLlm.complete).toHaveBeenCalledTimes(3);
+    expect(results).toHaveLength(50);
   });
 
   it("ignores out-of-range indices in the response", async () => {

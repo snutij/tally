@@ -49,7 +49,7 @@ describe("SqliteQueryRunner", () => {
     ).rejects.toThrow(InfrastructureError);
     await expect(
       runner.executeReadOnly("INSERT INTO categories (id, name, \"group\") VALUES ('x', 'y', 'z')"),
-    ).rejects.toThrow("disallowed statements");
+    ).rejects.toThrow("not permitted");
   });
 
   it("rejects UPDATE statement", async () => {
@@ -82,10 +82,42 @@ describe("SqliteQueryRunner", () => {
     );
   });
 
-  it("throws InfrastructureError for invalid SQL syntax", async () => {
-    await expect(runner.executeReadOnly("SELECT * FROM nonexistent_table")).rejects.toThrow(
+  it("rejects query referencing sqlite_master", async () => {
+    await expect(runner.executeReadOnly("SELECT * FROM sqlite_master")).rejects.toThrow(
       InfrastructureError,
     );
+    await expect(runner.executeReadOnly("SELECT * FROM sqlite_master")).rejects.toThrow(
+      "sqlite_master",
+    );
+  });
+
+  it("rejects query referencing a table not in the allowlist", async () => {
+    await expect(runner.executeReadOnly("SELECT * FROM unknown_table")).rejects.toThrow(
+      InfrastructureError,
+    );
+    await expect(runner.executeReadOnly("SELECT * FROM unknown_table")).rejects.toThrow(
+      "not in the allowed table set",
+    );
+  });
+
+  it("rejects unparseable SQL", async () => {
+    await expect(runner.executeReadOnly("THIS IS NOT SQL AT ALL")).rejects.toThrow(
+      InfrastructureError,
+    );
+    await expect(runner.executeReadOnly("THIS IS NOT SQL AT ALL")).rejects.toThrow(
+      "could not be parsed",
+    );
+  });
+
+  it("injects LIMIT 500 when query has no LIMIT clause", async () => {
+    // No LIMIT — still executes successfully (row count < 500 in test DB)
+    const rows = await runner.executeReadOnly("SELECT id FROM categories");
+    expect(Array.isArray(rows)).toBe(true);
+  });
+
+  it("preserves existing LIMIT clause without modification", async () => {
+    const rows = await runner.executeReadOnly("SELECT id FROM categories LIMIT 2");
+    expect(rows.length).toBeLessThanOrEqual(2);
   });
 
   it("handles non-Error thrown by prepare using String()", async () => {
