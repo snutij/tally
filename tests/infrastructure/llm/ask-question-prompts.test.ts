@@ -20,6 +20,20 @@ describe("buildNarrationUserPrompt", () => {
     const prompt = buildNarrationUserPrompt("How much?", [{ total: 1 }], true);
     expect(prompt).toContain("truncated to the first 50 rows");
   });
+
+  it("wraps row data in <data> delimiters", () => {
+    const prompt = buildNarrationUserPrompt("How much?", [{ total: 42 }], false);
+    expect(prompt).toContain("<data>");
+    expect(prompt).toContain("</data>");
+  });
+
+  it("includes untrusted-data instruction before the data block", () => {
+    const prompt = buildNarrationUserPrompt("How much?", [{ total: 42 }], false);
+    const dataTagIndex = prompt.indexOf("<data>");
+    const untrustedIndex = prompt.indexOf("untrusted");
+    expect(untrustedIndex).toBeGreaterThan(-1);
+    expect(untrustedIndex).toBeLessThan(dataTagIndex);
+  });
 });
 
 describe("buildSqlRetryUserPrompt", () => {
