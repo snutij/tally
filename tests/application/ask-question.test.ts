@@ -133,7 +133,7 @@ describe("LlmQuestionAnswerer", () => {
     const [, narrationCall] = vi.mocked(llmGateway.complete).mock.calls;
     const userPrompt = narrationCall[1] as string;
     const parsedRows = JSON.parse(
-      userPrompt.match(/Query results:\n([\s\S]*?)(?:\n\n\(Note|$)/)?.[1] ?? "[]",
+      userPrompt.match(/<data>\n([\s\S]*?)(?:\n\(Results truncated|$)/)?.[1] ?? "[]",
     );
     expect(parsedRows).toHaveLength(50);
     expect(userPrompt).toContain("truncated to the first 50 rows");
