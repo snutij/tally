@@ -37,7 +37,7 @@
     "commander": "14.0.3",
     "csv-parse": "6.2.1",
     "node-llama-cpp": "3.18.1",
-    "ora": "8.2.0",
+    "ora": "9.3.0",
     "temporal-polyfill": "0.3.2"
   },
   "devDependencies": {
