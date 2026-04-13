@@ -46,7 +46,7 @@
     "@vitest/coverage-v8": "4.1.1",
     "oxfmt": "0.43.0",
     "oxlint": "1.58.0",
-    "tsdown": "0.21.7",
+    "tsdown": "0.21.8",
     "tsx": "4.21.0",
     "typescript": "6.0.2",
     "vitest": "4.1.1"
